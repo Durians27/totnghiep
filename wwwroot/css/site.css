@@ -1,0 +1,93 @@
+/* BẢNG MÀU ĐỘC QUYỀN CỦA VELVY SKIN */
+:root {
+    --velvy-primary: #D4A373; /* Nâu be nhạt - thanh lịch */
+    --velvy-pink: #F4E7E7; /* Hồng pastel - dịu dàng */
+    --velvy-bg: #FAFAF8; /* Trắng ngà - sạch sẽ, dễ nhìn */
+    --velvy-text: #4A4A4A; /* Xám đậm - dễ đọc hơn màu đen thui */
+    --velvy-shadow: rgba(212, 163, 115, 0.2);
+}
+
+body {
+    background-color: var(--velvy-bg);
+    color: var(--velvy-text);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HIỆU ỨNG NAVBAR (THANH MENU) */
+.navbar {
+    background-color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    padding: 15px 0;
+    transition: all 0.3s ease;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    color: var(--velvy-primary) !important;
+}
+
+/* HIỆU ỨNG LINK MƯỢT MÀ */
+.nav-link {
+    color: var(--velvy-text) !important;
+    font-weight: 500;
+    margin: 0 10px;
+    position: relative;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+/* Gạch chân mượt mà khi di chuột */
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    background-color: var(--velvy-primary);
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--velvy-primary) !important;
+    transform: translateY(-2px); /* Nhảy nhẹ lên */
+}
+
+.nav-link:hover::after {
+    width: 100%;
+    left: 0;
+}
+
+/* NÚT BẤM (BUTTON) MỀM MẠI */
+.btn-velvy {
+    background-color: var(--velvy-primary);
+    color: white !important;
+    border-radius: 30px;
+    padding: 8px 25px;
+    font-weight: 600;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px var(--velvy-shadow);
+}
+
+.btn-velvy:hover {
+    background-color: #C08D5D;
+    transform: scale(1.05); /* Phình to mượt mà */
+    box-shadow: 0 6px 15px var(--velvy-shadow);
+}
+
+/* BỐ CỤC CHÍNH & FOOTER */
+main {
+    flex: 1; /* Đẩy footer xuống đáy màn hình */
+    padding-top: 30px;
+}
+
+.footer {
+    background-color: #ffffff;
+    border-top: 1px solid #f0f0f0;
+    padding: 25px 0;
+    margin-top: auto;
+}

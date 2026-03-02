@@ -1,0 +1,38 @@
+@model VelvySkinWeb.Models.Category
+
+@{
+    ViewData["Title"] = "Thêm mới Danh mục";
+}
+
+<div class="container mt-4">
+    <h3 style="color: var(--velvy-primary);">Thêm mới Danh mục Mỹ phẩm</h3>
+    <hr />
+    <div class="row">
+        <div class="col-md-6 bg-white p-4 rounded shadow-sm">
+            <form asp-action="Create">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                
+                <div class="form-group mb-3">
+                    <label asp-for="Name" class="control-label fw-bold">Tên danh mục (Vd: Sữa rửa mặt)</label>
+                    <input asp-for="Name" class="form-control" placeholder="Nhập tên danh mục..." />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                
+                <div class="form-group mb-4">
+                    <label asp-for="Description" class="control-label fw-bold">Mô tả</label>
+                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Mô tả công dụng..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+                
+                <div class="form-group">
+                    <input type="submit" value="Lưu vào SQL Server" class="btn btn-velvy" />
+                    <a asp-action="Index" class="btn btn-outline-secondary ms-2">Quay lại danh sách</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
