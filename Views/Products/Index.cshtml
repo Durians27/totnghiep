@@ -1,0 +1,46 @@
+@model IEnumerable<VelvySkinWeb.Models.Product>
+
+@{
+    ViewData["Title"] = "Quản lý Sản Phẩm";
+}
+
+<div class="container mt-4">
+    <h2 style="color: var(--velvy-primary);">Kho Sản Phẩm Velvy Skin</h2>
+    <hr />
+    <p>
+        <a asp-action="Create" class="btn btn-velvy">Thêm Sản phẩm mới</a>
+    </p>
+    <table class="table table-hover table-bordered align-middle bg-white shadow-sm mt-3">
+        <thead class="table-light">
+            <tr>
+                <th>Hình ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Giá bán</th>
+                <th>Tồn kho</th>
+                <th>Danh mục</th>
+                <th class="text-center">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model) {
+                <tr>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.ImageUrl)) {
+                            <img src="@item.ImageUrl" alt="@item.Name" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" />
+                        } else {
+                            <span class="text-muted">Chưa có ảnh</span>
+                        }
+                    </td>
+                    <td class="fw-bold">@item.Name</td>
+                    <td class="text-danger fw-bold">@item.Price.ToString("N0") đ</td>
+                    <td>@item.StockQuantity</td>
+                    <td>@(item.Category != null ? item.Category.Name : "N/A")</td>
+                    <td class="text-center">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Sửa</a>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Xóa</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

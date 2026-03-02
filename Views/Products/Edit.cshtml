@@ -1,0 +1,62 @@
+@model VelvySkinWeb.Models.Product
+
+@{
+    ViewData["Title"] = "Sửa Sản Phẩm";
+}
+
+<div class="container mt-5">
+    <h2 style="color: var(--velvy-primary);">Cập nhật Sản Phẩm</h2>
+    <hr />
+    <div class="row">
+        <div class="col-md-8 bg-white p-4 rounded shadow-sm">
+            <form asp-action="Edit" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="ImageUrl" />
+
+                <div class="row">
+                    <div class="col-md-6 form-group mb-3">
+                        <label asp-for="Name" class="control-label fw-bold">Tên sản phẩm</label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 form-group mb-3">
+                        <label asp-for="Price" class="control-label fw-bold">Giá bán</label>
+                        <input asp-for="Price" type="number" class="form-control" />
+                        <span asp-validation-for="Price" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group mb-3">
+                        <label asp-for="CategoryId" class="control-label fw-bold">Danh mục</label>
+                        <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
+                    </div>
+                    <div class="col-md-6 form-group mb-3">
+                        <label asp-for="StockQuantity" class="control-label fw-bold">Số lượng tồn kho</label>
+                        <input asp-for="StockQuantity" type="number" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label class="control-label fw-bold">Ảnh hiện tại</label><br />
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl)) {
+                        <img src="@Model.ImageUrl" style="width: 150px; border-radius: 8px; margin-bottom: 10px;" />
+                    }
+                    <br />
+                    <label asp-for="ImageFile" class="control-label">Đổi ảnh mới (Bỏ trống nếu muốn giữ nguyên)</label>
+                    <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
+                </div>
+
+                <div class="form-group">
+                    <input type="submit" value="Lưu Thay Đổi" class="btn btn-velvy btn-lg w-100 mb-2" />
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100">Hủy và quay lại</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

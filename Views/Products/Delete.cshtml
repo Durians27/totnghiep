@@ -1,0 +1,40 @@
+@model VelvySkinWeb.Models.Product
+
+@{
+    ViewData["Title"] = "Xóa Sản Phẩm";
+}
+
+<div class="container mt-5">
+    <h3 class="text-danger">Bạn có chắc chắn muốn xóa sản phẩm này khỏi hệ thống?</h3>
+    <p class="text-muted">Lưu ý: Hành động này sẽ xóa luôn cả hình ảnh vật lý trên máy chủ!</p>
+    <hr />
+    
+    <div class="row bg-white p-4 rounded shadow-sm">
+        <div class="col-md-4 text-center">
+            @if (!string.IsNullOrEmpty(Model.ImageUrl)) {
+                <img src="@Model.ImageUrl" class="img-fluid rounded" style="max-height: 250px;" />
+            }
+        </div>
+        <div class="col-md-8">
+            <dl class="row">
+                <dt class="col-sm-3">Tên sản phẩm</dt>
+                <dd class="col-sm-9 fw-bold fs-5">@Model.Name</dd>
+                
+                <dt class="col-sm-3">Giá bán</dt>
+                <dd class="col-sm-9 text-danger fw-bold">@Model.Price.ToString("N0") đ</dd>
+                
+                <dt class="col-sm-3">Tồn kho</dt>
+                <dd class="col-sm-9">@Model.StockQuantity</dd>
+
+                <dt class="col-sm-3">Thuộc danh mục</dt>
+                <dd class="col-sm-9">@(Model.Category != null ? Model.Category.Name : "N/A")</dd>
+            </dl>
+            
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+                <input type="submit" value="XÁC NHẬN XÓA" class="btn btn-danger btn-lg mt-3" /> 
+                <a asp-action="Index" class="btn btn-outline-secondary btn-lg mt-3 ms-2">Không xóa, quay lại</a>
+            </form>
+        </div>
+    </div>
+</div>
