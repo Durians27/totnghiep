@@ -1,0 +1,48 @@
+@model VelvySkinWeb.Models.Order
+@{ ViewData["Title"] = "Thanh toán đơn hàng"; }
+
+<div class="container mt-5 mb-5">
+    <h2 style="color: var(--primary-mint); font-family: 'Playfair Display';">ĐỊA CHỈ GIAO HÀNG</h2>
+    <hr />
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow-sm p-4 border-0">
+                <form asp-action="Checkout" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="CustomerName" class="fw-bold">Họ và Tên người nhận</label>
+                        <input asp-for="CustomerName" class="form-control" placeholder="Ví dụ: Nguyễn Văn Lực" />
+                        <span asp-validation-for="CustomerName" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="PhoneNumber" class="fw-bold">Số điện thoại liên hệ</label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="Ví dụ: 0901234567" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label asp-for="ShippingAddress" class="fw-bold">Địa chỉ nhận hàng chi tiết</label>
+                        <textarea asp-for="ShippingAddress" class="form-control" rows="3" placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố"></textarea>
+                        <span asp-validation-for="ShippingAddress" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-lg w-100 fw-bold" style="background-color: var(--primary-mint); color: white;">XÁC NHẬN CHỐT ĐƠN</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-5 mt-4 mt-md-0">
+            <div class="card shadow-sm p-4 border-0" style="background-color: var(--light-mint);">
+                <h4 class="fw-bold text-center mb-4">TÓM TẮT ĐƠN HÀNG</h4>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="fs-5">Tổng tiền hóa đơn:</span>
+                    <span class="fs-4 fw-bold text-danger">@ViewBag.GrandTotal.ToString("N0") đ</span>
+                </div>
+                <hr />
+                <p class="text-muted text-center" style="font-size: 13px;"><i class="fa fa-info-circle"></i> Vui lòng kiểm tra kỹ địa chỉ trước khi xác nhận.</p>
+            </div>
+        </div>
+    </div>
+</div>

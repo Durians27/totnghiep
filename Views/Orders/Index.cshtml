@@ -1,0 +1,79 @@
+@model IEnumerable<VelvySkinWeb.Models.Order>
+@{ 
+    ViewData["Title"] = "Quản lý Đơn hàng"; 
+    var currentStatus = ViewBag.CurrentStatus?.ToString() ?? "all";
+}
+
+<div class="container mt-4 mb-5">
+    <h2 style="color: var(--primary-mint); font-family: 'Playfair Display';"><i class="fa-solid fa-clipboard-list"></i> BẢNG ĐIỀU KHIỂN ĐƠN HÀNG</h2>
+    <hr />
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a asp-action="Index" asp-route-status="all" class="btn fw-bold @(currentStatus == "all" ? "btn-dark" : "btn-outline-dark")">
+            <i class="fa-solid fa-layer-group"></i> Tất cả đơn
+        </a>
+        <a asp-action="Index" asp-route-status="pending" class="btn fw-bold @(currentStatus == "pending" ? "btn-warning" : "btn-outline-warning text-dark")">
+            <i class="fa-solid fa-box"></i> Chờ xử lý mới
+        </a>
+        <a asp-action="Index" asp-route-status="shipping" class="btn fw-bold @(currentStatus == "shipping" ? "btn-info text-white" : "btn-outline-info text-dark")">
+            <i class="fa-solid fa-truck-fast"></i> Đang giao cho khách
+        </a>
+        <a asp-action="Index" asp-route-status="completed" class="btn fw-bold @(currentStatus == "completed" ? "btn-success" : "btn-outline-success")">
+            <i class="fa-solid fa-check-double"></i> Đã hoàn thành
+        </a>
+        <a asp-action="Index" asp-route-status="cancelled" class="btn fw-bold @(currentStatus == "cancelled" ? "btn-danger" : "btn-outline-danger")">
+            <i class="fa-solid fa-ban"></i> Đơn đã hủy
+        </a>
+    </div>
+
+    <div class="table-responsive bg-white p-3 rounded shadow-sm border-top border-3" style="border-color: var(--primary-mint) !important;">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fa-solid fa-box-open text-muted mb-3" style="font-size: 50px;"></i>
+                <h5 class="text-muted">Không có đơn hàng nào trong mục này.</h5>
+            </div>
+        }
+        else
+        {
+            <table class="table table-hover align-middle">
+                <thead class="table-light text-muted">
+                    <tr>
+                        <th>Mã Đơn</th>
+                        <th>Ngày đặt</th>
+                        <th>Khách hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold text-danger">#@item.Id</td>
+                            <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <strong>@item.CustomerName</strong><br />
+                                <small class="text-muted"><i class="fa-solid fa-phone"></i> @item.PhoneNumber</small>
+                            </td>
+                            <td class="fw-bold">@item.TotalAmount.ToString("N0") đ</td>
+                            <td>
+                                @if(item.OrderStatus == "Pending") { <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fa-solid fa-clock"></i> Chờ xử lý</span> }
+                                else if(item.OrderStatus == "Shipping") { <span class="badge bg-info text-dark px-3 py-2 rounded-pill"><i class="fa-solid fa-truck"></i> Đang giao</span> }
+                                else if(item.OrderStatus == "Completed") { <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fa-solid fa-check"></i> Hoàn thành</span> }
+                                else if(item.OrderStatus == "Cancelled") { <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="fa-solid fa-xmark"></i> Đã hủy</span> }
+                                else { <span class="badge bg-secondary px-3 py-2 rounded-pill">@item.OrderStatus</span> }
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary fw-bold" style="border-radius: 20px;">
+                                    Xử lý ngay <i class="fa-solid fa-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

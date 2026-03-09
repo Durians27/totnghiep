@@ -1,0 +1,74 @@
+@model IEnumerable<VelvySkinWeb.Models.ViewModels.CartItem>
+
+@{
+    ViewData["Title"] = "Giỏ Hàng Của Bạn";
+}
+
+<div class="container mt-5 mb-5">
+    <h2 style="color: var(--primary-mint); font-family: 'Playfair Display';"><i class="fa fa-shopping-cart"></i> GIỎ HÀNG</h2>
+    <hr />
+
+   @if (TempData["SuccessMsg"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMsg"]</div>
+}
+@if (TempData["ErrorMsg"] != null)
+    {
+        <div class="alert alert-danger fw-bold shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i> @TempData["ErrorMsg"]
+        </div>
+    }
+    @if (Model.Any())
+    {
+        <div class="table-responsive bg-white p-3 rounded shadow-sm">
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Đơn giá</th>
+                        <th>Số lượng</th>
+                        <th>Thành tiền</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <img src="@item.ImageUrl" alt="@item.ProductName" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px; margin-right: 10px;" />
+                                <span class="fw-bold">@item.ProductName</span>
+                            </td>
+                            <td class="text-muted">@item.Price.ToString("N0") đ</td>
+                            <td>
+                                <span class="badge bg-secondary fs-6">@item.Quantity</span>
+                            </td>
+                            <td class="text-danger fw-bold">@item.Total.ToString("N0") đ</td>
+                            <td>
+                                <a asp-action="RemoveFromCart" asp-route-id="@item.ProductId" class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary"><i class="fa fa-arrow-left"></i> Tiếp tục mua sắm</a>
+                <a asp-action="ClearCart" class="btn btn-outline-danger ms-2">Xóa sạch giỏ</a>
+            </div>
+            <div class="col-md-6 text-end">
+                <h4 class="fw-bold">Tổng cộng: <span class="text-danger">@ViewBag.GrandTotal.ToString("N0") đ</span></h4>
+                <a asp-action="Checkout" class="btn btn-lg mt-2 fw-bold" style="background-color: var(--primary-mint); color: white; width: 250px;">Tiến hành Thanh toán</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center p-5 bg-white rounded shadow-sm">
+            <h4 class="text-muted mb-3">Giỏ hàng của bạn đang trống</h4>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-lg" style="background-color: var(--primary-mint); color: white;">Đi mua sắm ngay</a>
+        </div>
+    }
+</div>

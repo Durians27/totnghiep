@@ -1,161 +1,128 @@
-﻿@{
+﻿@model IEnumerable<VelvySkinWeb.Models.Product>
+
+@{
     ViewData["Title"] = "Trang chủ";
 }
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-
 <style>
-    body {
-        background-color: #FAFAF8 !important; /* Màu nền web trắng ngà */
-    }
-
-    /* KHU VỰC BANNER MÀU DA DỊU NHẸ */
-    .premium-hero {
-        background-color: #F3E8E0; /* Màu Nude / Da dịu cực kỳ sang */
-        border-radius: 16px; /* Bo góc hình chữ nhật vừa phải */
-        padding: 5rem 4rem;
-        margin-top: 2rem;
-        color: #4A3C31; /* Chữ màu nâu trầm trầm, không dùng màu đen */
-        position: relative;
-        box-shadow: 0 15px 35px rgba(212, 163, 115, 0.1);
-        display: flex;
-        align-items: center;
-    }
-
-    /* PHÔNG CHỮ TIÊU ĐỀ */
-    .serif-heading {
-        font-family: 'Playfair Display', serif;
-        font-size: 4.8rem;
-        line-height: 1.15;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        letter-spacing: -1px;
-        color: #3D2B1F;
-    }
-
-    .sans-text {
-        font-family: 'DM Sans', sans-serif;
-        font-size: 1.15rem;
-        font-weight: 400;
-        color: #5C4D43;
-        max-width: 480px;
-        line-height: 1.7;
-        margin-bottom: 2.5rem;
-    }
-
-    /* NÚT BẤM CHỮ NHẬT HOA MỸ & SANG TRỌNG */
-    .elegant-btn {
-        display: inline-block;
-        background-color: #C08D5D; /* Màu nâu caramel của Velvy Skin */
-        color: white !important;
-        padding: 16px 40px;
-        border-radius: 6px; /* Chữ nhật bo góc rất nhẹ */
-        font-family: 'DM Sans', sans-serif;
-        font-weight: 500;
-        font-size: 1.1rem;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 20px rgba(192, 141, 93, 0.25);
-        letter-spacing: 0.5px;
-    }
-
-    .elegant-btn:hover {
-        background-color: #A8784C;
-        transform: translateY(-3px);
-        box-shadow: 0 12px 25px rgba(192, 141, 93, 0.35);
-    }
-
-  
-    /* KHU VỰC ELEVATE DƯỚI BANNER */
-    .elevate-section {
-        margin-top: 6rem;
-        padding-bottom: 4rem;
-    }
-
-    .elevate-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 3.2rem;
-        color: #3D2B1F;
-        font-weight: 700;
-        line-height: 1.2;
-    }
-
-    .elevate-subtitle {
-        font-family: 'DM Sans', sans-serif;
-        font-size: 1.15rem;
-        color: #666;
-        margin-top: 1.5rem;
-        line-height: 1.6;
-    }
-
-    .product-card-mini {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        border: 1px solid #F0EBE1;
-    }
-
-    .mini-img-placeholder {
-        width: 80px;
-        height: 100px;
-        background-color: #F3E8E0;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8rem;
-        color: #A89C92;
-        text-align: center;
-    }
+    /* CSS RIÊNG CỦA INDEX.CSHTML ĐỂ TRÁNH TRÙNG LẶP VỚI LAYOUT */
+    @@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .reveal { opacity: 0; }
+    .reveal.active { animation: fadeInUp 0.8s ease-out forwards; opacity: 1; }
+    
+    .hero { background: linear-gradient(135deg, var(--light-mint) 0%, #fff 100%); padding: 80px 8%; display: flex; align-items: center; gap: 50px; min-height: 550px; }
+    .hero-content { flex: 1; }
+    .hero-content h1 { font-family: 'Playfair Display', serif; font-size: 60px; color: #333; margin-bottom: 25px; line-height: 1.1; }
+    .btn-banner { background-color: var(--primary-mint); color: white; padding: 22px 50px; border: none; border-radius: 50px; font-weight: 700; font-size: 16px; text-transform: uppercase; cursor: pointer; transition: var(--transition); margin-top: 30px; box-shadow: 0 10px 25px rgba(46, 196, 182, 0.3); animation: pulse 2s infinite; }
+    .btn-banner:hover { transform: scale(1.05); background-color: var(--dark-mint); }
+    @@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(46, 196, 182, 0.5); } 70% { box-shadow: 0 0 0 20px rgba(46, 196, 182, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 196, 182, 0); } }
+    .hero-img { flex: 1; text-align: right; }
+    .hero-img img { width: 100%; max-width: 450px; border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; box-shadow: 25px 25px 0 var(--light-mint); }
+    
+    .section-container { padding: 80px 5%; text-align: center; }
+    .filter-group { margin-bottom: 40px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .filter-btn { background: white; border: 1px solid #ddd; padding: 10px 22px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 13px; transition: var(--transition); color: #666; }
+    .filter-btn.active, .filter-btn:hover { background: var(--primary-mint); color: white; border-color: var(--primary-mint); }
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 30px; max-width: 1250px; margin: 0 auto; }
+    .product-card { background: white; border-radius: 15px; padding: 20px; border: 1px solid #f0f0f0; transition: var(--transition); position: relative; overflow: hidden; text-align: left;}
+    .product-card:hover { transform: translateY(-10px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-color: var(--primary-mint); }
+    .wishlist-btn-item { position: absolute; top: 15px; right: 15px; background: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; border: none; transition: 0.3s; }
+    .wishlist-btn-item i { color: #ccc; font-size: 16px; transition: 0.3s; }
+    .wishlist-btn-item.active i { color: var(--accent-pink); }
+    .product-img-wrapper { position: relative; width: 100%; height: 250px; border-radius: 10px; overflow: hidden; margin-bottom: 15px; }
+    .product-img-wrapper img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; transition: all 0.6s ease-in-out; }
+    .img-hover { opacity: 0; transform: scale(1.1); }
+    .product-card:hover .img-main { opacity: 0; transform: scale(0.9); }
+    .product-card:hover .img-hover { opacity: 1; transform: scale(1); }
+    .btn-quick-view { position: absolute; top: 50%; left: 50%; transform: translate(-50%, 20%); background: rgba(255, 255, 255, 0.95); color: #333; border: none; padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 12px; opacity: 0; transition: all 0.3s ease; cursor: pointer; z-index: 5; white-space: nowrap; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .product-card:hover .btn-quick-view { opacity: 1; transform: translate(-50%, -50%); }
+    .btn-quick-view:hover { background: var(--primary-mint); color: white; }
+    .product-card h3 { font-size: 14px; text-transform: uppercase; color: var(--primary-mint); letter-spacing: 1px; margin-bottom: 5px; font-weight: 700; }
+    .product-card h4 { font-size: 15px; color: #333; text-transform: none; margin-bottom: 10px; height: 40px; overflow: hidden; font-weight: 600; line-height: 1.4; }
+    .product-card .price { color: var(--text-gray); font-weight: 700; font-size: 17px; margin-bottom: 15px; }
+    .btn-small { background: var(--primary-mint); color: white; border: none; padding: 12px 20px; border-radius: 50px; font-weight: 700; font-size: 11px; text-transform: uppercase; cursor: pointer; width: 100%; transition: 0.3s; }
+    .btn-small:hover { background: var(--dark-mint); letter-spacing: 1px; }
 </style>
 
-<div class="premium-hero">
-    <div class="row w-100 align-items-center">
-        
-        <div class="col-lg-7">
-            <div style="background: rgba(255,255,255,0.4); display: inline-block; padding: 6px 18px; border-radius: 4px; margin-bottom: 25px; font-family: 'DM Sans'; font-size: 0.9rem; color: #5C4D43; border: 1px solid rgba(0,0,0,0.05);">
-                ✨ Chăm sóc da chuẩn chuyên gia
+<section class="hero reveal">
+    <div class="hero-content">
+        <div style="display:inline-flex; align-items:center; gap:8px; background:#fff; padding:6px 15px; border-radius:30px; box-shadow:0 2px 10px rgba(0,0,0,0.05); margin-bottom:20px;">
+            <i class="fa-solid fa-sparkles" style="color:#d4a373"></i>
+            <span style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase">Làn da bạn là duy nhất</span>
+        </div>
+        <h1>Vẻ đẹp bắt nguồn <br> từ sự thấu hiểu.</h1>
+        <p style="font-size:16px; color:#666; max-width:500px; line-height:1.6">Hệ thống AI của Velvy Skin sẽ phân tích và đề xuất lộ trình chăm sóc độc bản dành riêng cho bạn.</p>
+        <button class="btn-banner">Bắt đầu tư vấn ngay</button>
+    </div>
+    <div class="hero-img">
+        <img src="~/images/anh1.jpg" alt="Skincare" onerror="this.src='https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=600'">
+    </div>
+</section>
+
+<div class="section-container reveal">
+    <h2 style="font-family:'Playfair Display'; font-size: 36px; margin-bottom: 10px;">Sản phẩm nổi bật</h2>
+    <p style="color:#888; margin-bottom:40px">Lựa chọn tốt nhất cho quy trình dưỡng da của bạn</p>
+
+    <div class="filter-group">
+        <button class="filter-btn active" onclick="filterPrice('all', this)">Tất cả</button>
+        <button class="filter-btn" onclick="filterPrice('under300', this)">Dưới 300k</button>
+        <button class="filter-btn" onclick="filterPrice('300-700', this)">300k - 700k</button>
+        <button class="filter-btn" onclick="filterPrice('above700', this)">Trên 700k</button>
+    </div>
+
+    <div class="product-grid" id="productGrid">
+        @foreach (var item in Model)
+        {
+            <div class="product-card" data-price="@item.Price">
+                <button class="wishlist-btn-item" onclick="toggleWishlist(this)"><i class="fa-solid fa-heart"></i></button>
+                <div class="product-img-wrapper">
+                    <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-main" alt="@item.Name">
+                    <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-hover" alt="@item.Name Hover">
+                    <button class="btn-quick-view">Xem nhanh</button>
+                </div>
+                <h3>@(item.Category != null ? item.Category.Name : "Velvy Skin")</h3>
+                <h4>@item.Name</h4>
+                <p class="price">@item.Price.ToString("N0")đ</p>
+                <a asp-controller="Cart" asp-action="AddToCart" asp-route-id="@item.Id" class="btn btn-small text-center text-decoration-none d-block">Thêm vào giỏ</a>
             </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterPrice(range, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const products = document.querySelectorAll('.product-card');
+            products.forEach(product => {
+                const price = parseInt(product.getAttribute('data-price'));
+                let show = false;
+
+                if (range === 'all') show = true;
+                else if (range === 'under300') show = price < 300000;
+                else if (range === '300-700') show = price >= 300000 && price <= 700000;
+                else if (range === 'above700') show = price > 700000;
+
+                product.style.display = show ? 'block' : 'none';
+                product.style.animation = show ? 'fadeInUp 0.5s ease-out forwards' : 'none';
+            });
+        }
+
+        let wishlistCount = 0;
+        function toggleWishlist(btn) {
+            btn.classList.toggle('active');
+            const countHeader = document.getElementById('wishlist-count-header');
             
-            <h1 class="serif-heading">Vẻ đẹp bắt nguồn<br>từ sự thấu hiểu.</h1>
-            <p class="sans-text">
-                Không có làn da nào giống nhau. Hệ thống AI của Velvy Skin sẽ lắng nghe, phân tích và đề xuất lộ trình chăm sóc độc bản dành riêng cho bạn.
-            </p>
-
-            <a asp-controller="SkinTest" asp-action="Index" class="elegant-btn">
-                Khám Phá Phác Đồ Làn Da
-            </a>
-        </div>
-
-        <div class="col-lg-5">
-            <div class="rect-placeholder">
-                <img src="~/images/banner-chinh.jpg" alt="Velvy Skin Chăm Sóc Da" style="width: 100%; height: 500px; object-fit: cover; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);" />
-            </div>
-        </div>
-        
-    </div>
-</div>
-
-<div class="elevate-section row align-items-center">
-    <div class="col-lg-6">
-        <h2 class="elevate-title">Nâng Tầm Trải Nghiệm<br>Skincare</h2>
-        <p class="elevate-subtitle">
-            Đừng để làn da phải chịu đựng những sản phẩm sai lệch. Hãy thiết lập một thói quen làm sạch, cấp ẩm và bảo vệ được thiết kế cho chính bạn.
-        </p>
-    </div>
-
-    <div class="col-lg-5 offset-lg-1 mt-4 mt-lg-0">
-        <div class="product-card-mini">
-            <div class="mini-img-placeholder">Ảnh SP</div>
-            <div>
-                <h4 style="font-family: 'Playfair Display'; font-weight: 700; margin: 0; color: #3D2B1F;">Velvy Pure Serum</h4>
-                <p style="font-family: 'DM Sans'; color: #666; font-size: 0.9rem; margin-top: 5px; margin-bottom: 10px;">Tinh chất phục hồi sâu</p>
-                <a asp-controller="Product" asp-action="Index" style="color: #C08D5D; font-weight: 700; text-decoration: none; font-family: 'DM Sans'; font-size: 0.9rem;">Xem chi tiết ➔</a>
-            </div>
-        </div>
-    </div>
-</div>
+            if (btn.classList.contains('active')) {
+                wishlistCount++;
+            } else {
+                wishlistCount--;
+            }
+            countHeader.innerText = wishlistCount;
+            countHeader.style.transform = "scale(1.3)";
+            setTimeout(() => countHeader.style.transform = "scale(1)", 200);
+        }
+    </script>
+}

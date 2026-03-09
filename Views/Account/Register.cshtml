@@ -1,0 +1,152 @@
+@model VelvySkinWeb.Models.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+
+<style>
+    .signup-main-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 0; 
+    }
+
+    .signup-container {
+        background: var(--white);
+        width: 100%;
+        max-width: 500px;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .signup-container::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 5px;
+        background: var(--primary-mint);
+    }
+
+    .signup-container h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 10px; color: #333; }
+    .subtitle { font-size: 14px; color: #888; margin-bottom: 25px; }
+
+    .form-group { text-align: left; margin-bottom: 15px; position: relative; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #555; }
+    .form-group i { position: absolute; left: 15px; top: 35px; color: var(--primary-mint); }
+    .form-group input {
+        width: 100%; padding: 12px 15px 12px 40px; border: 1px solid #eee;
+        border-radius: 10px; outline: none; background: #f9f9f9; font-family: inherit;
+        transition: 0.3s;
+    }
+    .form-group input:focus { border-color: var(--primary-mint); background: #fff; }
+
+    .terms-group {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        text-align: left;
+        margin: 20px 0;
+        font-size: 13px;
+        color: #666;
+        cursor: pointer;
+    }
+    .terms-group input { margin-top: 3px; accent-color: var(--primary-mint); }
+    .terms-group a { color: var(--primary-mint); text-decoration: none; font-weight: 600; }
+
+    .btn-signup {
+        width: 100%; padding: 15px; background: var(--primary-mint); color: white;
+        border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+        text-transform: uppercase; letter-spacing: 1px; transition: var(--transition);
+    }
+    .btn-signup:hover { background: var(--dark-mint); transform: translateY(-2px); }
+
+    .divider { margin: 25px 0; position: relative; height: 1px; background: #eee; }
+    .divider span {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: #fff; padding: 0 15px; font-size: 12px; color: #999;
+    }
+
+    .social-login { display: flex; gap: 15px; justify-content: center; }
+    .social-btn {
+        flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 10px;
+        background: #fff; cursor: pointer; transition: 0.3s;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        font-size: 14px; font-weight: 500;
+    }
+    .social-btn:hover { background: #f5f5f5; }
+    .social-btn img { width: 20px; }
+
+    .footer-link { margin-top: 25px; font-size: 14px; }
+    .footer-link a { color: var(--accent-pink); font-weight: 800; text-decoration: none; }
+    
+    /* Cập nhật style cho báo lỗi của C# Backend */
+    .text-danger { font-size: 12px; color: #dc3545; margin-top: 4px; display: block; }
+    .validation-summary-errors { color: #dc3545; font-size: 13px; text-align: left; margin-bottom: 15px; background: #ffe6e6; padding: 10px; border-radius: 8px;}
+    .validation-summary-errors ul { list-style: none; padding: 0; margin: 0; }
+</style>
+
+<div class="signup-main-wrapper">
+    <div class="signup-container">
+        <h2>ĐĂNG KÝ</h2>
+        <p class="subtitle">Tạo tài khoản để nhận ưu đãi từ Velvy Skin.</p>
+
+        <form asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+            <div class="form-group">
+                <label asp-for="Email">Email của bạn</label>
+                <i class="fa-regular fa-envelope"></i>
+                <input asp-for="Email" placeholder="example@gmail.com" required>
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">Mật khẩu</label>
+                <i class="fa-solid fa-lock"></i>
+                <input asp-for="Password" type="password" placeholder="••••••••" required>
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ConfirmPassword">Xác nhận mật khẩu</label>
+                <i class="fa-solid fa-lock"></i>
+                <input asp-for="ConfirmPassword" type="password" placeholder="••••••••" required>
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <label class="terms-group">
+                <input type="checkbox" required>
+                <span>Tôi đã đọc và đồng ý với các <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của Velvy Skin.</span>
+            </label>
+
+            <button type="submit" class="btn-signup">ĐĂNG KÝ NGAY</button>
+        </form>
+
+        <div class="divider">
+            <span>Hoặc đăng ký với</span>
+        </div>
+
+        <div class="social-login">
+            <button class="social-btn" type="button">
+                <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" alt="Google"> Google
+            </button>
+            <button class="social-btn" type="button">
+                <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Facebook
+            </button>
+        </div>
+
+        <div class="footer-link">
+            Đã có tài khoản? <a asp-controller="Account" asp-action="Login">Đăng nhập ngay</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,16 @@
+@{ ViewData["Title"] = "Đặt hàng thành công"; }
+
+<div class="container mt-5 mb-5 text-center">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px; padding: 50px 20px;">
+        <i class="fa-solid fa-circle-check text-success" style="font-size: 80px; margin-bottom: 20px;"></i>
+        <h2 style="color: var(--primary-mint); font-family: 'Playfair Display';">ĐẶT HÀNG THÀNH CÔNG!</h2>
+        <p class="fs-5 text-muted mt-3">Cảm ơn bạn đã tin tưởng mua sắm tại Velvy Skin.</p>
+        <p>Mã đơn hàng của bạn là: <strong class="text-danger fs-4">#@ViewBag.OrderId</strong></p>
+        <p class="mb-4">Chúng tôi sẽ sớm liên hệ với bạn để xác nhận và giao hàng.</p>
+        
+        <div>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary px-4 py-2 me-2">Về Trang chủ</a>
+            <a href="#" class="btn px-4 py-2" style="background-color: var(--primary-mint); color: white;">Xem tiến độ đơn</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,64 @@
+@{ ViewData["Title"] = "Xác thực OTP"; }
+
+<style>
+    .otp-main-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; padding: 60px 0; }
+    .otp-container { background: var(--white); width: 100%; max-width: 480px; padding: 50px 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.06); text-align: center; position: relative; }
+    .otp-container::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: var(--primary-mint); }
+    .icon-circle { width: 80px; height: 80px; background: var(--light-mint); color: var(--primary-mint); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 25px; }
+    .otp-container h2 { font-family: 'Playfair Display', serif; font-size: 28px; color: #333; margin-bottom: 15px; }
+    .subtitle { font-size: 14px; color: #777; line-height: 1.6; margin-bottom: 35px; }
+    .otp-input-group { display: flex; justify-content: center; gap: 12px; margin-bottom: 35px; }
+    .otp-input-group input { width: 55px; height: 65px; text-align: center; font-size: 28px; font-weight: 700; border: 2px solid #eee; border-radius: 12px; background: #f9f9f9; outline: none; transition: 0.3s; color: var(--dark-mint); }
+    .otp-input-group input:focus { border-color: var(--primary-mint); background: #fff; box-shadow: 0 0 15px rgba(46, 196, 182, 0.2); transform: translateY(-2px); }
+    .btn-verify { width: 100%; padding: 16px; background: var(--primary-mint); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(46, 196, 182, 0.3); }
+    .btn-verify:hover { background: var(--dark-mint); transform: translateY(-2px); }
+    .resend-box { margin-top: 30px; font-size: 14px; color: #888; }
+    .resend-box span { color: var(--accent-pink); font-weight: 700; cursor: pointer; transition: 0.3s; }
+    .resend-box span:hover { text-decoration: underline; }
+</style>
+
+<div class="otp-main-wrapper">
+    <div class="otp-container">
+        <div class="icon-circle"><i class="fa-solid fa-envelope-open-text"></i></div>
+        <h2>Xác thực mã OTP</h2>
+        <p class="subtitle">Chúng tôi đã gửi mã xác minh gồm 6 chữ số đến email <strong>@ViewBag.Email</strong>. Vui lòng nhập mã để tiếp tục.</p>
+
+        <form asp-action="VerifyOTP" method="post" id="otpForm">
+            <input type="hidden" name="email" value="@ViewBag.Email" />
+            <input type="hidden" name="otp" id="finalOtp" /> <div class="otp-input-group" id="otp-inputs">
+                <input type="text" maxlength="1" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" pattern="\d*" inputmode="numeric">
+            </div>
+
+            <button type="submit" class="btn-verify" onclick="gatherOTP()">Xác nhận mã</button>
+        </form>
+
+        <div class="resend-box">Bạn không nhận được mã? <span>Gửi lại mã ngay</span></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Gộp 6 ô thành 1 chuỗi để gửi về C#
+        function gatherOTP() {
+            let otp = "";
+            document.querySelectorAll('#otp-inputs input').forEach(input => otp += input.value);
+            document.getElementById('finalOtp').value = otp;
+        }
+
+        // Logic tự động nhảy ô của Frontend
+        const inputs = document.querySelectorAll('#otp-inputs input');
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1 && index < inputs.length - 1) inputs[index + 1].focus();
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) inputs[index - 1].focus();
+            });
+        });
+    </script>
+}
