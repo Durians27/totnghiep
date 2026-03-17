@@ -1,12 +1,14 @@
 ﻿<!DOCTYPE html>
+@using VelvySkinWeb.Extensions
+@using VelvySkinWeb.Models
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Velvy Skin</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <style>
         :root {
@@ -25,17 +27,36 @@
         .search-container { position: relative; flex: 1; max-width: 450px; margin: 0 40px; }
         .search-container input { width: 100%; height: 42px; padding: 0 15px 0 45px; border-radius: 25px; border: none; outline: none; background: rgba(255, 255, 255, 0.95); }
         .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
-        .header-right { display: flex; gap: 25px; align-items: center; }
-        .nav-icon-item { text-align: center; cursor: pointer; font-size: 11px; position: relative; }
-        .nav-icon-item i { font-size: 20px; display: block; margin-bottom: 4px; }
         
+        /* FIX LỆCH ICON TẠI ĐÂY */
+        .header-right { display: flex; gap: 30px; align-items: flex-end; height: 100%; padding-bottom: 25px;}
+        header.scrolled .header-right { padding-bottom: 12px; }
+        .nav-icon-item { cursor: pointer; font-size: 11px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;}
+        .nav-icon-item i { font-size: 22px; margin-bottom: 6px; }
+        
+        /* --- CSS CHO HỘP TÌM KIẾM GỢI Ý --- */
+        .search-suggestions-box {
+            position: absolute; top: 110%; left: 0; right: 0; background: white;
+            border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            overflow: hidden; z-index: 2000; display: none; border: 1px solid #eee;
+        }
+        .suggest-item {
+            display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid #f5f5f5;
+            text-decoration: none; color: #333; transition: 0.2s;
+        }
+        .suggest-item:hover { background: var(--light-mint); text-decoration: none; color: var(--dark-mint); }
+        .suggest-img { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; margin-right: 15px; }
+        .suggest-info h5 { font-size: 13px; font-weight: 600; margin: 0 0 3px 0; line-height: 1.3; }
+        .suggest-info p { font-size: 13px; color: var(--primary-mint); font-weight: 700; margin: 0; }
+        .suggest-empty { padding: 15px; text-align: center; color: #888; font-size: 13px; }
+
         /* DROPDOWN TÀI KHOẢN */
-        .nav-icon-item.account-dropdown { padding-bottom: 5px; }
+        .nav-icon-item.account-dropdown { padding-bottom: 0; }
         .dropdown-content { position: absolute; top: 100%; right: -20px; background-color: white; min-width: 180px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border-radius: 12px; padding: 10px 0; opacity: 0; visibility: hidden; transform: translateY(15px); transition: var(--transition); z-index: 2000; }
         .nav-icon-item.account-dropdown:hover .dropdown-content { opacity: 1; visibility: visible; transform: translateY(0); }
-        .dropdown-content a { color: var(--text-gray); padding: 12px 20px; text-decoration: none; display: block; font-size: 13px; font-weight: 500; text-align: left; transition: 0.3s; }
-        .dropdown-content a i { font-size: 14px !important; display: inline-block !important; margin-right: 10px; margin-bottom: 0 !important; width: 16px; color: var(--primary-mint); }
-        .dropdown-content a:hover { background-color: var(--light-mint); color: var(--dark-mint); }
+        .dropdown-content a, .dropdown-content button { color: var(--text-gray); padding: 12px 20px; text-decoration: none; display: block; font-size: 13px; font-weight: 500; text-align: left; transition: 0.3s; width: 100%; background: none; border: none; cursor: pointer;}
+        .dropdown-content a i, .dropdown-content button i { font-size: 14px !important; display: inline-block !important; margin-right: 10px; margin-bottom: 0 !important; width: 16px; color: var(--primary-mint); }
+        .dropdown-content a:hover, .dropdown-content button:hover { background-color: var(--light-mint); color: var(--dark-mint); }
         .dropdown-divider { height: 1px; background-color: #eee; margin: 8px 0; }
 
         /* NAV STYLES MỚI CỦA NHƯ */
@@ -48,15 +69,22 @@
         .nav-links li a.active::after { content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px; background-color: var(--primary-mint); border-radius: 10px 10px 0 0; }
         .nav-links li a:hover { color: var(--primary-mint); background: rgba(46, 196, 182, 0.05); }
         
-        /* DROPDOWN MENU CON (CỦA NHƯ) */
-        .dropdown-menu { position: absolute; top: 100%; left: 0; background-color: white; min-width: 200px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); list-style: none; padding: 10px 0; opacity: 0; visibility: hidden; transform: translateY(10px); transition: var(--transition); z-index: 1002; border-radius: 0 0 8px 8px; border-top: 2px solid var(--primary-mint); }
+       
+        .dropdown-menu { 
+            display: block !important; 
+            position: absolute; top: 100%; left: 0; background-color: white; 
+            min-width: 200px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); list-style: none; 
+            padding: 10px 0; opacity: 0; visibility: hidden; 
+            transform: translateY(10px); transition: var(--transition); 
+            z-index: 1002; border-radius: 0 0 8px 8px; border-top: 2px solid var(--primary-mint); 
+        }
         .has-dropdown:hover .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
         .dropdown-menu li::after { display: none !important; }
         .dropdown-menu li a { padding: 12px 20px !important; text-transform: none !important; font-weight: 500 !important; letter-spacing: 0.5px !important; display: block; width: 100%; transition: 0.3s; }
         .dropdown-menu li a:hover { background-color: var(--light-mint); color: var(--dark-mint) !important; padding-left: 25px !important; }
         .has-dropdown:hover i.fa-chevron-down { transform: rotate(180deg); transition: 0.3s; }
 
-        /* FOOTER ANIMATIONS CỦA NHƯ */
+        /* FOOTER ANIMATIONS */
         .footer-policies a:hover, .footer-support a:hover, .footer-social a:hover { color: var(--accent-pink); padding-left: 5px; }
         .footer-social a:hover { transform: scale(1.2); }
         .footer-newsletter button:hover { background: #d47f9d; transform: translateY(-2px); }
@@ -78,56 +106,96 @@
 <body>
     <header id="main-header">
         <a asp-controller="Home" asp-action="Index" class="logo-container">
-    <img src="~/images/01.png" alt="Velvy Skin" class="logo-img" style="max-height: 80px; width: auto; transition: var(--transition);">
-</a>
-        <div class="search-container">
+            <img src="~/images/01.png" alt="Velvy Skin" class="logo-img" style="max-height: 80px; width: auto; transition: var(--transition);">
+        </a>
+        
+        <div class="search-container" style="position: relative;">
             <i class="fa fa-search"></i>
-            <input type="text" placeholder="Tìm kiếm mỹ phẩm...">
+            <input type="text" id="liveSearchInput" placeholder="Tìm kiếm mỹ phẩm " autocomplete="off">
+            <div id="searchSuggestions" class="search-suggestions-box"></div>
         </div>
+
         <div class="header-right">
             <div class="nav-icon-item account-dropdown">
-                <i class="fa-regular fa-circle-user"></i>
-                <span>Tài khoản</span>
-                <div class="dropdown-content">
-                    @if (User.Identity?.IsAuthenticated == true)
+                <div style="position:relative;">
+                    <i class="fa-regular fa-circle-user"></i>
+                </div>
+                
+                <span style="display: block; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
-                        <span style="padding: 12px 20px; display: block; font-size: 12px; color: #888; font-weight: bold; border-bottom: 1px solid #eee; margin-bottom: 5px;">
-                            Xin chào, @User.Identity.Name!
-                        </span>
-                        @if (User.IsInRole("Admin"))
+                        string userName = User.Identity.Name ?? "";
+                        if (userName.Contains("@"))
                         {
-                            <a asp-controller="Products" asp-action="Index"><i class="fa-solid fa-box-open"></i> Quản lý Sản phẩm</a>
-                            <a asp-controller="Orders" asp-action="Index"><i class="fa-solid fa-clipboard-list"></i> Quản lý Đơn hàng</a>
-                            <div class="dropdown-divider"></div>
+                            userName = userName.Split('@')[0]; 
                         }
-                        <a href="#"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử mua hàng</a>
-                        <div class="dropdown-divider"></div>
-                        <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" style="display: none;"></form>
-                        <a href="#" onclick="document.getElementById('logoutForm').submit();"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+                        <text>Chào, @userName</text>
                     }
                     else
                     {
-                        <a asp-controller="Account" asp-action="Login"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</a>
-                        <a asp-controller="Account" asp-action="Register"><i class="fa-solid fa-user-plus"></i> Đăng ký</a>
+                        <text>Tài khoản</text>
+                    }
+                </span>
+
+                <div class="dropdown-content">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <div style="padding: 12px 20px; font-weight: bold; color: var(--primary-mint); border-bottom: 1px solid #eee; text-align: center; font-size: 13px; word-break: break-all;">
+                            @User.Identity.Name
+                        </div>
+                        <a asp-controller="Orders" asp-action="History"><i class="fa-solid fa-box-open"></i> Đơn hàng</a>
+                        
+                        <a href="/Home/Logout" style="color: var(--text-gray); padding: 12px 20px; text-decoration: none; display: block; font-size: 13px; font-weight: 500; text-align: left; transition: 0.3s; width: 100%;" onmouseover="this.style.backgroundColor='var(--light-mint)'; this.style.color='var(--dark-mint)'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--text-gray)'">
+                            <i class="fa-solid fa-right-from-bracket" style="font-size: 14px !important; display: inline-block !important; margin-right: 10px; margin-bottom: 0 !important; width: 16px; color: var(--primary-mint);"></i> Đăng xuất
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</a>
+                        <a href="/Account/Register"><i class="fa-solid fa-user-plus"></i> Đăng ký</a>
                     }
                 </div>
             </div>
 
-            <div class="nav-icon-item">
-                <div style="position:relative; display: inline-block;">
+            <div class="nav-icon-item" onclick="location.href='@Url.Action("Index", "Wishlist")'">
+                <div style="position:relative;">
                     <i class="fa-regular fa-heart"></i>
-                    <span id="wishlist-count-header" style="position:absolute;top:-8px;right:-8px;background:var(--accent-pink);color:white;padding:2px 5px;border-radius:50%;font-size:9px; transition: 0.3s;">0</span>
+                    @{
+                        int wishCount = 0;
+                        var sessionWish = Context.Session.GetString("Wishlist");
+                        if (!string.IsNullOrEmpty(sessionWish))
+                        {
+                            var wishList = System.Text.Json.JsonSerializer.Deserialize<List<int>>(sessionWish);
+                            wishCount = wishList?.Count ?? 0;
+                        }
+                    }
+                    @if (wishCount > 0)
+                    {
+                        <span style="position:absolute;top:-6px;right:-10px;background:var(--accent-pink);color:white;padding:2px 6px;border-radius:50%;font-size:10px;font-weight:bold;">@wishCount</span>
+                    }
                 </div>
-                <span>Yêu thích</span>
+                <span style="display: block;">Yêu thích</span>
             </div>
-            
-            <a asp-controller="Cart" asp-action="Index" class="nav-icon-item" style="text-decoration: none; color: inherit;">
-                <div style="position:relative; display: inline-block;">
+
+            <div class="nav-icon-item" onclick="location.href='@Url.Action("Index", "Cart")'">
+                <div style="position:relative;">
                     <i class="fa fa-shopping-cart"></i>
-                    <span style="position:absolute;top:-8px;right:-8px;background:var(--accent-pink);color:white;padding:2px 5px;border-radius:50%;font-size:9px">2</span>
+                    @{
+                        int cartCount = 0;
+                        var sessionCart = Context.Session.GetString("Cart");
+                        if (!string.IsNullOrEmpty(sessionCart))
+                        {
+                            var cart = System.Text.Json.JsonSerializer.Deserialize<List<VelvySkinWeb.Models.CartItem>>(sessionCart);
+                            cartCount = cart?.Sum(c => c.Quantity) ?? 0;
+                        }
+                    }
+                    @if (cartCount > 0)
+                    {
+                        <span style="position:absolute;top:-6px;right:-10px;background:var(--accent-pink);color:white;padding:2px 6px;border-radius:50%;font-size:10px;font-weight:bold;">@cartCount</span>
+                    }
                 </div>
-                <span>Giỏ hàng</span>
-            </a>
+                <span style="display: block;">Giỏ hàng</span>
+            </div>
         </div>
     </header>
 
@@ -136,38 +204,60 @@
             <li><a asp-controller="Home" asp-action="Index" class="active">Trang chủ</a></li>
             <li><a asp-controller="Home" asp-action="AiConsultation">Tư vấn AI <i class="fa-solid fa-sparkles text-warning" style="font-size:10px;"></i></a></li>
             <li class="has-dropdown">
-                <a href="#">Chăm sóc da <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="#">Sữa rửa mặt</a></li>
-                    <li><a href="#">Tẩy tế bào chết</a></li>
-                    <li><a href="#">Serum & Đặc trị</a></li>
-                    <li><a href="#">Kem dưỡng ẩm</a></li>
-                    <li><a href="#">Chống nắng</a></li>
-                </ul>
-            </li>
+            <a asp-controller="Products" asp-action="Skincare">Chăm sóc da <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+            
+            <ul class="dropdown-menu">
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="1">Sữa rửa mặt</a></li>
+                
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="2">Tẩy tế bào chết</a></li>
+                
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="4">Serum & Đặc trị</a></li>
+                
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="3">Kem dưỡng ẩm</a></li>
+                
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="5">Chống nắng</a></li>
+            </ul>
+        </li>
+           <li class="has-dropdown">
+            <a asp-controller="Products" asp-action="Haircare">Chăm sóc tóc <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+            <ul class="dropdown-menu">
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="6">Dầu gội & Xả</a></li>
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="7">Tinh dầu dưỡng</a></li>
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="8">Mặt nạ tóc</a></li>
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="9">Xịt dưỡng tóc</a></li>
+            </ul>
+        </li>
             <li class="has-dropdown">
-                <a href="#">Chăm sóc tóc <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="#">Dầu gội & Xả</a></li>
-                    <li><a href="#">Tinh dầu dưỡng</a></li>
-                    <li><a href="#">Mặt nạ tóc</a></li>
-                    <li><a href="#">Xịt dưỡng tóc</a></li>
-                </ul>
-            </li>
-            <li class="has-dropdown">
-                <a href="#">Trang điểm <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="#">Trang điểm mặt</a></li>
-                    <li><a href="#">Trang điểm mắt</a></li>
-                    <li><a href="#">Son môi</a></li>
-                    <li><a href="#">Phấn phủ & Má hồng</a></li>
-                </ul>
-            </li>
-            <li><a href="#">Về chúng tôi</a></li>
+            <a asp-controller="Products" asp-action="Makeup">Trang điểm <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+            <ul class="dropdown-menu">
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="10">Trang điểm mặt</a></li>
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="11">Trang điểm mắt</a></li>
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="12">Son môi</a></li>
+                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="13">Dụng Cụ Trang Điểm </a></li>
+            </ul>
+        </li>
+            <li><a asp-controller="Home" asp-action="About">Về chúng tôi</a></li>
         </ul>
     </nav>
 
     <main role="main">
+        <div class="container" style="max-width: 1200px; margin: 20px auto 0; padding: 0 5%; position: relative; z-index: 1000;">
+            @if (TempData["SuccessMsg"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" style="border-radius: 10px; background: #f0fdf4; color: #198754; padding: 15px 40px 15px 20px; border: 1px solid #d1e7dd; box-shadow: 0 4px 15px rgba(0,0,0,0.05);" role="alert">
+                    <i class="fa-solid fa-check-circle me-2"></i> <strong>Thành công!</strong> @TempData["SuccessMsg"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: transparent; border: none; font-size: 16px; cursor: pointer; color: #198754;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMsg"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" style="border-radius: 10px; background: #fff0f0; color: #d32f2f; padding: 15px 40px 15px 20px; border: 1px solid #f5c2c7; box-shadow: 0 4px 15px rgba(0,0,0,0.05);" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> <strong>Lỗi!</strong> @TempData["ErrorMsg"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: transparent; border: none; font-size: 16px; cursor: pointer; color: #d32f2f;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            }
+        </div>
         @RenderBody()
     </main>
 
@@ -231,6 +321,49 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     
+    <script>
+        document.getElementById('liveSearchInput').addEventListener('input', function() {
+            let keyword = this.value.trim();
+            let suggestBox = document.getElementById('searchSuggestions');
+
+            if (keyword.length < 2) { 
+                suggestBox.style.display = 'none';
+                return;
+            }
+
+            fetch('/Products/SearchSuggest?keyword=' + encodeURIComponent(keyword))
+                .then(response => response.json())
+                .then(data => {
+                    suggestBox.innerHTML = ''; 
+                    suggestBox.style.display = 'block'; 
+
+                    if (data.length === 0) {
+                        suggestBox.innerHTML = '<div class="suggest-empty">Không tìm thấy sản phẩm nào!</div>';
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        let priceFormatted = new Intl.NumberFormat('vi-VN').format(item.price) + 'đ';
+                        let html = `
+                            <a href="/Products/Details/${item.id}" class="suggest-item">
+                                <img src="${item.imageUrl || 'https://via.placeholder.com/50'}" class="suggest-img" onerror="this.src='https://via.placeholder.com/50'">
+                                <div class="suggest-info">
+                                    <h5>${item.name}</h5>
+                                    <p>${priceFormatted}</p>
+                                </div>
+                            </a>
+                        `;
+                        suggestBox.innerHTML += html;
+                    });
+                });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!document.querySelector('.search-container').contains(e.target)) {
+                document.getElementById('searchSuggestions').style.display = 'none';
+            }
+        });
+    </script>
     <script>
         window.addEventListener('scroll', () => {
             const header = document.getElementById('main-header');

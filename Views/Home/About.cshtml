@@ -1,0 +1,188 @@
+@{
+    ViewData["Title"] = "Về Chúng Tôi";
+}
+
+<style>
+    /* --- ABOUT CONTENT --- */
+    .about-page-wrapper { font-family: 'Montserrat', sans-serif; color: var(--text-gray); line-height: 1.6; padding-bottom: 50px;}
+    
+    .breadcrumb { padding: 20px 5%; background: #f9f9f9; font-size: 13px; color: #888; margin-bottom: 40px;}
+    .breadcrumb a { color: var(--primary-mint); text-decoration: none; font-weight: 500; transition: 0.3s;}
+
+    .about-container { max-width: 1200px; margin: 0 auto; padding: 0 5%; }
+
+    .page-title { font-family: 'Playfair Display', serif; font-size: 36px; margin-bottom: 20px; color: #222; text-align: center; }
+    .about-intro { text-align: center; margin-bottom: 50px; }
+    .about-intro p { font-size: 16px; color: #666; max-width: 800px; margin: 0 auto 15px; }
+
+    .about-section { margin-bottom: 60px; }
+    .about-section h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 20px; color: var(--dark-mint); position: relative; padding-bottom: 10px;}
+    .about-section h2::after { content: ''; position: absolute; bottom: 0; left: 0; width: 60px; height: 3px; background: var(--accent-pink); border-radius: 3px;}
+    
+    .about-section p { font-size: 16px; color: #555; margin-bottom: 20px; }
+    .about-section ul { list-style-type: none; margin-left: 0; font-size: 16px; color: #555; padding-left: 0;}
+    .about-section ul li { margin-bottom: 12px; position: relative; padding-left: 25px;}
+    .about-section ul li::before { content: '✓'; position: absolute; left: 0; color: var(--primary-mint); font-weight: bold;}
+
+    /* Team Grid - Đã chỉnh lại cho 3 người cực cân đối */
+    .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 30px;}
+    .team-member { text-align: center; background: white; padding: 40px 20px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.04); transition: 0.3s; border: 1px solid #f5f5f5;}
+    .team-member:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); border-color: var(--light-mint);}
+    .team-member img { width: 160px; height: 160px; border-radius: 50%; margin-bottom: 20px; object-fit: cover; border: 4px solid var(--light-mint); padding: 5px;}
+    .team-member h3 { font-size: 20px; margin-bottom: 5px; color: var(--dark-mint); font-weight: 700;}
+    .team-member p { font-size: 14px; color: var(--accent-pink); margin: 0; font-weight: 600; text-transform: uppercase;}
+
+    /* Timeline */
+    .timeline { position: relative; max-width: 900px; margin: 40px auto 0; }
+    .timeline::after { content: ''; position: absolute; width: 4px; background-color: var(--light-mint); top: 0; bottom: 0; left: 50%; margin-left: -2px; border-radius: 5px;}
+    .timeline-item { padding: 10px 40px; position: relative; background-color: inherit; width: 50%; box-sizing: border-box;}
+    .timeline-item::after { content: ''; position: absolute; width: 20px; height: 20px; right: -10px; background-color: white; border: 4px solid var(--primary-mint); top: 20px; border-radius: 50%; z-index: 1; box-shadow: 0 0 0 4px rgba(46,196,182,0.2);}
+    .left { left: 0; }
+    .right { left: 50%; }
+    .right::after { left: -10px; }
+    .timeline-content { padding: 25px; background-color: white; position: relative; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.04); border: 1px solid #f9f9f9;}
+    .timeline-content h3 { margin-bottom: 10px; color: var(--accent-pink); font-family: 'Playfair Display', serif; font-size: 22px;}
+    .timeline-content p { margin: 0; font-size: 15px;}
+
+    /* Values */
+    .values-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 30px;}
+    .value-item { background: var(--light-mint); padding: 30px 20px; border-radius: 20px; text-align: center; transition: 0.3s;}
+    .value-item:hover { background: var(--primary-mint); color: white;}
+    .value-item:hover p, .value-item:hover h3, .value-item:hover i { color: white;}
+    .value-item i { font-size: 40px; color: var(--dark-mint); margin-bottom: 20px; transition: 0.3s;}
+    .value-item h3 { font-size: 18px; margin-bottom: 15px; color: var(--dark-mint); transition: 0.3s;}
+    .value-item p { font-size: 14px; color: #555; transition: 0.3s; margin: 0;}
+
+    @@media (max-width: 768px) {
+        .timeline::after { left: 31px; }
+        .timeline-item { width: 100%; padding-left: 70px; padding-right: 25px; }
+        .timeline-item::after { left: 21px; }
+        .right { left: 0%; }
+        .about-section h2::after { left: 50%; transform: translateX(-50%); }
+        .about-section h2 { text-align: center; }
+    }
+</style>
+
+<div class="about-page-wrapper">
+    <div class="breadcrumb">
+        <a asp-controller="Home" asp-action="Index"><i class="fa-solid fa-house-chimney" style="font-size: 12px; margin-right: 5px;"></i>Trang chủ</a> 
+        <span style="margin: 0 10px; color: #ccc;">/</span> 
+        <span style="color: #444; font-weight: 600;">Về chúng tôi</span>
+    </div>
+
+    <div class="about-container">
+        <h1 class="page-title">Về Chúng Tôi</h1>
+        
+        <div class="about-intro">
+            <p>Velvy Skin là thương hiệu mỹ phẩm hàng đầu tại Việt Nam, chuyên cung cấp các sản phẩm chăm sóc da, tóc và trang điểm từ thiên nhiên. Với sứ mệnh mang đến vẻ đẹp tự nhiên và an toàn cho mọi phụ nữ, chúng tôi luôn cam kết chất lượng cao nhất, sử dụng nguyên liệu hữu cơ và công nghệ tiên tiến.</p>
+            <p>Chúng tôi không chỉ là một thương hiệu mỹ phẩm, mà còn là người bạn đồng hành trong hành trình chăm sóc sắc đẹp của bạn.</p>
+            
+            <img src="~/images/02.png" alt="Velvy Skin Banner" style="width: 100%; max-width: 400px; height: auto; margin: 40px auto; display: block; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.05));">
+        </div>
+
+        <div class="about-section">
+            <h2>Sứ Mệnh Của Chúng Tôi</h2>
+            <p style="margin-top: 20px;">Chúng tôi tin rằng vẻ đẹp thực sự đến từ sự chăm sóc tự nhiên và bền vững. Velvy Skin sử dụng nguyên liệu hữu cơ, không chất bảo quản hóa học, để giúp bạn có làn da khỏe mạnh. Chúng tôi cam kết:</p>
+            <ul>
+                <li>Cung cấp sản phẩm an toàn, hiệu quả cho mọi loại da.</li>
+                <li>Áp dụng công nghệ AI để tư vấn cá nhân hóa routine chăm sóc.</li>
+                <li>Thúc đẩy lối sống xanh, bảo vệ môi trường qua bao bì tái chế.</li>
+                <li>Đảm bảo minh bạch trong nguồn gốc nguyên liệu và quy trình sản xuất.</li>
+            </ul>
+        </div>
+
+        <div class="about-section">
+            <h2>Giá Trị Cốt Lõi</h2>
+            <div class="values-grid">
+                <div class="value-item">
+                    <i class="fa-solid fa-leaf"></i>
+                    <h3>Tự Nhiên & An Toàn</h3>
+                    <p>Ưu tiên nguyên liệu hữu cơ, không paraben, không thử nghiệm trên động vật.</p>
+                </div>
+                <div class="value-item">
+                    <i class="fa-solid fa-microchip"></i>
+                    <h3>Đổi Mới Công Nghệ</h3>
+                    <p>Sử dụng AI và nghiên cứu khoa học để tạo sản phẩm hiệu quả nhất.</p>
+                </div>
+                <div class="value-item">
+                    <i class="fa-solid fa-headset"></i>
+                    <h3>Chăm Sóc Tận Tâm</h3>
+                    <p>Luôn lắng nghe và hỗ trợ khách hàng liên tục 24/7.</p>
+                </div>
+                <div class="value-item">
+                    <i class="fa-solid fa-earth-asia"></i>
+                    <h3>Bền Vững</h3>
+                    <p>Cam kết bảo vệ môi trường qua sản xuất xanh và bao bì thân thiện.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2>Lịch Sử Hình Thành</h2>
+            <div class="timeline">
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <h3>2024: Ý tưởng khởi nguồn</h3>
+                        <p>Dự án Velvy Skin được ấp ủ bởi 3 sinh viên đam mê công nghệ và làm đẹp.</p>
+                    </div>
+                </div>
+                <div class="timeline-item right">
+                    <div class="timeline-content">
+                        <h3>2025: Bắt tay xây dựng</h3>
+                        <p>Hoàn thiện cơ sở dữ liệu và phác thảo giao diện thân thiện với người dùng.</p>
+                    </div>
+                </div>
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <h3>2026: Phiên bản hoàn chỉnh</h3>
+                        <p>Ra mắt website chính thức tích hợp tính năng E-commerce và tư vấn AI.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2 style="text-align: center;">Đội Ngũ Của Chúng Tôi</h2>
+            <p style="text-align: center; margin-top: 20px;">Những Founder đứng sau sự phát triển của hệ thống Velvy Skin.</p>
+            <div class="team-grid">
+                <div class="team-member">
+                    <img src="~/images/avatar-luc.jpg" alt="Lực" onerror="this.src='https://via.placeholder.com/300?text=Avatar+Lực'">
+                    <h3>Nguyễn Văn Lực</h3>
+                </div>
+
+                <div class="team-member">
+                    <img src="~/images/avatar-nhu.jpg" alt="Như" onerror="this.src='https://via.placeholder.com/300?text=Avatar+Như'">
+                    <h3>Nguyễn Thị Thanh Như</h3>
+                </div>
+
+                <div class="team-member">
+                    <img src="~/images/avatar-thien.jpg" alt="Thạch Thiện" onerror="this.src='https://via.placeholder.com/300?text=Avatar+Thạch+Thiện'">
+                    <h3>Thạch Thiện</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2>Cam Kết Của Chúng Tôi</h2>
+            <p style="margin-top: 20px; font-size: 16px; color: #555; line-height: 1.8;">
+                Velvy Skin cam kết mang đến sản phẩm chất lượng cao với giá cả hợp lý. Chúng tôi thường xuyên tổ chức các chương trình khuyến mãi, workshop về chăm sóc da miễn phí, và hợp tác với các chuyên gia, influencer để lan tỏa kiến thức làm đẹp chuẩn khoa học.
+            </p>
+            <p style="font-size: 16px; color: #555; line-height: 1.8;">
+                Bên cạnh đó, chúng tôi luôn ưu tiên các hoạt động xã hội như hỗ trợ phụ nữ nông thôn trong việc sản xuất nguyên liệu hữu cơ, góp phần phát triển kinh tế địa phương và bảo vệ môi trường.
+            </p>
+        </div>
+
+        <div class="about-section">
+            <h2>Liên Hệ Với Chúng Tôi</h2>
+            <p style="margin-top: 20px; font-size: 16px; color: #555; margin-bottom: 20px;">
+                Nếu bạn có bất kỳ câu hỏi nào cần giải đáp hoặc cần tư vấn lộ trình chăm sóc phù hợp, đừng ngần ngại kết nối với đội ngũ Velvy Skin qua các kênh sau:
+            </p>
+            <ul style="list-style: none; padding: 0; line-height: 2.2;">
+                <li><i class="fa-solid fa-envelope" style="color: var(--primary-mint); font-size: 18px; width: 30px;"></i> <strong>Email:</strong> info@velvyskin.com</li>
+                <li><i class="fa-solid fa-phone" style="color: var(--primary-mint); font-size: 18px; width: 30px;"></i> <strong>Hotline:</strong> 0123 456 789</li>
+                <li><i class="fa-solid fa-location-dot" style="color: var(--primary-mint); font-size: 18px; width: 30px;"></i> <strong>Địa chỉ:</strong> Phường Trung Mỹ Tây, Quận 12, TP. HCM</li>
+            </ul>
+        </div>
+
+    </div>
+</div>

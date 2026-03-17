@@ -1,48 +1,168 @@
-@model VelvySkinWeb.Models.Order
-@{ ViewData["Title"] = "Thanh toán đơn hàng"; }
+@model List<VelvySkinWeb.Models.CartItem>
+@{
+    ViewData["Title"] = "Thanh toán đơn hàng";
+    
+    // Tính toán tiền bạc tự động
+    decimal subTotal = Model.Sum(item => item.Total);
+    decimal shippingFee = (subTotal > 0 && subTotal < 500000) ? 30000 : 0; 
+    decimal discount = 0; // Sẽ xử lý mã giảm giá sau
+    decimal finalTotal = subTotal + shippingFee - discount;
+}
 
-<div class="container mt-5 mb-5">
-    <h2 style="color: var(--primary-mint); font-family: 'Playfair Display';">ĐỊA CHỈ GIAO HÀNG</h2>
-    <hr />
-    <div class="row">
-        <div class="col-md-7">
-            <div class="card shadow-sm p-4 border-0">
-                <form asp-action="Checkout" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                    
-                    <div class="form-group mb-3">
-                        <label asp-for="CustomerName" class="fw-bold">Họ và Tên người nhận</label>
-                        <input asp-for="CustomerName" class="form-control" placeholder="Ví dụ: Nguyễn Văn Lực" />
-                        <span asp-validation-for="CustomerName" class="text-danger"></span>
+<style>
+    /* CSS CỦA BẠN ĐÃ ĐƯỢC GIỮ NGUYÊN VÀ LÀM GỌN */
+    .checkout-container { display: flex; flex-wrap: wrap; gap: 40px; padding: 30px 5%; max-width: 1400px; margin: 0 auto; font-family: 'Montserrat', sans-serif;}
+    .page-title { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 10px; color: #222; width: 100%;}
+    
+    .checkout-form { flex: 2; min-width: 300px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); border: 1px solid #eee;}
+    .form-section { margin-bottom: 35px; }
+    .form-section h3 { font-size: 18px; margin-bottom: 20px; border-bottom: 2px solid var(--light-mint); padding-bottom: 10px; color: var(--dark-mint); font-weight: 700;}
+    
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 14px; margin-bottom: 8px; font-weight: 600; color: #555;}
+    .form-group input, .form-group select { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: 0.3s; background: #fdfdfd;}
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary-mint); box-shadow: 0 0 0 3px rgba(46,196,182,0.1); background: white;}
+
+    .payment-methods { display: flex; flex-direction: column; gap: 15px; }
+    .payment-option { display: flex; align-items: center; gap: 12px; padding: 15px 20px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; transition: 0.3s; background: #fafafa;}
+    .payment-option:hover, .payment-option.active { border-color: var(--primary-mint); background: rgba(46,196,182,0.05); }
+    .payment-option input { accent-color: var(--primary-mint); width: 18px; height: 18px; cursor: pointer;}
+    .payment-option label { cursor: pointer; font-weight: 600; color: #444; width: 100%; margin: 0;}
+
+    .order-summary { flex: 1; min-width: 300px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); border: 1px solid #eee; align-self: flex-start; position: sticky; top: 120px;}
+    .order-summary h3 { font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid var(--light-mint); padding-bottom: 15px; color: var(--dark-mint); font-weight: 700;}
+    .summary-item { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 15px; color: #555;}
+    .summary-total { font-weight: 700; font-size: 22px; color: var(--accent-pink); border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px; }
+    
+    .btn-place-order { display: block; width: 100%; padding: 16px; background: var(--dark-mint); color: white; border: none; border-radius: 30px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 25px; text-transform: uppercase;}
+    .btn-place-order:hover { background: var(--primary-mint); box-shadow: 0 8px 20px rgba(46,196,182,0.3); transform: translateY(-2px);}
+    
+    .product-list-mini { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    .product-item-mini { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+    .product-item-mini img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+    .product-item-mini-info { flex: 1; }
+    .product-item-mini-name { font-size: 14px; font-weight: 600; color: #333; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;}
+    .product-item-mini-price { font-size: 14px; color: var(--primary-mint); font-weight: 600; }
+</style>
+
+<div class="breadcrumb" style="padding: 20px 5%; background: #f9f9f9; font-size: 18px; color: #ccc; margin-bottom: 0; display: flex; align-items: center; gap: 10px;">
+    <a asp-controller="Home" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-house"></i> Trang chủ
+    </a> 
+    <span>/</span> 
+    <a asp-controller="Cart" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500;">
+        Giỏ hàng
+    </a> 
+    <span>/</span> 
+    <span style="color: #333; font-weight: 700;">Thanh toán</span>
+</div>
+
+<div class="checkout-container">
+    <h1 class="page-title">Thanh Toán Đơn Hàng</h1>
+    
+    <div class="checkout-form">
+        <form asp-action="PlaceOrder" method="post">
+            
+            <div class="form-section">
+                <h3><i class="fa-solid fa-location-dot me-2"></i> Thông Tin Giao Hàng</h3>
+                
+                <div class="form-group">
+                    <label>Họ và tên người nhận (*)</label>
+                    <input type="text" name="CustomerName" placeholder="Nhập họ và tên" value="@ViewBag.OldName" required>
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại (*)</label>
+                    <input type="tel" name="PhoneNumber" placeholder="Nhập số điện thoại" value="@ViewBag.OldPhone" required>
+                </div>
+                <div class="form-group">
+                    <label>Địa chỉ nhận hàng chi tiết (*)</label>
+                    <input type="text" name="ShippingAddress" placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện..." value="@ViewBag.OldAddress" required>
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú (tùy chọn)</label>
+                    <input type="text" name="Note" placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi giao...">
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><i class="fa-solid fa-wallet me-2"></i> Phương Thức Thanh Toán</h3>
+                <div class="payment-methods">
+                    <div class="payment-option active">
+                        <input type="radio" id="cod" name="PaymentMethod" value="COD" checked>
+                        <label for="cod">Thanh toán khi nhận hàng (COD)</label>
+                        <i class="fa-solid fa-money-bill-wave text-success"></i>
                     </div>
-
-                    <div class="form-group mb-3">
-                        <label asp-for="PhoneNumber" class="fw-bold">Số điện thoại liên hệ</label>
-                        <input asp-for="PhoneNumber" class="form-control" placeholder="Ví dụ: 0901234567" />
-                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    <div class="payment-option">
+                        <input type="radio" id="bank" name="PaymentMethod" value="Chuyển khoản">
+                        <label for="bank">Chuyển khoản ngân hàng</label>
+                        <i class="fa-solid fa-building-columns text-primary"></i>
                     </div>
-
-                    <div class="form-group mb-4">
-                        <label asp-for="ShippingAddress" class="fw-bold">Địa chỉ nhận hàng chi tiết</label>
-                        <textarea asp-for="ShippingAddress" class="form-control" rows="3" placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố"></textarea>
-                        <span asp-validation-for="ShippingAddress" class="text-danger"></span>
+                    <div class="payment-option">
+                        <input type="radio" id="momo" name="PaymentMethod" value="Ví MoMo">
+                        <label for="momo">Ví điện tử MoMo</label>
+                        <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" style="width: 20px; height: 20px;" alt="Momo">
                     </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-place-order">Xác nhận đặt hàng <i class="fa-solid fa-check ms-2"></i></button>
+        </form>
+    </div>
 
-                    <button type="submit" class="btn btn-lg w-100 fw-bold" style="background-color: var(--primary-mint); color: white;">XÁC NHẬN CHỐT ĐƠN</button>
-                </form>
+    <div class="order-summary">
+        <h3>Tóm Tắt Đơn Hàng</h3>
+        
+        <div class="product-list-mini">
+            @foreach(var item in Model)
+            {
+                <div class="product-item-mini">
+                    <img src="@item.ImageUrl" onerror="this.src='https://via.placeholder.com/50'" />
+                    <div class="product-item-mini-info">
+                        <div class="product-item-mini-name">@item.ProductName</div>
+                        <div style="font-size: 12px; color: #888;">SL: @item.Quantity</div>
+                    </div>
+                    <div class="product-item-mini-price">@item.Total.ToString("N0")đ</div>
+                </div>
+            }
+        </div>
+
+        <div class="form-section" style="margin-bottom: 20px;">
+            <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 0;">
+                <input type="text" placeholder="Nhập mã giảm giá" style="padding: 10px; font-size: 14px;">
+                <button style="padding: 10px 20px; background: var(--primary-mint); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Áp dụng</button>
             </div>
         </div>
 
-        <div class="col-md-5 mt-4 mt-md-0">
-            <div class="card shadow-sm p-4 border-0" style="background-color: var(--light-mint);">
-                <h4 class="fw-bold text-center mb-4">TÓM TẮT ĐƠN HÀNG</h4>
-                <div class="d-flex justify-content-between mb-3">
-                    <span class="fs-5">Tổng tiền hóa đơn:</span>
-                    <span class="fs-4 fw-bold text-danger">@ViewBag.GrandTotal.ToString("N0") đ</span>
-                </div>
-                <hr />
-                <p class="text-muted text-center" style="font-size: 13px;"><i class="fa fa-info-circle"></i> Vui lòng kiểm tra kỹ địa chỉ trước khi xác nhận.</p>
+        <div class="summary-item">
+            <span>Tạm tính (@Model.Sum(x => x.Quantity) sản phẩm)</span>
+            <span style="font-weight: 600;">@subTotal.ToString("N0")đ</span>
+        </div>
+        <div class="summary-item">
+            <span>Phí vận chuyển</span>
+            <span>@(shippingFee == 0 ? "Miễn phí" : shippingFee.ToString("N0") + "đ")</span>
+        </div>
+        @if(discount > 0)
+        {
+            <div class="summary-item" style="color: var(--primary-mint);">
+                <span>Giảm giá</span>
+                <span>-@discount.ToString("N0")đ</span>
             </div>
+        }
+        <div class="summary-item summary-total">
+            <span>Tổng cộng</span>
+            <span>@finalTotal.ToString("N0")đ</span>
         </div>
     </div>
 </div>
+
+<script>
+    // JS nhẹ nhàng để làm nổi bật phương thức thanh toán khi chọn
+    document.querySelectorAll('.payment-option input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('active'));
+            if(this.checked) {
+                this.parentElement.classList.add('active');
+            }
+        });
+    });
+</script>

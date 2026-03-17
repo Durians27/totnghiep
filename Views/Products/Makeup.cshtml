@@ -1,0 +1,200 @@
+@model IEnumerable<VelvySkinWeb.Models.Product>
+@{
+    ViewData["Title"] = ViewBag.PageTitle; 
+}
+
+<style>
+    /* --- MAKEUP LAYOUT --- */
+    .page-header-makeup {
+        background: linear-gradient(rgba(46, 196, 182, 0.1), rgba(46, 196, 182, 0.1)), url('https://images.unsplash.com/photo-1512495039889-52a82cdc47ab?auto=format&fit=crop&w=1500');
+        background-size: cover; background-position: center;
+        padding: 80px 5%; text-align: center; color: #333;
+    }
+    .page-header-makeup h1 { font-family: 'Playfair Display', serif; font-size: 45px; margin-bottom: 15px; text-transform: capitalize;}
+
+    .container { display: grid; grid-template-columns: 280px 1fr; gap: 40px; padding: 50px 5%; max-width: 1400px; margin: 0 auto; }
+    
+    .sidebar { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 120px; }
+    .filter-group-header h3 { font-size: 20px; color: var(--dark-mint); display: flex; align-items: center; gap: 10px; border: none; margin-bottom: 25px; }
+    .filter-section { border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+    .filter-section:last-child { border: none; }
+    .filter-section h4 { font-size: 14px; letter-spacing: 1px; margin-bottom: 15px; color: var(--dark-mint); text-transform: uppercase;}
+    .filter-list { list-style: none; }
+    .filter-list li { margin-bottom: 10px; font-size: 14px;}
+    .filter-list li label { transition: var(--transition); padding: 4px 0; display: flex; align-items: center; gap: 10px; cursor: pointer;}
+    .filter-list input[type="checkbox"], .filter-list input[type="radio"] { accent-color: var(--primary-mint); width: 16px; height: 16px; margin: 0; cursor: pointer;}
+    .filter-list li label:hover { color: var(--primary-mint); padding-left: 5px; }
+
+    .btn-reset-filter { width: 100%; padding: 12px; background: #f5f5f5; border: none; border-radius: 8px; color: #666; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.3s; }
+    .btn-reset-filter:hover { background: var(--accent-pink); color: white; }
+
+    .product-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+    .custom-sort-select { appearance: none; -webkit-appearance: none; background-color: #fff; border: 1.5px solid var(--light-mint); border-radius: 30px; padding: 10px 45px 10px 20px; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600; color: var(--dark-mint); cursor: pointer; outline: none; transition: 0.3s; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232ec4b6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; }
+
+    /* Product Grid */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+    .product-card { background: white; border-radius: 15px; padding: 15px; border: 1px solid #f0f0f0; transition: var(--transition); position: relative; overflow: hidden;}
+    .product-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); border-color: var(--primary-mint); }
+    .wishlist-btn { position: absolute; top: 25px; right: 25px; z-index: 10; background: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: 0.3s; color: #ccc; }
+    .wishlist-btn:hover { transform: scale(1.1); color: #ff4d4d; }
+    .img-container { width: 100%; height: 280px; overflow: hidden; border-radius: 10px; margin-bottom: 15px; }
+    .product-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+    .product-card:hover .product-img { transform: scale(1.08); }
+    
+    .product-info h3 { font-size: 11px; color: #999; text-transform: uppercase; margin-bottom: 5px; }
+    .product-info h2 { font-size: 16px; color: #333; margin-bottom: 10px; height: 45px; overflow: hidden; line-height: 1.4; font-weight: 600; }
+    .product-info .price { font-weight: 700; color: var(--primary-mint); font-size: 18px; margin-bottom: 20px; } 
+
+    .product-buttons { display: flex; gap: 10px; }
+    .btn-detail { flex: 1; padding: 12px; background: #f5f5f5; color: #555; text-decoration: none; text-align: center; border-radius: 8px; font-weight: 600; font-size: 14px; transition: 0.3s; }
+    .btn-detail:hover { background: #e0e0e0; color: #000; }
+    .btn-add-cart { flex: 2; padding: 12px; background: var(--dark-mint); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.3s; text-align: center; text-decoration: none; display: block; }
+    .btn-add-cart:hover { background: var(--primary-mint); box-shadow: 0 5px 15px rgba(46,196,182,0.3); color: white;}
+
+    .ai-banner { grid-column: 1 / -1; background: var(--light-mint); padding: 30px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; margin-top: 20px;}
+    
+    @@media (max-width: 992px) {
+        .container { grid-template-columns: 1fr; }
+        .sidebar { display: none; } 
+        .ai-banner { flex-direction: column; text-align: center; gap: 20px;}
+    }
+</style>
+
+<section class="page-header-makeup">
+    <h1>@ViewBag.PageTitle</h1>
+    <p>@ViewBag.PageDescription</p>
+</section>
+
+<div class="breadcrumb" style="padding: 15px 5%; background: #fcfcfc; font-size: 14px; color: #888; border-bottom: 1px solid #eee; margin-bottom: 0;">
+    <a asp-controller="Home" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; transition: 0.3s;"><i class="fa-solid fa-house-chimney" style="font-size: 12px; margin-right: 5px;"></i>Trang chủ</a>
+    <span style="margin: 0 10px; color: #ccc;">/</span>
+    
+    @if (ViewBag.PageTitle != "Trang Điểm")
+    {
+        <a asp-controller="Products" asp-action="Makeup" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; transition: 0.3s;">Trang điểm</a>
+        <span style="margin: 0 10px; color: #ccc;">/</span>
+    }
+    
+    <span style="color: #444; font-weight: 600; text-transform: capitalize;">@ViewBag.PageTitle</span>
+</div>
+
+<div class="container">
+    <aside class="sidebar">
+        <div class="filter-group-header">
+            <h3><i class="fa-solid fa-sliders"></i> Bộ lọc nâng cao</h3>
+        </div>
+
+        <div class="filter-section">
+            <h4>Loại trang điểm</h4>
+            <ul class="filter-list">
+                <li><label><input type="checkbox"> Mặt (kem nền, phấn)</label></li>
+                <li><label><input type="checkbox"> Mắt (mascara, eyeliner)</label></li>
+                <li><label><input type="checkbox"> Môi (son môi, dưỡng)</label></li>
+                <li><label><input type="checkbox"> Dụng cụ (cọ, mút)</label></li>
+                <li><label><input type="checkbox"> Tạo khối / Highlight</label></li>
+            </ul>
+        </div>
+
+        <div class="filter-section">
+            <h4>Thành phần chìa khóa</h4>
+            <ul class="filter-list">
+                <li><label><input type="checkbox"> Khoáng chất tự nhiên</label></li>
+                <li><label><input type="checkbox"> Vegan / Không thử nghiệm ĐV</label></li>
+                <li><label><input type="checkbox"> Chống nước</label></li>
+                <li><label><input type="checkbox"> Có SPF</label></li>
+                <li><label><input type="checkbox"> Matte / Lì</label></li>
+            </ul>
+        </div>
+
+        <div class="filter-section">
+            <h4>Khoảng giá</h4>
+            <ul class="filter-list">
+                <li><label><input type="radio" name="price-range"> Dưới 200.000đ</label></li>
+                <li><label><input type="radio" name="price-range"> 200.000đ - 500.000đ</label></li>
+                <li><label><input type="radio" name="price-range"> 500.000đ - 1.000.000đ</label></li>
+                <li><label><input type="radio" name="price-range"> Trên 1.000.000đ</label></li>
+            </ul>
+        </div>
+
+        <div class="filter-section">
+            <h4>Thương hiệu</h4>
+            <ul class="filter-list">
+                <li><label><input type="checkbox"> Velvy Exclusive</label></li>
+                <li><label><input type="checkbox"> Maybelline</label></li>
+                <li><label><input type="checkbox"> MAC</label></li>
+                <li><label><input type="checkbox"> Fenty Beauty</label></li>
+            </ul>
+        </div>
+
+        <button class="btn-reset-filter">Xóa tất cả bộ lọc</button>
+    </aside>
+
+    <main>
+        <div class="product-toolbar">
+            <h1 style="font-family: 'Playfair Display', serif; font-size: 32px; color: #222; margin: 0;">@ViewBag.PageTitle</h1>
+            <div class="sort">
+                <select class="custom-sort-select" name="sortOrder" onchange="window.location.href=window.location.pathname + '?sortOrder=' + this.value;">
+                    <option value="default" selected="@(ViewBag.CurrentSort == "default" ? "selected" : null)">Sắp xếp: Mặc định</option>
+                    <option value="price_asc" selected="@(ViewBag.CurrentSort == "price_asc" ? "selected" : null)">Giá: Thấp đến Cao</option>
+                    <option value="price_desc" selected="@(ViewBag.CurrentSort == "price_desc" ? "selected" : null)">Giá: Cao đến Thấp</option>
+                    <option value="popular" selected="@(ViewBag.CurrentSort == "popular" ? "selected" : null)">Phổ biến nhất</option>
+                </select>
+            </div>
+        </div>
+        
+        <p style="color:#777; margin-bottom: 25px;">Tìm thấy @Model.Count() sản phẩm phù hợp với tiêu chí của bạn.</p>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info text-center" style="border-radius: 10px; background: var(--light-mint); color: var(--dark-mint); padding: 20px;">
+                <i class="fa-solid fa-box-open fs-3 mb-2"></i>
+                <p class="mb-0 fw-bold">Hiện tại chưa có sản phẩm trang điểm nào.</p>
+                <small>Quản trị viên đang cập nhật thêm hàng mới, bạn quay lại sau nhé!</small>
+            </div>
+        }
+
+        <div class="product-grid">
+            @foreach (var item in Model)
+            {
+                <div class="product-card">
+                    <button class="wishlist-btn" onclick="toggleWish(this)">
+                        <i class="fa fa-heart"></i>
+                    </button>
+
+                    <a asp-controller="Products" asp-action="Details" asp-route-id="@item.Id">
+                        <div class="img-container">
+                            <img src="@item.ImageUrl" class="product-img" onerror="this.src='https://via.placeholder.com/500'">
+                        </div>
+                    </a>
+                    
+                    <div class="product-info">
+                        <h3>VELVY SKIN</h3>
+                        <h2>@item.Name</h2>
+                        <p class="price">@item.Price.ToString("N0")đ</p>
+                        
+                        <div class="product-buttons">
+                            <a asp-controller="Products" asp-action="Details" asp-route-id="@item.Id" class="btn-detail">Chi tiết</a>
+                            <a asp-controller="Cart" asp-action="AddToCart" asp-route-id="@item.Id" class="btn-add-cart">
+                                Thêm giỏ hàng
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="ai-banner">
+            <div>
+                <h2 style="font-family:'Playfair Display', serif; color: var(--dark-mint); margin-bottom: 5px;">Chưa biết chọn gì?</h2>
+                <p style="margin: 0; color: #555;">Hãy để AI của chúng tôi gợi ý phong cách trang điểm phù hợp nhất với tone da của bạn.</p>
+            </div>
+            <a asp-controller="Home" asp-action="AiConsultation" style="background:var(--primary-mint); color:white; border:none; padding:12px 25px; border-radius:30px; font-weight:700; text-decoration:none; transition: 0.3s;">Thử AI ngay</a>
+        </div>
+    </main>
+</div>
+
+<script>
+    function toggleWish(btn) {
+        btn.classList.toggle('active');
+    }
+</script>

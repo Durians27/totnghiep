@@ -4,7 +4,6 @@
 }
 
 <style>
-    /* CSS DÀNH RIÊNG CHO FORM ĐĂNG NHẬP */
     .login-main-wrapper {
         flex: 1; display: flex; align-items: center; justify-content: center; padding: 60px 0;
     }
@@ -82,6 +81,13 @@
         <h2>ĐĂNG NHẬP</h2>
         <p class="subtitle">Đăng nhập để nhận tư vấn da cá nhân hóa.</p>
 
+        @if (TempData["ErrorMsg"] != null)
+        {
+            <div class="alert alert-danger" style="border-radius: 8px; background: #fff0f0; color: #d32f2f; padding: 15px; margin-bottom: 20px; border: 1px solid #f5c2c7; text-align: center; font-weight: 500;">
+                <i class="fa-solid fa-circle-exclamation me-2"></i> @TempData["ErrorMsg"]
+            </div>
+        }
+        
         <form asp-action="Login" method="post" asp-route-returnurl="@ViewData["ReturnUrl"]">
             <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
 

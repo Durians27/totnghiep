@@ -1,0 +1,297 @@
+@model VelvySkinWeb.Models.Product
+
+@{
+    ViewData["Title"] = Model.Name;
+    var oldPrice = Model.Price * 1.2m; 
+    var bigSizePrice = Model.Price * 1.6m;
+    var bigSizeOldPrice = oldPrice * 1.6m;
+
+    // ===============================================================
+    // LÕI XỬ LÝ LOGIC "THÀNH PHẦN NỔI BẬT" BẰNG DẤU "|"
+    // ===============================================================
+    string rawIng = string.IsNullOrEmpty(Model.Ingredients) ? "Đang cập nhật..." : Model.Ingredients;
+    string tagsHtml = "";
+    string detailIng = rawIng;
+
+    if (rawIng.Contains("|"))
+    {
+        var parts = rawIng.Split('|');
+        // Lấy nửa trước dấu | và cắt theo dấu phẩy để tạo Tag
+        var tags = parts[0].Split(',', StringSplitOptions.RemoveEmptyEntries);
+        foreach(var t in tags)
+        {
+            tagsHtml += $"<span class=\"ingredient-tag\">{t.Trim()}</span>";
+        }
+        // Nửa sau dấu | là chi tiết
+        detailIng = parts[1].Trim();
+    }
+
+    // Format chống lỗi xuống dòng cho Javascript
+    detailIng = detailIng.Replace("\n", "<br/>").Replace("'", "\\'");
+    string fullDesc = string.IsNullOrEmpty(Model.FullDescription) ? "Đang cập nhật..." : Model.FullDescription.Replace("\n", "<br/>").Replace("'", "\\'");
+    string usageIns = string.IsNullOrEmpty(Model.UsageInstructions) ? "Đang cập nhật..." : Model.UsageInstructions.Replace("\n", "<br/>").Replace("'", "\\'");
+}
+
+<style>
+    /* --- BREADCRUMB --- */
+    .breadcrumb { margin-top: 20px; font-size: 14px; color: #888; }
+    .breadcrumb a { color: var(--primary-mint); text-decoration: none; font-weight: 500; transition: 0.3s; }
+    
+    /* --- PRODUCT MAIN SECTION --- */
+    .product-essential { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; margin-bottom: 60px; margin-top: 30px; }
+    .product-gallery { position: sticky; top: 100px; }
+    
+    /* FIX ẢNH: Đổi background, bo tròn, đổi sang contain để ảnh không bị phóng to cắt xén */
+    .main-image-container { 
+        border-radius: 16px; border: 1px solid #f0f0f0; 
+        background: #fff; padding: 40px; 
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    }
+    .main-image { 
+        max-width: 100%; 
+        max-height: 450px; /* Khóa chiều cao tối đa để ảnh không bị khổng lồ */
+        object-fit: contain; 
+        transition: 0.5s;
+    }
+    
+    /* FIX THUMBNAIL CỦA NHƯ: Đưa lại dải ảnh nhỏ xuống dưới */
+    .thumb-list { display: flex; gap: 15px; margin-top: 20px; justify-content: center;}
+    .thumb-item { width: 80px; height: 80px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; object-fit: cover; transition: 0.3s; background: #fff;}
+    .thumb-item.active { border-color: var(--primary-mint); }
+    .thumb-item:hover { opacity: 0.8; }
+
+    /* --- INFO RIGHT SIDE --- */
+    .brand-name { color: var(--primary-mint); font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; }
+    .product-info-detail h1 { font-family: 'Playfair Display', serif; font-size: 32px; margin: 10px 0; color: #222; }
+    .rating { color: #ffc107; margin-bottom: 15px; font-size: 14px; }
+    
+    .price-box { margin-bottom: 25px; display: flex; align-items: center; gap: 15px; }
+    .current-price { font-size: 32px; font-weight: 700; color: var(--dark-mint); transition: opacity 0.3s; }
+    .old-price { text-decoration: line-through; color: #bbb; font-size: 18px; }
+    .short-desc { margin-bottom: 25px; color: #666; font-size: 15px; line-height: 1.6; }
+
+    .option-group { margin-bottom: 25px; }
+    .option-title { font-weight: 600; font-size: 14px; margin-bottom: 10px; color: var(--text-gray); }
+    .size-btn { padding: 10px 25px; border: 1.5px solid #ddd; background: white; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-right: 10px; font-family: inherit; font-weight: 500; font-size: 14px;}
+    .size-btn.active { border-color: var(--primary-mint); color: var(--dark-mint); background: var(--light-mint); box-shadow: 0 4px 10px rgba(46, 196, 182, 0.1); }
+    .size-btn:hover:not(.active) { border-color: #bbb; }
+
+    .product-actions { display: flex; gap: 15px; margin-bottom: 30px; align-items: center; }
+    .quantity-selector { display: flex; align-items: center; border: 1.5px solid #ddd; border-radius: 30px; padding: 5px 15px; background: white; height: 50px;}
+    .quantity-selector button { background: none; border: none; font-size: 20px; cursor: pointer; width: 30px; color: #555; }
+    .quantity-selector input { width: 40px; text-align: center; border: none; font-weight: 700; outline: none; font-size: 16px; color: var(--dark-mint);}
+
+    .btn-add-cart { 
+        max-width: 250px; 
+        flex: 1; background: var(--primary-mint); color: white; border: none; height: 50px;
+        border-radius: 30px; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 14px; 
+        display: flex; justify-content: center; align-items: center; gap: 10px;
+    }
+    .btn-add-cart:hover { background: var(--dark-mint); transform: translateY(-2px); box-shadow: 0 8px 15px rgba(46,196,182,0.2); }
+
+    /* --- TABS SECTION --- */
+    .product-tabs { border-top: 1px solid #eee; padding-top: 40px; margin-top: 20px; }
+    .tab-nav { display: flex; gap: 40px; border-bottom: 1px solid #eee; margin-bottom: 25px; }
+    .tab-item { padding-bottom: 12px; cursor: pointer; font-weight: 600; position: relative; color: #888; transition: 0.3s; }
+    .tab-item.active { color: var(--primary-mint); }
+    .tab-item.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 3px; background: var(--primary-mint); border-radius: 3px 3px 0 0; }
+    .tab-content { font-size: 15px; color: #555; line-height: 1.8; min-height: 150px; transition: opacity 0.4s; }
+    
+    .ingredient-tag { display: inline-block; background: var(--light-mint); padding: 6px 15px; border-radius: 20px; margin: 4px; font-size: 13px; color: var(--dark-mint); font-weight: 600; }
+
+    @@media (max-width: 768px) {
+        .product-essential { grid-template-columns: 1fr; }
+        .product-gallery { position: static; }
+        .main-image { height: 350px; }
+        .btn-add-cart { max-width: 100%; }
+    }
+</style>
+
+<div class="container">
+    <div class="breadcrumb">
+        <a asp-controller="Home" asp-action="Index"><i class="fa-solid fa-house-chimney" style="font-size: 12px; margin-right: 5px;"></i>Trang chủ</a>
+        <span style="margin: 0 10px; color: #ccc;">/</span> 
+        <a asp-controller="Products" asp-action="Skincare">Chăm sóc da</a>
+        <span style="margin: 0 10px; color: #ccc;">/</span> 
+        <a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="@Model.CategoryId">@(Model.Category != null ? Model.Category.Name : "Mỹ phẩm")</a>
+        <span style="margin: 0 10px; color: #ccc;">/</span> 
+        <span style="color: #444; font-weight: 600;">@Model.Name</span>
+    </div>
+
+    <div class="product-essential">
+        <div class="product-gallery">
+            <div class="main-image-container">
+                <img src="@Model.ImageUrl" alt="@Model.Name" class="main-image" id="mainImg" onerror="this.src='https://via.placeholder.com/800'">
+            </div>
+        </div>
+
+        <div class="product-info-detail">
+            <span class="brand-name">Velvy Skin Official</span>
+            <h1>@Model.Name</h1>
+            
+            <div class="rating">
+                <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-half-alt"></i>
+                <span style="color:#999; margin-left:10px;">(128 đánh giá)</span>
+            </div>
+
+            <div class="price-box">
+                <span class="current-price" id="currentPrice">@Model.Price.ToString("N0")đ</span>
+                <span class="old-price" id="oldPrice">@oldPrice.ToString("N0")đ</span>
+            </div>
+
+            <p class="short-desc">
+                @(string.IsNullOrEmpty(Model.ShortDescription) ? "Một sản phẩm tuyệt vời đến từ nhà Velvy Skin, giúp nuôi dưỡng và tái tạo làn da rạng rỡ từ sâu bên trong." : Model.ShortDescription)
+            </p>
+
+            <div class="option-group">
+                <p class="option-title">Dung tích:</p>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="cap-btn active" onclick="changeCapacity(1, this)" style="padding: 10px 20px; border-radius: 8px; border: 1px solid var(--primary-mint); background: var(--light-mint); color: var(--dark-mint); font-weight: 600; cursor: pointer; transition: 0.3s;">Bản Tiêu chuẩn</button>
+                    <button type="button" class="cap-btn" onclick="changeCapacity(1.5, this)" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #ddd; background: white; color: #666; font-weight: 600; cursor: pointer; transition: 0.3s;">Bản Lớn (Tiết kiệm)</button>
+                </div>
+            </div>
+
+            <div class="product-actions">
+                <form asp-controller="Cart" asp-action="AddToCart" method="post" style="display: flex; gap: 15px; align-items: center; width: 100%;">
+                    
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    
+                    <input type="hidden" id="submitPrice" name="selectedPrice" value="@((long)Model.Price)" />
+                    
+                    <div style="display: flex; align-items: center; border: 1px solid #ddd; border-radius: 30px; overflow: hidden; height: 50px;">
+                        <button type="button" onclick="updateQty(-1)" style="width: 40px; height: 100%; background: #f9f9f9; border: none; cursor: pointer; font-size: 20px; font-weight: bold; color: #555; transition: 0.3s;">-</button>
+                        
+                        <input type="number" id="buyQty" name="quantity" value="1" min="1" max="@Model.StockQuantity" style="width: 50px; height: 100%; text-align: center; border: none; outline: none; font-weight: bold; font-size: 16px;" readonly />
+                        
+                        <button type="button" onclick="updateQty(1)" style="width: 40px; height: 100%; background: #f9f9f9; border: none; cursor: pointer; font-size: 20px; font-weight: bold; color: #555; transition: 0.3s;">+</button>
+                    </div>
+
+                    <button type="submit" class="btn-add-cart">
+                        <i class="fa fa-shopping-cart"></i> Thêm vào giỏ
+                    </button>
+
+                </form>
+            </div>
+
+            <div style="background: #fdf2f5; padding: 20px; border-radius: 15px; border: 1px dashed var(--accent-pink);">
+                <p style="color: var(--accent-pink); font-weight: 700; font-size: 14px; margin-bottom: 5px;">
+                    <i class="fa fa-gift"></i> ƯU ĐÃI ĐẶC BIỆT
+                </p>
+                <p style="font-size: 13px; margin: 0;">Freeship cho đơn hàng từ 500k. Tặng kèm sample dùng thử cho mọi đơn hàng.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="product-tabs">
+        <div class="tab-nav">
+            <div class="tab-item active" data-index="0">Mô tả sản phẩm</div>
+            <div class="tab-item" data-index="1">Thành phần</div>
+            <div class="tab-item" data-index="2">Hướng dẫn sử dụng</div>
+        </div>
+        
+        <div class="tab-content" id="tabContent">
+            <div>@Html.Raw(fullDesc)</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Đổ dữ liệu từ C# Razor vào biến JS
+    const tabData = {
+        0: `@Html.Raw(fullDesc)`,
+        1: `<div class="ingredient-list">
+                <p style="margin-bottom: 15px;"><strong>Thành phần nổi bật:</strong></p>
+                @Html.Raw(tagsHtml)
+                
+                <p style="margin-top: 20px; font-size: 14px; color: #666; line-height: 1.8;">
+                    <strong>Chi tiết:</strong> <br/>
+                    @Html.Raw(detailIng)
+                </p>
+            </div>`,
+        2: `<div style="line-height: 1.8;">@Html.Raw(usageIns)</div>`
+    };
+
+    // Đổi ảnh chính khi click ảnh nhỏ (Thumbnail)
+    function changeImage(element) {
+        document.getElementById('mainImg').src = element.src;
+        document.querySelectorAll('.thumb-item').forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+    }
+
+    const basePrice = @((long)Model.Price); 
+    const oldBasePrice = @((long)oldPrice);
+    
+    const currentPriceEl = document.getElementById('currentPrice');
+    const oldPriceEl = document.getElementById('oldPrice');
+
+    function formatMoney(num) {
+        return new Intl.NumberFormat('vi-VN').format(num) + 'đ';
+    }
+
+    function changeCapacity(multiplier, btn) {
+        // Reset màu các nút
+        document.querySelectorAll('.cap-btn').forEach(el => {
+            el.style.background = 'white';
+            el.style.borderColor = '#ddd';
+            el.style.color = '#666';
+        });
+        // Tô màu nút đang chọn
+        btn.style.background = 'var(--light-mint)';
+        btn.style.borderColor = 'var(--primary-mint)';
+        btn.style.color = 'var(--dark-mint)';
+
+        // Hiệu ứng mờ dần
+        currentPriceEl.style.opacity = '0';
+        oldPriceEl.style.opacity = '0';
+
+        setTimeout(() => {
+            let newPrice = basePrice * multiplier;
+            
+            // Cập nhật giá hiển thị ngoài màn hình
+            currentPriceEl.innerText = formatMoney(newPrice);
+            oldPriceEl.innerText = formatMoney(oldBasePrice * multiplier);
+            
+            // VỊ TRÍ 2: Cập nhật giá trị vào Input ẩn để nộp về Backend
+            document.getElementById('submitPrice').value = newPrice;
+            
+            currentPriceEl.style.opacity = '1';
+            oldPriceEl.style.opacity = '1';
+        }, 200);
+    }
+
+    // ===============================================
+    // JAVASCRIPT ĐÃ FIX LỖI TĂNG GIẢM SỐ LƯỢNG
+    // ===============================================
+    function updateQty(change) {
+        let input = document.getElementById('buyQty');
+        let maxQty = parseInt(input.getAttribute('max')) || 1; // Lấy tồn kho tối đa từ C#
+        let currentQty = parseInt(input.value);
+        let newQty = currentQty + change;
+
+        // Chặn không cho giảm xuống âm và không cho tăng lố tồn kho
+        if (newQty >= 1 && newQty <= maxQty) {
+            input.value = newQty;
+        } else if (newQty > maxQty) {
+            alert('Xin lỗi, trong kho chỉ còn ' + maxQty + ' sản phẩm!');
+        }
+    }
+
+    // Xử lý chuyển Tab
+    const tabs = document.querySelectorAll('.tab-item');
+    const contentBox = document.getElementById('tabContent');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const index = this.getAttribute('data-index');
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            contentBox.style.opacity = '0';
+            setTimeout(() => {
+                contentBox.innerHTML = tabData[index];
+                contentBox.style.opacity = '1';
+            }, 200);
+        });
+    });
+</script>

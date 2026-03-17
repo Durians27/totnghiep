@@ -1,0 +1,214 @@
+@model VelvySkinWeb.Models.Order
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng #" + Model.Id;
+
+    int step = 1;
+    string statusText = "Chờ xác nhận";
+    string badgeClass = "background: #fff3cd; color: #856404;"; 
+
+    switch (Model.OrderStatus?.ToLower())
+    {
+        case "pending": case "chờ xác nhận":
+            step = 2; statusText = "Đã xác nhận"; break;
+        case "shipping": case "đang giao":
+            step = 4; statusText = "Đang giao"; badgeClass = "background: #d1ecf1; color: #0c5460;"; break;
+        case "completed": case "đã giao": case "thành công":
+            step = 5; statusText = "Đã giao"; badgeClass = "background: #d4edda; color: #155724;"; break;
+        case "cancelled": case "đã hủy":
+            step = 0; statusText = "Đã hủy"; badgeClass = "background: #f8d7da; color: #721c24;"; break;
+    }
+}
+
+<style>
+    /* CHỈ GIỮ LẠI CSS PHẦN RUỘT ĐƠN HÀNG */
+    .section-container { padding: 60px 5% 80px; max-width: 1100px; margin: 0 auto; font-family: 'Montserrat', sans-serif;}
+    
+    /* ĐÃ TĂNG SIZE BREADCRUMB */
+    .breadcrumb { font-size: 16px; color: #888; margin-bottom: 20px; }
+    .breadcrumb a { color: var(--primary-mint); text-decoration: none; font-weight: 600;}
+
+    .order-detail-header { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 25px; align-items: center; justify-content: space-between; border: 1px solid #f0f0f0;}
+    .order-id-big { font-size: 22px; font-weight: 700; color: var(--primary-mint); }
+    .status-badge-detail { padding: 8px 24px; border-radius: 30px; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+
+    .order-progress { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); margin-bottom: 30px; border: 1px solid #f0f0f0;}
+    .progress-container { display: flex; justify-content: space-between; position: relative; max-width: 800px; margin: 30px auto 0; }
+    .progress-container::before { content: ''; position: absolute; top: 18px; left: 10%; right: 10%; height: 4px; background: #eee; z-index: 1; }
+    .progress-step { text-align: center; z-index: 2; width: 20%; }
+    .progress-circle { width: 38px; height: 38px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 18px; color: #aaa; transition: var(--transition); border: 3px solid white;}
+    
+    .progress-step.completed .progress-circle, .progress-step.active .progress-circle { background: var(--primary-mint); color: white; }
+    .progress-step.active .progress-circle { box-shadow: 0 0 0 6px rgba(46,196,182,0.2); }
+    .progress-step span { font-size: 12px; font-weight: 600; display: block; color: #666; }
+    .progress-step.active span { color: var(--primary-mint); font-weight: 700; }
+
+    .order-items-detail { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); margin-bottom: 30px; border: 1px solid #f0f0f0;}
+    .order-items-detail h3 { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 20px; color: #222; }
+    .item-row { display: flex; align-items: center; gap: 20px; padding: 18px 0; border-bottom: 1px solid #eee; }
+    .item-row:last-child { border-bottom: none; }
+    .item-row img { width: 90px; height: 90px; object-fit: cover; border-radius: 12px; border: 1px solid #f9f9f9;}
+    .item-info { flex: 1; }
+    .item-info h4 { font-size: 16px; margin-bottom: 6px; font-weight: 600;}
+    .item-price { font-weight: 600; color: var(--primary-mint); font-size: 15px; }
+    .quantity { color: #666; font-size: 14px; }
+
+    .order-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    @@media (max-width: 768px) { .order-summary { grid-template-columns: 1fr; } }
+    .summary-box, .info-box { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #f0f0f0;}
+    .summary-box h3, .info-box h3 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 20px; color: #222; }
+    .summary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #eee; font-size: 14px;}
+    .summary-row:last-child { border-bottom: none; font-weight: 700; font-size: 18px; color: var(--accent-pink); }
+    .info-row { margin-bottom: 18px; display: flex; gap: 15px; font-size: 14px; line-height: 1.6;}
+    .info-row i { color: var(--primary-mint); font-size: 20px; width: 24px; text-align: center;}
+
+    .detail-actions { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 30px; justify-content: center;}
+    .btn-detail { padding: 14px 28px; border-radius: 50px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;}
+    .btn-primary { background: var(--primary-mint); color: white; }
+    .btn-primary:hover { background: var(--dark-mint); transform: translateY(-3px); color: white;}
+    .btn-outline { background: transparent; color: var(--primary-mint); border: 2px solid var(--primary-mint); }
+    .btn-outline:hover { background: var(--primary-mint); color: white; transform: translateY(-3px);}
+</style>
+
+<div class="section-container">
+    <div class="breadcrumb">
+        <a asp-controller="Orders" asp-action="History">← Quay lại Đơn hàng của tôi</a> &nbsp; / &nbsp; <span style="color: #333; font-weight: 600;">Chi tiết đơn hàng</span>
+    </div>
+
+    <div class="order-detail-header">
+        <div>
+            <div class="order-id-big">Mã đơn: #@Model.Id</div>
+            <p style="margin-top: 8px; color:#888; font-size:14px;">
+                <strong>Ngày đặt:</strong> @Model.OrderDate.ToString("dd/MM/yyyy • HH:mm")
+            </p>
+        </div>
+        <div>
+            <span class="status-badge-detail" style="@badgeClass">@statusText</span>
+        </div>
+    </div>
+
+    <div class="order-progress">
+        <h3 style="font-family:'Playfair Display'; font-size:24px; text-align:center; margin-bottom:10px;">Theo dõi tình trạng đơn hàng</h3>
+        
+        @if (step == 0)
+        {
+            <div style="text-align: center; color: #dc3545; padding: 20px; font-weight: bold; font-size: 18px;">
+                <i class="fa-solid fa-ban" style="font-size: 40px; margin-bottom: 10px; display: block;"></i>
+                ĐƠN HÀNG ĐÃ BỊ HỦY
+            </div>
+        }
+        else
+        {
+            <div class="progress-container">
+                <div class="progress-step @(step >= 1 ? "completed" : "") @(step == 1 ? "active" : "")">
+                    <div class="progress-circle"><i class="fa-solid fa-clipboard-list"></i></div>
+                    <span>Đặt hàng</span>
+                </div>
+                <div class="progress-step @(step >= 2 ? "completed" : "") @(step == 2 ? "active" : "")">
+                    <div class="progress-circle"><i class="fa-solid fa-check"></i></div>
+                    <span>Xác nhận</span>
+                </div>
+                <div class="progress-step @(step >= 3 ? "completed" : "") @(step == 3 ? "active" : "")">
+                    <div class="progress-circle"><i class="fa-solid fa-box-open"></i></div>
+                    <span>Đang chuẩn bị</span>
+                </div>
+                <div class="progress-step @(step >= 4 ? "completed" : "") @(step == 4 ? "active" : "")">
+                    <div class="progress-circle"><i class="fa-solid fa-truck-fast"></i></div>
+                    <span>Đang giao</span>
+                </div>
+                <div class="progress-step @(step >= 5 ? "completed" : "") @(step == 5 ? "active" : "")">
+                    <div class="progress-circle"><i class="fa-solid fa-box-check"></i><i class="fa-solid fa-check-double"></i></div>
+                    <span>Đã giao</span>
+                </div>
+            </div>
+            
+            <p style="text-align:center; margin-top:30px; font-size:14px; color:#666;">
+                Mã vận đơn: <strong style="color: var(--primary-mint);">VELVY-TRK-@Model.OrderDate.ToString("yyMMdd")@Model.Id</strong>
+            </p>
+        }
+    </div>
+
+    <div class="order-items-detail">
+        <h3><i class="fa-solid fa-box me-2" style="color: var(--primary-mint);"></i> Sản phẩm trong đơn hàng</h3>
+        @if(Model.OrderDetails != null)
+        {
+            foreach(var item in Model.OrderDetails)
+            {
+                <div class="item-row">
+                    <img src="@(item.Product?.ImageUrl ?? "https://via.placeholder.com/90")" alt="@item.Product?.Name">
+                    <div class="item-info">
+                        <h4>@(item.Product?.Name ?? "Sản phẩm không xác định")</h4>
+                        <div class="quantity">Số lượng: <strong>@item.Quantity</strong></div>
+                        <div class="item-price">@item.UnitPrice.ToString("N0")đ × @item.Quantity</div>
+                    </div>
+                    <div style="text-align:right; min-width:120px;">
+                        <div style="font-size:17px; font-weight:700; color:var(--dark-mint);">@((item.UnitPrice * item.Quantity).ToString("N0"))đ</div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="order-summary">
+        <div class="summary-box">
+            <h3><i class="fa-solid fa-file-invoice-dollar me-2" style="color: var(--primary-mint);"></i> Thông tin thanh toán</h3>
+            <div class="summary-row">
+                <span>Tạm tính</span>
+                <span>@Model.TotalAmount.ToString("N0")đ</span>
+            </div>
+            <div class="summary-row">
+                <span>Phí vận chuyển</span>
+                <span>0đ</span>
+            </div>
+           <div class="summary-row" style="margin-top:15px; padding-top:15px; border-top:2px solid #eee; align-items: center;">
+                <span style="font-weight: 700; font-size: 16px; color: #222;">Tổng thanh toán</span>
+                <span style="font-weight: 800; font-size: 24px; color: var(--accent-pink);">@Model.TotalAmount.ToString("N0")đ</span>
+            </div>
+            <p style="margin-top:20px; font-size:14px; color:#666; font-weight: 500;">
+                <i class="fa-solid fa-credit-card me-2" style="color: var(--primary-mint);"></i> Phương thức: @(Model.PaymentMethod ?? "Thanh toán khi nhận hàng (COD)")
+            </p>
+        </div>
+
+        <div class="info-box">
+            <h3><i class="fa-solid fa-map-location-dot me-2" style="color: var(--primary-mint);"></i> Địa chỉ nhận hàng</h3>
+            <div class="info-row">
+                <i class="fa-solid fa-user"></i>
+                <div>
+                    <strong>@Model.CustomerName</strong><br>
+                    @Model.ShippingAddress<br>
+                    SĐT: <strong>@Model.PhoneNumber</strong>
+                </div>
+            </div>
+            @if(!string.IsNullOrEmpty(Model.Note))
+            {
+                <div class="info-row" style="margin-top: 15px; color: #856404; background: #fff3cd; padding: 10px; border-radius: 8px;">
+                    <i class="fa-solid fa-comment-dots" style="color: #856404;"></i>
+                    <div><strong>Ghi chú:</strong> @Model.Note</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="detail-actions">
+        <button onclick="trackOrder()" class="btn-detail btn-primary">
+            <i class="fa-solid fa-truck"></i> Theo dõi vận chuyển
+        </button>
+        <button onclick="contactSupport()" class="btn-detail btn-outline">
+            <i class="fa-solid fa-headset"></i> Liên hệ hỗ trợ
+        </button>
+        <a asp-controller="Products" asp-action="Skincare" class="btn-detail btn-outline">
+            <i class="fa-solid fa-rotate-right"></i> Mua lại
+        </a>
+        <a asp-controller="Orders" asp-action="History" class="btn-detail btn-outline">
+            ← Quay lại danh sách
+        </a>
+    </div>
+</div>
+
+<script>
+    function trackOrder() {
+        alert('📦 Đang mở trang theo dõi vận chuyển...\n\nMã vận đơn: VELVY-TRK-@Model.OrderDate.ToString("yyMMdd")@Model.Id\nTrạng thái: @statusText');
+    }
+    function contactSupport() {
+        alert('💬 Bạn đang kết nối với đội ngũ hỗ trợ Velvy Skin.\nChúng tôi sẽ gọi lại vào số @Model.PhoneNumber trong vòng 5 phút!');
+    }
+</script>

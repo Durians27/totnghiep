@@ -1,0 +1,32 @@
+@model VelvySkinWeb.Models.Category
+
+@{
+    ViewData["Title"] = "Xóa Danh Mục";
+}
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="alert alert-danger" style="border-radius: 15px; padding: 30px; box-shadow: 0 5px 15px rgba(220, 53, 69, 0.1);">
+        <h3 class="text-danger" style="font-family: 'Playfair Display', serif;">
+            <i class="fa-solid fa-triangle-exclamation text-danger fs-2 me-2"></i> Cảnh báo nguy hiểm!
+        </h3>
+        <hr />
+        <p class="fs-5">Bạn có chắc chắn muốn xóa vĩnh viễn danh mục <strong>"@Model.Name"</strong> không?</p>
+        <p class="text-muted" style="font-size: 14px;">
+            <em>Lưu ý: Hành động này không thể hoàn tác. Các sản phẩm đang nằm trong danh mục này có thể bị mất liên kết hiển thị trên web.</em>
+        </p>
+        
+        <div class="mt-4">
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger px-4 py-2" style="border-radius: 30px; font-weight: 600;">
+                        <i class="fa-solid fa-trash-can"></i> Vâng, Xóa Ngay!
+                    </button>
+                    <a asp-action="Index" class="btn btn-light px-4 py-2" style="border-radius: 30px; font-weight: 600; border: 1px solid #ddd;">
+                        Không, quay lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

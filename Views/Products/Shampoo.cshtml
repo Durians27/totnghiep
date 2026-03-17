@@ -1,0 +1,7 @@
+@model IEnumerable<VelvySkinWeb.Models.Product>
+@{
+    // "Mượn" lại nguyên khung xương của trang Haircare. Chỉ cần 1 dòng này là bạn có tất cả CSS, HTML, Filters của Haircare!
+    Layout = null; 
+}
+
+@await Html.PartialAsync("Haircare", Model)

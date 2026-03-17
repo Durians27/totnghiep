@@ -1,4 +1,5 @@
-﻿@model IEnumerable<VelvySkinWeb.Models.Product>
+﻿@using Microsoft.AspNetCore.Http
+@model IEnumerable<VelvySkinWeb.Models.Product>
 
 @{
     ViewData["Title"] = "Trang chủ";
@@ -24,11 +25,16 @@
     .filter-btn { background: white; border: 1px solid #ddd; padding: 10px 22px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 13px; transition: var(--transition); color: #666; }
     .filter-btn.active, .filter-btn:hover { background: var(--primary-mint); color: white; border-color: var(--primary-mint); }
     .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 30px; max-width: 1250px; margin: 0 auto; }
-    .product-card { background: white; border-radius: 15px; padding: 20px; border: 1px solid #f0f0f0; transition: var(--transition); position: relative; overflow: hidden; text-align: left;}
+    
+    .product-card { background: white; border-radius: 15px; padding: 20px; border: 1px solid #f0f0f0; transition: var(--transition); position: relative; overflow: hidden; text-align: left; display: flex; flex-direction: column;}
     .product-card:hover { transform: translateY(-10px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-color: var(--primary-mint); }
-    .wishlist-btn-item { position: absolute; top: 15px; right: 15px; background: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; border: none; transition: 0.3s; }
+    
+    /* CHỈNH LẠI CSS NÚT YÊU THÍCH */
+    .wishlist-btn-item { background: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; border: none; transition: 0.3s; }
     .wishlist-btn-item i { color: #ccc; font-size: 16px; transition: 0.3s; }
     .wishlist-btn-item.active i { color: var(--accent-pink); }
+    .wishlist-btn-item:hover i { color: var(--accent-pink); }
+    
     .product-img-wrapper { position: relative; width: 100%; height: 250px; border-radius: 10px; overflow: hidden; margin-bottom: 15px; }
     .product-img-wrapper img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; transition: all 0.6s ease-in-out; }
     .img-hover { opacity: 0; transform: scale(1.1); }
@@ -37,10 +43,12 @@
     .btn-quick-view { position: absolute; top: 50%; left: 50%; transform: translate(-50%, 20%); background: rgba(255, 255, 255, 0.95); color: #333; border: none; padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 12px; opacity: 0; transition: all 0.3s ease; cursor: pointer; z-index: 5; white-space: nowrap; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     .product-card:hover .btn-quick-view { opacity: 1; transform: translate(-50%, -50%); }
     .btn-quick-view:hover { background: var(--primary-mint); color: white; }
+    
     .product-card h3 { font-size: 14px; text-transform: uppercase; color: var(--primary-mint); letter-spacing: 1px; margin-bottom: 5px; font-weight: 700; }
     .product-card h4 { font-size: 15px; color: #333; text-transform: none; margin-bottom: 10px; height: 40px; overflow: hidden; font-weight: 600; line-height: 1.4; }
     .product-card .price { color: var(--text-gray); font-weight: 700; font-size: 17px; margin-bottom: 15px; }
-    .btn-small { background: var(--primary-mint); color: white; border: none; padding: 12px 20px; border-radius: 50px; font-weight: 700; font-size: 11px; text-transform: uppercase; cursor: pointer; width: 100%; transition: 0.3s; }
+    
+    .btn-small { background: var(--primary-mint); color: white; border: none; padding: 12px 20px; border-radius: 50px; font-weight: 700; font-size: 13px; text-transform: uppercase; cursor: pointer; width: 100%; transition: 0.3s; margin-top: auto;}
     .btn-small:hover { background: var(--dark-mint); letter-spacing: 1px; }
 </style>
 
@@ -74,16 +82,38 @@
         @foreach (var item in Model)
         {
             <div class="product-card" data-price="@item.Price">
-                <button class="wishlist-btn-item" onclick="toggleWishlist(this)"><i class="fa-solid fa-heart"></i></button>
-                <div class="product-img-wrapper">
-                    <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-main" alt="@item.Name">
-                    <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-hover" alt="@item.Name Hover">
-                    <button class="btn-quick-view">Xem nhanh</button>
-                </div>
-                <h3>@(item.Category != null ? item.Category.Name : "Velvy Skin")</h3>
-                <h4>@item.Name</h4>
+                
+                @{
+    var currentWishSession = Context.Session.GetString("Wishlist");
+    var currentWishList = currentWishSession != null ? System.Text.Json.JsonSerializer.Deserialize<List<int>>(currentWishSession) : new List<int>();
+    
+    bool isWished = currentWishList != null && currentWishList.Contains(item.Id);
+}
+                <form asp-controller="Wishlist" asp-action="Toggle" method="post" style="position: absolute; top: 15px; right: 15px; z-index: 10;">
+                    <input type="hidden" name="id" value="@item.Id" />
+                    <button type="submit" class="wishlist-btn-item @(isWished ? "active" : "")">
+                        <i class="fa-solid fa-heart"></i>
+                    </button>
+                </form>
+                
+                <a asp-controller="Products" asp-action="Details" asp-route-id="@item.Id" style="text-decoration: none; color: inherit; display: block; margin-top: 10px;">
+                    <div class="product-img-wrapper">
+                        <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-main" alt="@item.Name">
+                        <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-hover" alt="@item.Name Hover">
+                        <span class="btn-quick-view">Xem chi tiết</span>
+                    </div>
+                    <h3>@(item.Category != null ? item.Category.Name : "Velvy Skin")</h3>
+                    <h4>@item.Name</h4>
+                </a>
+
                 <p class="price">@item.Price.ToString("N0")đ</p>
-                <a asp-controller="Cart" asp-action="AddToCart" asp-route-id="@item.Id" class="btn btn-small text-center text-decoration-none d-block">Thêm vào giỏ</a>
+                
+                <form asp-controller="Cart" asp-action="AddToCart" method="post" style="width: 100%; margin-top: auto;">
+                    <input type="hidden" name="id" value="@item.Id" />
+                    <input type="hidden" name="quantity" value="1" />
+                    <input type="hidden" name="selectedPrice" value="@((long)item.Price)" />
+                    <button type="submit" class="btn-small">Thêm vào giỏ</button>
+                </form>
             </div>
         }
     </div>
@@ -105,24 +135,9 @@
                 else if (range === '300-700') show = price >= 300000 && price <= 700000;
                 else if (range === 'above700') show = price > 700000;
 
-                product.style.display = show ? 'block' : 'none';
+                product.style.display = show ? 'flex' : 'none'; /* Sửa block thành flex để layout đều nhau */
                 product.style.animation = show ? 'fadeInUp 0.5s ease-out forwards' : 'none';
             });
-        }
-
-        let wishlistCount = 0;
-        function toggleWishlist(btn) {
-            btn.classList.toggle('active');
-            const countHeader = document.getElementById('wishlist-count-header');
-            
-            if (btn.classList.contains('active')) {
-                wishlistCount++;
-            } else {
-                wishlistCount--;
-            }
-            countHeader.innerText = wishlistCount;
-            countHeader.style.transform = "scale(1.3)";
-            setTimeout(() => countHeader.style.transform = "scale(1)", 200);
         }
     </script>
 }

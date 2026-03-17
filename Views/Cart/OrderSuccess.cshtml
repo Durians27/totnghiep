@@ -1,16 +1,76 @@
-@{ ViewData["Title"] = "Đặt hàng thành công"; }
+@model VelvySkinWeb.Models.Order
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+}
 
-<div class="container mt-5 mb-5 text-center">
-    <div class="card shadow-sm border-0 mx-auto" style="max-width: 600px; padding: 50px 20px;">
-        <i class="fa-solid fa-circle-check text-success" style="font-size: 80px; margin-bottom: 20px;"></i>
-        <h2 style="color: var(--primary-mint); font-family: 'Playfair Display';">ĐẶT HÀNG THÀNH CÔNG!</h2>
-        <p class="fs-5 text-muted mt-3">Cảm ơn bạn đã tin tưởng mua sắm tại Velvy Skin.</p>
-        <p>Mã đơn hàng của bạn là: <strong class="text-danger fs-4">#@ViewBag.OrderId</strong></p>
-        <p class="mb-4">Chúng tôi sẽ sớm liên hệ với bạn để xác nhận và giao hàng.</p>
-        
-        <div>
-            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary px-4 py-2 me-2">Về Trang chủ</a>
-            <a href="#" class="btn px-4 py-2" style="background-color: var(--primary-mint); color: white;">Xem tiến độ đơn</a>
+<style>
+    /* --- CONFIRMATION LAYOUT --- */
+    .success-container { max-width: 800px; margin: 40px auto; padding: 30px 5%; text-align: center; font-family: 'Montserrat', sans-serif;}
+
+    .success-icon { font-size: 80px; color: var(--primary-mint); margin-bottom: 20px; animation: scaleUp 0.5s ease-out; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 10px; color: #222; }
+    .confirmation-message { font-size: 16px; color: #666; margin-bottom: 35px; line-height: 1.6;}
+    
+    .order-details { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.05); margin-bottom: 35px; text-align: left; border: 1px solid #f0f0f0;}
+    .order-details h3 { font-size: 18px; margin-bottom: 20px; border-bottom: 2px solid var(--light-mint); padding-bottom: 10px; color: var(--dark-mint); font-weight: 700;}
+    
+    .detail-item { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 15px; color: #555;}
+    .detail-item span:last-child { font-weight: 600; color: #222; text-align: right; max-width: 60%; word-break: break-word;}
+    
+    .btn-continue { display: inline-block; padding: 15px 40px; background: var(--dark-mint); color: white; border: none; border-radius: 30px; font-weight: 600; font-size: 16px; cursor: pointer; transition: 0.3s; text-decoration: none; text-transform: uppercase; letter-spacing: 1px;}
+    .btn-continue:hover { background: var(--primary-mint); box-shadow: 0 8px 20px rgba(46,196,182,0.3); color: white; transform: translateY(-2px);}
+
+    @@keyframes scaleUp {
+        0% { transform: scale(0); opacity: 0; }
+        70% { transform: scale(1.1); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+<div class="breadcrumb" style="padding: 20px 5%; background: #f9f9f9; font-size: 18px; color: #ccc; margin-bottom: 0; display: flex; align-items: center; gap: 10px;">
+    <a asp-controller="Home" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-house"></i> Trang chủ
+    </a> 
+    <span>/</span> 
+    <span style="color: #333; font-weight: 700;">Xác nhận đặt hàng</span>
+</div>
+
+<div class="success-container">
+    <i class="fa-solid fa-check-circle success-icon"></i>
+    <h1 class="page-title">Đơn Hàng Đã Đặt Thành Công!</h1>
+    <p class="confirmation-message">Cảm ơn bạn <strong>@Model.CustomerName</strong> đã mua sắm tại Velvy Skin.<br>Đơn hàng của bạn đang được hệ thống xử lý và sẽ sớm được giao đến bạn.</p>
+    
+    <div class="order-details">
+        <h3><i class="fa-solid fa-file-invoice me-2"></i> Thông Tin Đơn Hàng</h3>
+        <div class="detail-item">
+            <span>Mã đơn hàng</span>
+            <span style="color: var(--primary-mint);">#@Model.Id</span>
         </div>
+        <div class="detail-item">
+            <span>Ngày đặt</span>
+            <span>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+        </div>
+        <div class="detail-item">
+            <span>Tổng tiền thanh toán</span>
+            <span style="color: var(--accent-pink); font-size: 18px;">@Model.TotalAmount.ToString("N0")đ</span>
+        </div>
+        <div class="detail-item">
+            <span>Phương thức thanh toán</span>
+            <span>@ViewBag.PaymentMethod</span>
+        </div>
+        <div class="detail-item">
+            <span>Địa chỉ giao hàng</span>
+            <span>@Model.ShippingAddress</span>
+        </div>
+        
+        @if(!string.IsNullOrEmpty(Model.Note))
+        {
+            <div class="detail-item">
+                <span>Ghi chú</span>
+                <span>@Model.Note</span>
+            </div>
+        }
     </div>
+    
+    <a asp-controller="Home" asp-action="Index" class="btn-continue">Tiếp tục mua sắm <i class="fa-solid fa-bag-shopping ms-2"></i></a>
 </div>

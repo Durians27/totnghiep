@@ -1,13 +1,12 @@
-namespace VelvySkinWeb.Models.ViewModels
+namespace VelvySkinWeb.Models
 {
     public class CartItem
     {
         public int ProductId { get; set; }
-        public string ProductName { get; set; } = string.Empty;
+        public string ProductName { get; set; }
         public decimal Price { get; set; }
         public int Quantity { get; set; }
-        public string? ImageUrl { get; set; }
-
-        public decimal Total => Price * Quantity;
+        public string ImageUrl { get; set; }
+        public decimal Total => Price * Quantity; // Tự động tính Thành tiền = Giá x Số lượng
     }
 }

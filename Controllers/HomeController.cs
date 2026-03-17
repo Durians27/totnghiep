@@ -2,6 +2,8 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore; // Thêm dòng này
 using VelvySkinWeb.Data; // Thêm dòng này
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using VelvySkinWeb.Models;
 
 namespace VelvySkinWeb.Controllers
@@ -16,7 +18,17 @@ namespace VelvySkinWeb.Controllers
             _logger = logger;
             _context = context;
         }
-
+public async Task<IActionResult> Logout()
+        {
+            // 1. Ép hệ thống xóa sạch Cookie đăng nhập của người dùng
+            await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+            
+            // 2. Tùy chọn: Xóa luôn các "Trí nhớ" session (Giỏ hàng, Yêu thích) của phiên cũ
+            HttpContext.Session.Clear(); 
+            
+            // 3. Đá văng về trang chủ
+            return RedirectToAction("Index", "Home");
+        }
         public async Task<IActionResult> Index()
         {
             // Lôi 8 sản phẩm mới nhất từ SQL Server ra (kèm theo Tên danh mục của nó)
@@ -99,6 +111,10 @@ namespace VelvySkinWeb.Controllers
             ViewBag.Diagnosis = diagnosis;
 
             return View(suggestedProducts); // Truyền model Mỹ phẩm qua
+        }
+        public IActionResult About()
+        {
+            return View();
         }
     }
 }

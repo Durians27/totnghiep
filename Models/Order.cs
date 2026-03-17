@@ -16,6 +16,8 @@ namespace VelvySkinWeb.Models
 
         [Required(ErrorMessage = "Vui lòng nhập số điện thoại")]
         public string PhoneNumber { get; set; } = string.Empty;
+        public string? Note { get; set; }
+        public string? PaymentMethod { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập địa chỉ giao hàng")]
         public string ShippingAddress { get; set; } = string.Empty;

@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization; 
+using System.Security.Claims; 
 using VelvySkinWeb.Data;
 using VelvySkinWeb.Models.ViewModels;
 using VelvySkinWeb.Extensions;
 using VelvySkinWeb.Models;
+using Microsoft.EntityFrameworkCore;
+
 namespace VelvySkinWeb.Controllers
 {
     public class CartController : Controller
@@ -14,67 +18,115 @@ namespace VelvySkinWeb.Controllers
             _context = context;
         }
 
+        // ==========================================
+        // 1. HIỂN THỊ GIỎ HÀNG
+        // ==========================================
         public IActionResult Index()
         {
             var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart") ?? new List<CartItem>();
-
             ViewBag.GrandTotal = cart.Sum(item => item.Total);
-
             return View(cart);
         }
+
         // ==========================================
-        // 2. THÊM VÀO GIỎ HÀNG (ĐÃ NÂNG CẤP CHẶN TỒN KHO)
+        // 2. THÊM VÀO GIỎ HÀNG (CÓ CHẶN TỒN KHO)
         // ==========================================
-        public IActionResult AddToCart(int id)
+        public IActionResult AddToCart(int id, int quantity = 1, decimal selectedPrice = 0)
         {
+            // ----------------------------------------------------
+            // 🛑 CHỐT CHẶN BẢO VỆ: KIỂM TRA ĐĂNG NHẬP
+            // ----------------------------------------------------
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                TempData["ErrorMsg"] = "Vui lòng đăng nhập tài khoản để thêm sản phẩm vào giỏ hàng!";
+                string returnUrl = $"/Products/Details/{id}"; 
+                return Redirect($"/Account/Login?ReturnUrl={returnUrl}");
+            }
+
             var product = _context.Products.Find(id);
             if (product == null) return NotFound();
 
             var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart") ?? new List<CartItem>();
-            var cartItem = cart.FirstOrDefault(c => c.ProductId == id);
+            
+            decimal finalPrice = selectedPrice > 0 ? selectedPrice : product.Price;
+            var cartItem = cart.FirstOrDefault(c => c.ProductId == id && c.Price == finalPrice);
 
-            // --------------------------------------------------------
-            // CHỐT CHẶN 1: SẢN PHẨM ĐÃ HẾT SẠCH (Tồn kho = 0)
-            // --------------------------------------------------------
             if (product.StockQuantity <= 0)
             {
                 TempData["ErrorMsg"] = $"Rất tiếc, sản phẩm '{product.Name}' hiện đã hết hàng!";
-                return RedirectToAction("Index"); // Đẩy về trang Giỏ hàng để xem lỗi
+                return RedirectToAction("Index"); 
             }
 
-            // --------------------------------------------------------
-            // CHỐT CHẶN 2: KHÁCH MUA QUÁ SỐ LƯỢNG TRONG KHO
-            // --------------------------------------------------------
             int currentQtyInCart = cartItem != null ? cartItem.Quantity : 0;
-            if (currentQtyInCart + 1 > product.StockQuantity)
+            if (currentQtyInCart + quantity > product.StockQuantity)
             {
-                TempData["ErrorMsg"] = $"Không thể thêm! Kho chỉ còn {product.StockQuantity} sản phẩm '{product.Name}'. Bạn đang có {currentQtyInCart} sản phẩm này trong giỏ.";
-                return RedirectToAction("Index"); // Đẩy về trang Giỏ hàng để xem lỗi
+                TempData["ErrorMsg"] = $"Không thể thêm! Kho chỉ còn {product.StockQuantity} sản phẩm. Bạn đang có {currentQtyInCart} sản phẩm loại này trong giỏ.";
+                return RedirectToAction("Index"); 
             }
 
-            // NẾU VƯỢT QUA 2 CHỐT CHẶN TRÊN THÌ CHO PHÉP THÊM BÌNH THƯỜNG
             if (cartItem == null)
             {
+                string variantName = finalPrice > product.Price ? " (Bản Lớn)" : " (Tiêu chuẩn)";
                 cart.Add(new CartItem
                 {
                     ProductId = product.Id,
-                    ProductName = product.Name,
-                    Price = product.Price,
-                    Quantity = 1,
+                    ProductName = product.Name + variantName,
+                    Price = finalPrice,                      
+                    Quantity = quantity,
                     ImageUrl = product.ImageUrl
                 });
             }
             else
             {
-                cartItem.Quantity += 1;
+                cartItem.Quantity += quantity;
             }
 
             HttpContext.Session.SetJson("Cart", cart);
             TempData["SuccessMsg"] = $"Đã thêm {product.Name} vào giỏ!";
             
-            return RedirectToAction("Index"); 
+            string referer = Request.Headers["Referer"].ToString();
+            if (!string.IsNullOrEmpty(referer))
+            {
+                return Redirect(referer); 
+            }
+            
+            return RedirectToAction("Index", "Home"); 
         }
 
+        // ==========================================
+        // 3. CẬP NHẬT SỐ LƯỢNG TRONG GIỎ (+ / -)
+        // ==========================================
+        public IActionResult UpdateQuantity(int id, int quantity)
+        {
+            var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart");
+            if (cart != null)
+            {
+                var cartItem = cart.FirstOrDefault(c => c.ProductId == id);
+                if (cartItem != null)
+                {
+                    var product = _context.Products.Find(id);
+                    if (product != null && quantity <= product.StockQuantity)
+                    {
+                        cartItem.Quantity = quantity;
+                        if (cartItem.Quantity <= 0) 
+                        {
+                            cart.Remove(cartItem);
+                        }
+                        HttpContext.Session.SetJson("Cart", cart);
+                    }
+                    else
+                    {
+                        TempData["ErrorMsg"] = "Số lượng vượt quá tồn kho!";
+                    }
+                }
+            }
+            return RedirectToAction("Index");
+        }
+
+        // ==========================================
+        // 4. XÓA SẢN PHẨM KHỎI GIỎ
+        // ==========================================
+        [HttpGet]
         public IActionResult RemoveFromCart(int id)
         {
             var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart");
@@ -86,6 +138,9 @@ namespace VelvySkinWeb.Controllers
             return RedirectToAction("Index");
         }
        
+        // ==========================================
+        // 5. LÀM SẠCH GIỎ HÀNG
+        // ==========================================
         public IActionResult ClearCart()
         {
             HttpContext.Session.Remove("Cart");
@@ -93,47 +148,93 @@ namespace VelvySkinWeb.Controllers
         }
 
         // ==========================================
-        // 5. HIỂN THỊ FORM THANH TOÁN (GET)
+        // 6. NHẬN NHỮNG MÓN ĐƯỢC CHECKBOX ĐỂ CHUẨN BỊ THANH TOÁN
         // ==========================================
-        // Bắt buộc khách phải Đăng nhập mới được vào trang Thanh toán
-        [Microsoft.AspNetCore.Authorization.Authorize] 
-        [HttpGet]
-        public IActionResult Checkout()
+        [HttpPost] 
+        [Authorize]
+        public IActionResult Checkout(List<int> selectedItems)
         {
-            var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart");
-            if (cart == null || !cart.Any())
+            var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart") ?? new List<CartItem>();
+            
+            if (selectedItems == null || !selectedItems.Any())
             {
-                return RedirectToAction("Index"); // Giỏ trống thì đá về trang Giỏ hàng
+                TempData["ErrorMsg"] = "Bạn chưa chọn sản phẩm nào để thanh toán!";
+                return RedirectToAction("Index");
             }
 
-            ViewBag.GrandTotal = cart.Sum(item => item.Total);
-            return View(new Order()); // Trả về form trống cho khách điền
+            var itemsToCheckout = cart.Where(c => selectedItems.Contains(c.ProductId)).ToList();
+
+            if (itemsToCheckout.Count == 0)
+            {
+                TempData["ErrorMsg"] = "Sản phẩm đã chọn không hợp lệ hoặc không có trong giỏ!";
+                return RedirectToAction("Index");
+            }
+
+            HttpContext.Session.SetJson("ItemsToCheckout", itemsToCheckout);
+            return RedirectToAction("Checkout"); 
         }
 
         // ==========================================
-        // 6. XỬ LÝ CHỐT ĐƠN VÀ TRỪ TỒN KHO (POST)
+        // 7. TRANG THANH TOÁN (TỰ ĐỘNG ĐIỀN THÔNG TIN KHÁCH CŨ)
         // ==========================================
-        [Microsoft.AspNetCore.Authorization.Authorize]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Checkout(Order order)
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Checkout()
         {
-            var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart");
-            if (cart == null || !cart.Any()) return RedirectToAction("Index");
+            var itemsToCheckout = HttpContext.Session.GetJson<List<CartItem>>("ItemsToCheckout");
+            
+            if (itemsToCheckout == null || !itemsToCheckout.Any())
+            {
+                TempData["ErrorMsg"] = "Không có sản phẩm nào để thanh toán!";
+                return RedirectToAction("Index");
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var lastOrder = await _context.Orders
+                                          .Where(o => o.UserId == userId)
+                                          .OrderByDescending(o => o.OrderDate)
+                                          .FirstOrDefaultAsync();
+
+            if (lastOrder != null)
+            {
+                ViewBag.OldName = lastOrder.CustomerName;
+                ViewBag.OldPhone = lastOrder.PhoneNumber;
+                ViewBag.OldAddress = lastOrder.ShippingAddress;
+            }
+            else
+            {
+                ViewBag.OldName = ""; ViewBag.OldPhone = ""; ViewBag.OldAddress = "";
+            }
+
+            return View(itemsToCheckout);
+        }
+
+        // ==========================================
+        // 8. XỬ LÝ CHỐT ĐƠN VÀ TRỪ TỒN KHO (TẠO ĐƠN HÀNG THẬT)
+        // ==========================================
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PlaceOrder(Order order, string PaymentMethod)
+        {
+            var itemsToCheckout = HttpContext.Session.GetJson<List<CartItem>>("ItemsToCheckout");
+            if (itemsToCheckout == null || !itemsToCheckout.Any()) return RedirectToAction("Index");
 
             if (ModelState.IsValid)
             {
-                // 1. Ghi thông tin Đơn Hàng (Order)
-                order.UserId = User.Identity?.Name; // Lấy Email tài khoản đang đăng nhập
+                order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 order.OrderDate = DateTime.Now;
                 order.OrderStatus = "Pending";
-                order.TotalAmount = cart.Sum(item => item.Total);
+                order.PaymentMethod = PaymentMethod;
+
+                decimal subTotal = itemsToCheckout.Sum(item => item.Total);
+                decimal shippingFee = (subTotal > 0 && subTotal < 500000) ? 30000 : 0;
+                order.TotalAmount = subTotal + shippingFee; 
 
                 _context.Orders.Add(order);
-                await _context.SaveChangesAsync(); // Lưu để sinh ra mã OrderId
+                await _context.SaveChangesAsync(); 
 
-                // 2. Ghi chi tiết từng chai mỹ phẩm (OrderDetail) & Trừ Tồn Kho
-                foreach (var item in cart)
+                foreach (var item in itemsToCheckout)
                 {
                     var orderDetail = new OrderDetail
                     {
@@ -144,35 +245,61 @@ namespace VelvySkinWeb.Controllers
                     };
                     _context.OrderDetails.Add(orderDetail);
 
-                    // THUẬT TOÁN TRỪ TỒN KHO
                     var productInDb = await _context.Products.FindAsync(item.ProductId);
                     if (productInDb != null)
                     {
-                        productInDb.StockQuantity -= item.Quantity; // Lấy tồn kho trừ đi số lượng khách mua
+                        productInDb.StockQuantity -= item.Quantity;
                         _context.Products.Update(productInDb);
                     }
                 }
                 
-                await _context.SaveChangesAsync(); // Lưu toàn bộ xuống SQL
+                await _context.SaveChangesAsync(); 
 
-                // 3. Xóa sạch giỏ hàng trên RAM
-                HttpContext.Session.Remove("Cart");
+                var mainCart = HttpContext.Session.GetJson<List<CartItem>>("Cart");
+                if (mainCart != null)
+                {
+                    mainCart.RemoveAll(c => itemsToCheckout.Any(checkoutItem => checkoutItem.ProductId == c.ProductId));
+                    HttpContext.Session.SetJson("Cart", mainCart); 
+                }
 
-                // 4. Chuyển hướng sang trang Thành công
-                return RedirectToAction("OrderSuccess", new { id = order.Id });
+                HttpContext.Session.Remove("ItemsToCheckout");
+
+                if (PaymentMethod == "Chuyển khoản")
+                {
+                    return RedirectToAction("BankTransfer", new { id = order.Id });
+                }
+                
+                // ĐÃ FIX: Chuyền thêm biến pm cho COD
+                return RedirectToAction("OrderSuccess", new { id = order.Id, pm = PaymentMethod });
             }
 
-            ViewBag.GrandTotal = cart.Sum(item => item.Total);
-            return View(order);
+            return View("Checkout", itemsToCheckout); 
         }
 
         // ==========================================
-        // 7. TRANG THÔNG BÁO THÀNH CÔNG
+        // TRANG THANH TOÁN CHUYỂN KHOẢN (BƯỚC ĐỆM)
         // ==========================================
-        public IActionResult OrderSuccess(int id)
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> BankTransfer(int id)
         {
-            ViewBag.OrderId = id;
-            return View();
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return NotFound();
+
+            return View(order);
+        }
+        
+        // ==========================================
+        // 9. TRANG THÔNG BÁO THÀNH CÔNG (ĐÃ UPDATE ĐỂ MÓC DATA)
+        // ==========================================
+        [HttpGet]
+        public async Task<IActionResult> OrderSuccess(int id, string pm = "Thanh toán khi nhận hàng (COD)")
+        {
+            var order = await _context.Orders.FindAsync(id);
+            if (order == null) return RedirectToAction("Index", "Home");
+
+            ViewBag.PaymentMethod = pm;
+            return View(order);
         }
     }
 }

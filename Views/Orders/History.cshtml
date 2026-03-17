@@ -1,0 +1,148 @@
+@model List<VelvySkinWeb.Models.Order>
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+}
+
+<style>
+    /* Chỉ giữ lại CSS của phần Đơn hàng, bỏ Header/Footer vì _Layout đã lo */
+    .section-container { padding: 50px 5%; text-align: center; min-height: 60vh; font-family: 'Montserrat', sans-serif;}
+    
+    .order-tabs { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+    .order-tab-btn { background: white; border: 1px solid #ddd; padding: 12px 28px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.3s; color: #666; }
+    .order-tab-btn.active, .order-tab-btn:hover { background: var(--primary-mint); color: white; border-color: var(--primary-mint); }
+
+    .order-list { max-width: 1000px; margin: 0 auto; }
+
+    .order-card { background: white; border-radius: 16px; padding: 25px; border: 1px solid #f0f0f0; margin-bottom: 25px; transition: 0.3s; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+    .order-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.08); border-color: var(--primary-mint); }
+
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%; flex-wrap: wrap; gap: 10px; }
+    .order-id { font-weight: 700; color: var(--primary-mint); font-size: 15px; }
+    
+    .status-badge { padding: 6px 18px; border-radius: 30px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-shipping { background: #d1ecf1; color: #0c5460; }
+    .status-delivered { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+
+    .order-date { color: #888; font-size: 13px; }
+
+    .order-items { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; width: 100%;}
+    .order-item { display: flex; align-items: center; gap: 12px; background: #f9f9f9; padding: 8px 14px; border-radius: 10px; }
+    .order-item img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
+    .order-item span { font-size: 13px; font-weight: 500; color: #444;}
+
+    .order-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding-top: 20px; border-top: 1px solid #eee; width: 100%;}
+    .order-total { font-size: 16px; font-weight: 700; color: #222; }
+    .order-total span { color: var(--primary-mint); font-size: 18px;}
+
+    .order-actions { display: flex; gap: 12px; }
+    .btn-order-detail { background: white; color: var(--primary-mint); border: 1px solid var(--primary-mint); padding: 10px 24px; border-radius: 50px; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.3s; }
+    .btn-order-detail:hover { background: var(--primary-mint); color: white; }
+    
+    .empty-order { padding: 60px 0; color: #888; text-align: center; width: 100%;}
+    .empty-order i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
+</style>
+
+<div class="breadcrumb" style="padding: 20px 5%; background: #f9f9f9; font-size: 18px; color: #ccc; margin-bottom: 0; display: flex; align-items: center; gap: 10px;">
+    <a asp-controller="Home" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-house"></i> Trang chủ
+    </a> 
+    <span>/</span> 
+    <span style="color: #333; font-weight: 700;">Đơn hàng của tôi</span>
+</div>
+
+<div class="section-container">
+    <h2 style="font-family:'Playfair Display'; font-size: 36px; margin-bottom: 10px; color: #222;">Đơn hàng của tôi</h2>
+    <p style="color:#888; margin-bottom:40px; max-width: 600px; margin-left: auto; margin-right: auto;">
+        Theo dõi tình trạng đơn hàng và xem lại lịch sử mua sắm của bạn
+    </p>
+
+    <div class="order-tabs">
+        <button class="order-tab-btn active" onclick="filterOrders('all', this)">Tất cả đơn hàng</button>
+        <button class="order-tab-btn" onclick="filterOrders('pending', this)">Chờ xác nhận</button>
+        <button class="order-tab-btn" onclick="filterOrders('shipping', this)">Đang giao</button>
+        <button class="order-tab-btn" onclick="filterOrders('delivered', this)">Đã giao</button>
+        <button class="order-tab-btn" onclick="filterOrders('cancelled', this)">Đã hủy</button>
+    </div>
+
+    <div class="order-list" id="orderList">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="empty-order">
+                <i class="fa-solid fa-box-open"></i>
+                <h3>Bạn chưa có đơn hàng nào</h3>
+                <p>Hãy dạo quanh cửa hàng và chọn cho mình những sản phẩm ưng ý nhé!</p>
+                <a asp-controller="Products" asp-action="Skincare" style="display:inline-block; margin-top: 15px; padding: 12px 30px; background: var(--primary-mint); color: white; border-radius: 30px; text-decoration: none; font-weight: bold;">Mua sắm ngay</a>
+            </div>
+        }
+        else
+        {
+            foreach (var order in Model)
+            {
+                string badgeClass = "";
+                string badgeText = "";
+                string dataStatus = "";
+
+                // ĐÃ FIX SẠCH SẼ TẤT CẢ order.Status THÀNH order.OrderStatus
+                switch (order.OrderStatus?.ToLower()) 
+                {
+                    case "pending": case "chờ xác nhận": 
+                        badgeClass = "status-pending"; badgeText = "Chờ xác nhận"; dataStatus = "pending"; break;
+                    case "shipping": case "đang giao": 
+                        badgeClass = "status-shipping"; badgeText = "Đang giao"; dataStatus = "shipping"; break;
+                    case "completed": case "delivered": case "đã giao": case "thành công":
+                        badgeClass = "status-delivered"; badgeText = "Đã giao"; dataStatus = "delivered"; break;
+                    case "cancelled": case "đã hủy":
+                        badgeClass = "status-cancelled"; badgeText = "Đã hủy"; dataStatus = "cancelled"; break;
+                    default:
+                        badgeClass = "status-pending"; badgeText = order.OrderStatus ?? "Chờ xử lý"; dataStatus = "pending"; break;
+                }
+
+                <div class="order-card" data-status="@dataStatus">
+                    <div class="order-header">
+                        <span class="order-id">Mã đơn: #@order.Id</span>
+                        <span class="status-badge @badgeClass">@badgeText</span>
+                    </div>
+                    <p class="order-date"><strong>Ngày đặt:</strong> @order.OrderDate.ToString("dd/MM/yyyy • HH:mm")</p>
+                    
+                    <div class="order-items">
+                        @if (order.OrderDetails != null)
+                        {
+                            foreach(var detail in order.OrderDetails)
+                            {
+                                <div class="order-item">
+                                    <img src="@(detail.Product?.ImageUrl ?? "https://via.placeholder.com/50")" alt="Product">
+                                    <span>@(detail.Product?.Name ?? "Sản phẩm") &times; @detail.Quantity</span>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="order-footer">
+                        <div class="order-total">Tổng thanh toán: <span>@order.TotalAmount.ToString("N0")đ</span></div>
+                        <div class="order-actions">
+                            <a asp-action="OrderInfo" asp-route-id="@order.Id" class="btn-order-detail">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<script>
+    function filterOrders(status, btn) {
+        document.querySelectorAll('.order-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const orders = document.querySelectorAll('.order-card');
+        orders.forEach(order => {
+            if (status === 'all') {
+                order.style.display = 'flex';
+            } else {
+                order.style.display = (order.getAttribute('data-status') === status) ? 'flex' : 'none';
+            }
+        });
+    }
+</script>

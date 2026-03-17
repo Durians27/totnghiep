@@ -15,16 +15,14 @@
                 <div class="row">
                     <div class="col-md-6 form-group mb-3">
                         <label asp-for="Name" class="control-label fw-bold">Tên sản phẩm</label>
-                        <input asp-for="Name" class="form-control" placeholder="VD: Sữa rửa mặt Cetaphil" />
+                        <input asp-for="Name" class="form-control" placeholder="" />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
-                    <div class="col-md-6 form-group mb-3">
-                        <label asp-for="Price" class="control-label fw-bold">Giá bán (VNĐ)</label>
-                        <input asp-for="Price" type="number" class="form-control" placeholder="VD: 250000" />
-                        <span asp-validation-for="Price" class="text-danger"></span>
-                    </div>
-                </div>
-
+                    <div class="form-group mb-3">
+    <label asp-for="Price" class="control-label fw-bold">Giá bán (VNĐ)</label>
+    <input asp-for="Price" class="form-control" type="number" min="0" step="1" />
+    <span asp-validation-for="Price" class="text-danger"></span>
+</div>
                 <div class="row">
                     <div class="col-md-6 form-group mb-3">
                         <label asp-for="CategoryId" class="control-label fw-bold">Thuộc danh mục nào?</label>
@@ -34,7 +32,7 @@
                     </div>
                     <div class="col-md-6 form-group mb-3">
                         <label asp-for="StockQuantity" class="control-label fw-bold">Số lượng nhập kho</label>
-                        <input asp-for="StockQuantity" type="number" class="form-control" value="100" />
+                        <input asp-for="StockQuantity" type="number" class="form-control" value="" />
                         <span asp-validation-for="StockQuantity" class="text-danger"></span>
                     </div>
                 </div>
@@ -42,7 +40,6 @@
                 <div class="form-group mb-3">
                     <label asp-for="ImageFile" class="control-label fw-bold">Tải ảnh sản phẩm lên</label>
                     <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" required />
-                    <small class="text-muted">Vui lòng chọn ảnh định dạng JPG, PNG.</small>
                 </div>
 
                 <div class="form-group mb-4">
@@ -51,6 +48,25 @@
                 </div>
 
                 <div class="form-group">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                <label class="control-label" style="font-weight: 600; color: var(--dark-mint);">Mô tả ngắn (Hiển thị ngay dưới giá tiền)</label>
+                <textarea asp-for="ShortDescription" class="form-control" rows="2" placeholder="Ví dụ: Sữa rửa mặt dạng bọt siêu mịn giúp làm sạch sâu..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label class="control-label" style="font-weight: 600; color: var(--dark-mint);">Mô tả chi tiết (Tab 1)</label>
+                <textarea asp-for="FullDescription" class="form-control" rows="4" placeholder="Ghi công dụng, cơ chế hoạt động chi tiết (có thể xuống dòng)..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label class="control-label" style="font-weight: 600; color: var(--dark-mint);">Thành phần (Tab 2)</label>
+                <textarea asp-for="Ingredients" class="form-control" rows="3" placeholder="Ví dụ: Nước, Glycerin, Trà xanh..."></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label class="control-label" style="font-weight: 600; color: var(--dark-mint);">Hướng dẫn sử dụng (Tab 3)</label>
+                <textarea asp-for="UsageInstructions" class="form-control" rows="3" placeholder="Bước 1: Rửa mặt... Bước 2: Thoa kem..."></textarea>
+            </div>
                     <input type="submit" value="Lưu Sản Phẩm" class="btn btn-lg w-100 mb-2" style="background-color: var(--primary-mint); color: white; font-weight: bold;" />
                     <a asp-action="Index" class="btn btn-outline-secondary w-100">Hủy và quay lại danh sách</a>
                 </div>

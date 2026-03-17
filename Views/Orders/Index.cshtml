@@ -12,7 +12,7 @@
         <a asp-action="Index" asp-route-status="all" class="btn fw-bold @(currentStatus == "all" ? "btn-dark" : "btn-outline-dark")">
             <i class="fa-solid fa-layer-group"></i> Tất cả đơn
         </a>
-        <a asp-action="Index" asp-route-status="pending" class="btn fw-bold @(currentStatus == "pending" ? "btn-warning" : "btn-outline-warning text-dark")">
+        <a asp-action="Index" asp-route-status="pending" class="btn fw-bold @(currentStatus == "pending" ? "btn-warning text-dark" : "btn-outline-warning text-dark")">
             <i class="fa-solid fa-box"></i> Chờ xử lý mới
         </a>
         <a asp-action="Index" asp-route-status="shipping" class="btn fw-bold @(currentStatus == "shipping" ? "btn-info text-white" : "btn-outline-info text-dark")">
@@ -60,15 +60,21 @@
                             <td class="fw-bold">@item.TotalAmount.ToString("N0") đ</td>
                             <td>
                                 @if(item.OrderStatus == "Pending") { <span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="fa-solid fa-clock"></i> Chờ xử lý</span> }
-                                else if(item.OrderStatus == "Shipping") { <span class="badge bg-info text-dark px-3 py-2 rounded-pill"><i class="fa-solid fa-truck"></i> Đang giao</span> }
+                                else if(item.OrderStatus == "Shipping") { <span class="badge bg-info text-white px-3 py-2 rounded-pill"><i class="fa-solid fa-truck"></i> Đang giao</span> }
                                 else if(item.OrderStatus == "Completed") { <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fa-solid fa-check"></i> Hoàn thành</span> }
                                 else if(item.OrderStatus == "Cancelled") { <span class="badge bg-danger px-3 py-2 rounded-pill"><i class="fa-solid fa-xmark"></i> Đã hủy</span> }
                                 else { <span class="badge bg-secondary px-3 py-2 rounded-pill">@item.OrderStatus</span> }
                             </td>
-                            <td class="text-center">
+                            <td class="text-center d-flex justify-content-center gap-2 align-items-center" style="border-bottom: none;">
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary fw-bold" style="border-radius: 20px;">
-                                    Xử lý ngay <i class="fa-solid fa-arrow-right"></i>
+                                    Xử lý <i class="fa-solid fa-arrow-right"></i>
                                 </a>
+
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('CẢNH BÁO: Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng #@item.Id này không? Hành động này không thể hoàn tác!');" style="margin: 0;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger fw-bold" style="border-radius: 20px;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     }

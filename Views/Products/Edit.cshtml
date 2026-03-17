@@ -25,6 +25,11 @@
                         <input asp-for="Price" type="number" class="form-control" />
                         <span asp-validation-for="Price" class="text-danger"></span>
                     </div>
+                    <div class="form-group mb-3">
+    <label asp-for="StockQuantity" class="control-label fw-bold">Số lượng tồn kho</label>
+    <input asp-for="StockQuantity" class="form-control" type="number" min="0" style="border-radius: 8px;" />
+    <span asp-validation-for="StockQuantity" class="text-danger"></span>
+</div>
                 </div>
 
                 <div class="row">
@@ -32,10 +37,7 @@
                         <label asp-for="CategoryId" class="control-label fw-bold">Danh mục</label>
                         <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId"></select>
                     </div>
-                    <div class="col-md-6 form-group mb-3">
-                        <label asp-for="StockQuantity" class="control-label fw-bold">Số lượng tồn kho</label>
-                        <input asp-for="StockQuantity" type="number" class="form-control" />
-                    </div>
+                   
                 </div>
 
                 <div class="form-group mb-3">
@@ -47,7 +49,29 @@
                     <label asp-for="ImageFile" class="control-label">Đổi ảnh mới (Bỏ trống nếu muốn giữ nguyên)</label>
                     <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
                 </div>
+<div class="form-group" style="margin-bottom: 15px;">
+                <label asp-for="ShortDescription" class="control-label" style="font-weight: 600; color: var(--dark-mint);">Mô tả ngắn (Hiển thị ngay dưới giá tiền)</label>
+                <textarea asp-for="ShortDescription" class="form-control" rows="2" placeholder="Ví dụ: Sữa rửa mặt dạng bọt siêu mịn giúp làm sạch sâu..."></textarea>
+                <span asp-validation-for="ShortDescription" class="text-danger"></span>
+            </div>
 
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label asp-for="FullDescription" class="control-label" style="font-weight: 600; color: var(--dark-mint);">Mô tả chi tiết (Tab 1)</label>
+                <textarea asp-for="FullDescription" class="form-control" rows="4" placeholder="Ghi công dụng, cơ chế hoạt động chi tiết (có thể xuống dòng)..."></textarea>
+                <span asp-validation-for="FullDescription" class="text-danger"></span>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label asp-for="Ingredients" class="control-label" style="font-weight: 600; color: var(--dark-mint);">Thành phần (Tab 2)</label>
+                <textarea asp-for="Ingredients" class="form-control" rows="3" placeholder="Ví dụ: Nước, Glycerin, Trà xanh..."></textarea>
+                <span asp-validation-for="Ingredients" class="text-danger"></span>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label asp-for="UsageInstructions" class="control-label" style="font-weight: 600; color: var(--dark-mint);">Hướng dẫn sử dụng (Tab 3)</label>
+                <textarea asp-for="UsageInstructions" class="form-control" rows="3" placeholder="Bước 1: Rửa mặt... Bước 2: Thoa kem..."></textarea>
+                <span asp-validation-for="UsageInstructions" class="text-danger"></span>
+            </div>
                 <div class="form-group">
                     <input type="submit" value="Lưu Thay Đổi" class="btn btn-velvy btn-lg w-100 mb-2" />
                     <a asp-action="Index" class="btn btn-outline-secondary w-100">Hủy và quay lại</a>

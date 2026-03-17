@@ -1,4 +1,4 @@
-#nullable enable
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace VelvySkinWeb.Models
@@ -8,12 +8,14 @@ namespace VelvySkinWeb.Models
         [Key]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Tên danh mục không được để trống")]
-        [MaxLength(100)]
-        public string Name { get; set; } = string.Empty;
-        public string? Description { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập tên danh mục")]
+        [Display(Name = "Tên danh mục")]
+        public string Name { get; set; }
 
-        // Mối quan hệ 1-Nhiều: 1 Danh mục có nhiều Sản phẩm
-        public ICollection<Product> Products { get; set; } = new List<Product>();
+        [Display(Name = "Mô tả")]
+        public string Description { get; set; }
+
+        // Sợi dây liên kết: 1 Danh mục có thể chứa NHIỀU Sản phẩm
+        public ICollection<Product>? Products { get; set; }
     }
 }

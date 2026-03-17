@@ -1,0 +1,90 @@
+@model VelvySkinWeb.Models.Order
+@{
+    ViewData["Title"] = "Thanh toán chuyển khoản";
+}
+
+<style>
+    /* CHỈ GIỮ LẠI CSS PHẦN RUỘT */
+    .bank-container { display: grid; grid-template-columns: 1fr 400px; gap: 40px; padding: 30px 5%; max-width: 1400px; margin: 0 auto; font-family: 'Montserrat', sans-serif;}
+    .page-title { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 10px; color: #222; grid-column: 1 / -1; }
+
+    .bank-info { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); border: 1px solid #eee;}
+    .bank-info h3 { font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; color: var(--dark-mint);}
+    .bank-details { margin-bottom: 20px; }
+    .bank-details p { margin-bottom: 10px; font-size: 15px; color: #444;}
+    .bank-details strong { color: #222; font-weight: 600;}
+    
+    .qr-code { text-align: center; margin-bottom: 20px; padding: 20px; background: #fdfdfd; border-radius: 10px; border: 1px dashed #ddd;}
+    .qr-code img { max-width: 250px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: white;}
+    .note { background: var(--light-mint); padding: 15px; border-radius: 8px; color: var(--dark-mint); font-size: 14px; font-weight: 500; line-height: 1.6;}
+
+    .order-summary { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); height: fit-content; border: 1px solid #eee;}
+    .summary-item { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 15px; color: #555;}
+    .summary-total { font-weight: 700; font-size: 20px; color: var(--accent-pink); border-top: 1px solid #eee; padding-top: 15px; margin-top: 15px; }
+    
+    .btn-confirm { display: block; width: 100%; padding: 15px; background: var(--dark-mint); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 20px; text-align: center; text-decoration: none;}
+    .btn-confirm:hover { background: var(--primary-mint); box-shadow: 0 5px 15px rgba(46,196,182,0.3); color: white; transform: translateY(-2px);}
+
+    @@media (max-width: 992px) {
+        .bank-container { grid-template-columns: 1fr; }
+        .order-summary { margin-top: 0px; }
+    }
+</style>
+
+<div class="breadcrumb" style="padding: 20px 5%; background: #f9f9f9; font-size: 18px; color: #ccc; margin-bottom: 0; display: flex; align-items: center; gap: 10px;">
+    <a asp-controller="Home" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-house"></i> Trang chủ
+    </a> 
+    <span>/</span> 
+    <a asp-controller="Cart" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500;">Giỏ hàng</a> 
+    <span>/</span> 
+    <span style="color: #333; font-weight: 700;">Chuyển khoản ngân hàng</span>
+</div>
+
+<div class="bank-container">
+    <h1 class="page-title">Thanh Toán Đơn Hàng</h1>
+    
+    <div class="bank-info">
+        <h3><i class="fa-solid fa-building-columns me-2"></i> Hướng Dẫn Chuyển Khoản</h3>
+        <div class="bank-details">
+            <p><strong>Ngân hàng:</strong> Vietcombank</p>
+            <p><strong>Số tài khoản:</strong> 0123456789</p>
+            <p><strong>Chủ tài khoản:</strong> Công ty TNHH Velvy Skin</p>
+            <p><strong>Số tiền cần chuyển:</strong> <span style="color: var(--accent-pink); font-size: 20px; font-weight: bold;">@Model.TotalAmount.ToString("N0")đ</span></p>
+            <p><strong>Nội dung chuyển khoản:</strong> <span style="background: #eee; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; color: var(--dark-mint);">THANHTOAN @Model.Id</span></p>
+        </div>
+        
+        <div class="qr-code">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?data=STK:0123456789;NH:Vietcombank;Amount:@Model.TotalAmount;Content:THANHTOAN @Model.Id&size=250x250" alt="QR Code Thanh Toán">
+            <p style="margin-top: 15px; color: #666; font-size: 14px;"><i class="fa-solid fa-qrcode"></i> Mở App ngân hàng quét mã QR để chuyển khoản nhanh</p>
+        </div>
+        
+        <div class="note">
+            <i class="fa-solid fa-circle-info"></i> Vui lòng chuyển khoản với nội dung chính xác để hệ thống xác nhận tự động. Đơn hàng của bạn sẽ được chuyển sang trạng thái "Đang chuẩn bị" ngay khi chúng tôi nhận được thanh toán.
+        </div>
+    </div>
+
+    <div class="order-summary">
+        <h3><i class="fa-solid fa-receipt me-2"></i> Thông Tin Đơn Hàng</h3>
+        <div class="summary-item">
+            <span>Mã đơn hàng</span>
+            <span style="font-weight: 600;">#@Model.Id</span>
+        </div>
+        <div class="summary-item">
+            <span>Người đặt</span>
+            <span style="font-weight: 600;">@Model.CustomerName</span>
+        </div>
+        <div class="summary-item">
+            <span>Ngày đặt</span>
+            <span>@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</span>
+        </div>
+        <div class="summary-item summary-total">
+            <span>Tổng thanh toán</span>
+            <span>@Model.TotalAmount.ToString("N0")đ</span>
+        </div>
+        
+        <a asp-controller="Cart" asp-action="OrderSuccess" asp-route-id="@Model.Id" asp-route-pm="Chuyển khoản ngân hàng" class="btn-confirm">
+            <i class="fa-solid fa-check me-2"></i> Tôi đã chuyển khoản xong
+        </a>
+    </div>
+</div>
