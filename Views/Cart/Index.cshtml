@@ -4,7 +4,6 @@
 }
 
 <style>
-    /* --- CSS CHUẨN CỦA NHƯ --- */
     .cart-container { padding: 30px 5%; max-width: 1400px; margin: 0 auto; min-height: 50vh; font-family: 'Montserrat', sans-serif;}
     .page-title { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 10px; color: #222; }
 
@@ -67,12 +66,6 @@
             <i class="fa-solid fa-triangle-exclamation"></i> @TempData["ErrorMsg"]
         </div>
     }
-    @if (TempData["SuccessMsg"] != null)
-    {
-        <div class="alert alert-success" style="border-radius: 10px; background: #f0fdf4; color: #198754; padding: 15px; margin-bottom: 20px; border: 1px solid #d1e7dd;">
-            <i class="fa-solid fa-check-circle"></i> @TempData["SuccessMsg"]
-        </div>
-    }
 
     @if (Model == null || !Model.Any())
     {
@@ -123,9 +116,7 @@
                             <td data-label="Số lượng">
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <a asp-controller="Cart" asp-action="UpdateQuantity" asp-route-id="@item.ProductId" asp-route-quantity="@(item.Quantity - 1)" style="text-decoration: none; background: #eee; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; border-radius: 5px; color: #333; font-weight: bold;">-</a>
-                                    
                                     <span style="font-weight: bold; width: 20px; text-align: center;">@item.Quantity</span>
-                                    
                                     <a asp-controller="Cart" asp-action="UpdateQuantity" asp-route-id="@item.ProductId" asp-route-quantity="@(item.Quantity + 1)" style="text-decoration: none; background: #eee; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; border-radius: 5px; color: #333; font-weight: bold;">+</a>
                                 </div>
                             </td>
@@ -143,10 +134,33 @@
             </table>
 
             <div class="cart-bottom-area">
-                <div>
+                <div style="flex: 1;">
                     <a asp-controller="Cart" asp-action="ClearCart" class="btn-clear-cart" onclick="return confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng không?');">
                         <i class="fa-solid fa-trash-can"></i> Xóa toàn bộ giỏ hàng
                     </a>
+
+                    <div style="background: #fdfdfd; padding: 20px; border-radius: 16px; border: 1px solid #f0f0f0; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); max-width: 500px;">
+                        <h6 style="font-weight: 700; margin-bottom: 15px; color: var(--dark-mint);">
+                            <i class="fa-solid fa-ticket" style="margin-right: 5px;"></i> Khuyến mãi & Ưu đãi
+                        </h6>
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <input type="text" id="manualCouponCode" placeholder="Nhập mã giảm giá..." style="flex: 1; padding: 10px 15px; border: 1px solid #eee; border-radius: 8px; text-transform: uppercase; outline: none;">
+                            <button type="button" onclick="applyCoupon(document.getElementById('manualCouponCode').value)" style="background: var(--text-gray); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s;">Áp dụng</button>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <hr style="flex: 1; border-color: #eee;">
+                            <span style="font-size: 12px; color: #999; font-weight: 600; text-transform: uppercase;">HOẶC</span>
+                            <hr style="flex: 1; border-color: #eee;">
+                        </div>
+
+                        <button type="button" data-bs-toggle="modal" data-bs-target="#voucherModal" style="width: 100%; margin-top: 15px; background: var(--light-mint); color: var(--dark-mint); border: 1px dashed var(--primary-mint); padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-list-check"></i> Chọn mã từ Kho Voucher
+                        </button>
+
+                        <div id="couponMessage" style="margin-top: 15px; font-size: 13px; font-weight: 600; display: none;"></div>
+                    </div>
                 </div>
 
                 <div class="cart-summary">
@@ -155,10 +169,17 @@
                         <span>Tạm tính (<span id="countSelected">0</span> SP)</span>
                         <span style="font-weight: 600;" id="subTotalDisplay">0đ</span>
                     </div>
+                    
+                    <div class="summary-row" id="discountRow" style="display: none;">
+                        <span>Giảm giá (<span id="appliedCodeText" style="color:var(--primary-mint);font-weight:bold;"></span>)</span>
+                        <span id="discountDisplay" style="color: var(--primary-mint); font-weight: bold; font-size: 16px;">-0đ</span>
+                    </div>
+
                     <div class="summary-row">
                         <span>Phí vận chuyển</span>
                         <span id="shippingDisplay">0đ</span>
                     </div>
+
                     <div class="summary-row summary-total">
                         <span>Tổng cộng</span>
                         <span id="finalTotalDisplay">0đ</span>
@@ -174,48 +195,55 @@
     }
 </div>
 
-<script>
-    // JAVASCRIPT XỬ LÝ CHECKBOX VÀ TÍNH TIỀN TỰ ĐỘNG
+<div class="modal fade" id="voucherModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: 20px; border: none;">
+            <div class="modal-header" style="background: var(--primary-mint); color: white; padding: 15px 20px; border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title" style="font-size: 16px; font-weight: 700;">Chọn Mã Khuyến Mãi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="background: #f8f9fa; padding: 20px;" id="voucherListContainer">
+                <p style="text-align: center; color: #888; font-size: 14px;">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    let currentSubTotal = 0;      // Lưu giữ tổng tiền chưa giảm
+    let currentDiscount = 0;      // Số tiền đang được giảm
+    let appliedCouponCode = "";   // Tên mã đang xài
+    let appliedDiscountType = ""; // 🔥 Biến mới: Lưu loại mã (Percent, Amount, Freeship)
+
     function formatMoney(amount) {
         return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
     }
 
+    // ================= CỤM 1: XỬ LÝ CHECKBOX =================
     function toggleAll(source) {
         const checkboxes = document.querySelectorAll('.item-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = source.checked;
-        });
+        checkboxes.forEach(cb => { cb.checked = source.checked; });
         calculateTotal();
     }
 
     function calculateTotal() {
         const checkboxes = document.querySelectorAll('.item-checkbox');
         const btnCheckout = document.getElementById('btnCheckout');
-        let subTotal = 0;
+        let newSubTotal = 0;
         let countSelected = 0;
 
         checkboxes.forEach(cb => {
             if (cb.checked) {
-                subTotal += parseFloat(cb.getAttribute('data-price'));
+                newSubTotal += parseFloat(cb.getAttribute('data-price'));
                 countSelected++;
             }
         });
 
-        // Cập nhật số lượng SP đã chọn
+        currentSubTotal = newSubTotal;
         document.getElementById('countSelected').innerText = countSelected;
-
-        // Tính phí ship (Dưới 500k = 30k ship)
-        let shippingFee = 0;
-        if (subTotal > 0 && subTotal < 500000) {
-            shippingFee = 30000;
-        }
-
-        let finalTotal = subTotal + shippingFee;
-
-        // Hiển thị lên màn hình
-        document.getElementById('subTotalDisplay').innerText = formatMoney(subTotal);
-        document.getElementById('shippingDisplay').innerText = shippingFee === 0 ? (subTotal > 0 ? "Miễn phí" : "0đ") : formatMoney(shippingFee);
-        document.getElementById('finalTotalDisplay').innerText = formatMoney(finalTotal);
 
         // Bật/Tắt nút Thanh toán
         if (countSelected > 0) {
@@ -224,13 +252,162 @@
             btnCheckout.classList.add('disabled');
         }
 
-        // Đồng bộ cái nút Check All ở trên cùng
         const checkAllBox = document.getElementById('selectAll');
-        checkAllBox.checked = (countSelected === checkboxes.length) && (checkboxes.length > 0);
+        if(checkAllBox) {
+            checkAllBox.checked = (countSelected === checkboxes.length) && (checkboxes.length > 0);
+        }
+
+        // MỖI KHI ĐỔI CHECKBOX, PHẢI KIỂM TRA LẠI MÃ GIẢM GIÁ
+        if (appliedCouponCode !== "" && countSelected > 0) {
+            recheckCouponSilent(appliedCouponCode);
+        } else {
+            removeCouponSilent();
+        }
+
+        updateFinalDisplay();
     }
-    
-    // Gọi tính toán ngay lần đầu load trang (trường hợp khách back lại từ trang thanh toán)
+
+    // Cập nhật giao diện tiền nong tổng thể
+    function updateFinalDisplay() {
+        let shippingFee = 0;
+        // Chỉ tính ship khi có chọn hàng
+        if (currentSubTotal > 0 && currentSubTotal < 500000) {
+            shippingFee = 30000;
+        }
+
+        // 🔥 LOGIC FREESHIP NẰM Ở ĐÂY 🔥
+        if (appliedDiscountType === "Freeship") {
+            shippingFee = 0; // Xóa sổ phí vận chuyển
+            currentDiscount = 0; // Mã freeship thì ko giảm tiền hàng
+        } else {
+            // Tiền giảm ko đc lớn hơn tổng tiền hàng (chống lỗ vốn)
+            if(currentDiscount > currentSubTotal) currentDiscount = currentSubTotal;
+        }
+
+        let finalTotal = currentSubTotal - currentDiscount + shippingFee;
+
+        // Hiển thị ra HTML
+        document.getElementById('subTotalDisplay').innerText = formatMoney(currentSubTotal);
+        
+        // Nếu là Freeship thì in chữ cho đẹp
+        if (appliedDiscountType === "Freeship" && currentSubTotal > 0) {
+            document.getElementById('shippingDisplay').innerHTML = '<span style="color: #2ec4b6; font-weight: bold;">Miễn phí (Áp mã)</span>';
+        } else {
+            document.getElementById('shippingDisplay').innerText = shippingFee === 0 ? (currentSubTotal > 0 ? "Miễn phí" : "0đ") : formatMoney(shippingFee);
+        }
+
+        document.getElementById('finalTotalDisplay').innerText = formatMoney(finalTotal);
+
+        // Hiện/Ẩn dòng Giảm giá hàng hóa
+        const discountRow = document.getElementById('discountRow');
+        if (currentDiscount > 0 && appliedDiscountType !== "Freeship") {
+            discountRow.style.display = 'flex';
+            document.getElementById('appliedCodeText').innerText = appliedCouponCode;
+            document.getElementById('discountDisplay').innerText = '-' + formatMoney(currentDiscount);
+        } else if (appliedDiscountType === "Freeship") {
+            // Nếu là freeship thì hiện dòng thông báo mã freeship
+            discountRow.style.display = 'flex';
+            document.getElementById('appliedCodeText').innerText = appliedCouponCode;
+            document.getElementById('discountDisplay').innerText = 'Freeship';
+        } else {
+            discountRow.style.display = 'none';
+        }
+    }
+
+    // ================= CỤM 2: XỬ LÝ MÃ KHUYẾN MÃI (AJAX) =================
+    function applyCoupon(codeParam) {
+        var msgBox = document.getElementById('couponMessage');
+        
+        if (currentSubTotal <= 0) {
+            msgBox.style.display = 'block';
+            msgBox.style.color = '#ff4d4d';
+            msgBox.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Vui lòng tick chọn sản phẩm trước khi áp dụng mã!';
+            return;
+        }
+
+        if (!codeParam || codeParam.trim() === '') {
+            msgBox.style.display = 'block';
+            msgBox.style.color = '#ff4d4d';
+            msgBox.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập mã!';
+            return;
+        }
+
+        $.ajax({
+            url: '/Cart/ApplyCoupon',
+            type: 'POST',
+            data: { code: codeParam }, 
+            success: function (res) {
+                msgBox.style.display = 'block';
+                if (res.success) {
+                    currentDiscount = res.discount;
+                    appliedCouponCode = codeParam;
+                    appliedDiscountType = res.discountType; // 🔥 Nhận loại mã từ C# trả về
+
+                    msgBox.style.color = '#2ec4b6';
+                    msgBox.innerHTML = '<i class="fa-solid fa-check-circle"></i> ' + res.message;
+                    document.getElementById('manualCouponCode').value = codeParam; 
+                    
+                    updateFinalDisplay(); 
+                } else {
+                    removeCouponSilent();
+                    msgBox.style.color = '#ff4d4d';
+                    msgBox.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + res.message;
+                    updateFinalDisplay();
+                }
+            }
+        });
+    }
+
+    // Hàm gọi ngầm để check lại mã khi khách thay đổi checkbox
+    function recheckCouponSilent(codeParam) {
+        $.ajax({
+            url: '/Cart/ApplyCoupon',
+            type: 'POST',
+            data: { code: codeParam },
+            success: function (res) {
+                if (res.success) {
+                    currentDiscount = res.discount; 
+                    appliedDiscountType = res.discountType; // Cập nhật loại
+                } else {
+                    removeCouponSilent();
+                    var msgBox = document.getElementById('couponMessage');
+                    msgBox.style.display = 'block';
+                    msgBox.style.color = '#ff4d4d';
+                    msgBox.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> ' + res.message;
+                }
+                updateFinalDisplay();
+            }
+        });
+    }
+
+    // Gỡ mã trong im lặng
+    function removeCouponSilent() {
+        currentDiscount = 0;
+        appliedCouponCode = "";
+        appliedDiscountType = ""; // Reset
+        document.getElementById('manualCouponCode').value = "";
+    }
+
+    // Khởi động
     window.onload = function() {
         calculateTotal();
     };
+
+    // ================= CỤM 3: TẢI DANH SÁCH MÃ VÀO MODAL =================
+    $('#voucherModal').on('show.bs.modal', function (e) {
+        const container = document.getElementById('voucherListContainer');
+        container.innerHTML = '<p style="text-align: center; color: #888; font-size: 14px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</p>';
+        
+        $.ajax({
+            url: '/Home/GetVoucherListHtml',
+            type: 'GET',
+            success: function (htmlContent) {
+                container.innerHTML = htmlContent;
+            },
+            error: function () {
+                container.innerHTML = '<p style="text-align: center; color: red;">Lỗi tải dữ liệu. Vui lòng thử lại sau.</p>';
+            }
+        });
+    });
 </script>
+}

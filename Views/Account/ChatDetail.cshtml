@@ -1,0 +1,130 @@
+@model VelvySkinWeb.Models.SupportTicket
+@{
+    ViewData["Title"] = "Chi tiết Hỗ trợ #" + Model.Id;
+}
+
+<style>
+    .chat-wrapper {
+        --primary-mint: #2ec4b6; --light-mint: #f0fdfa; --text: #333; --bg: #f8fafb;
+        max-width: 900px; margin: 40px auto; font-family: 'Montserrat', sans-serif;
+    }
+
+    .chat-header {
+        background: white; padding: 20px 30px; border-radius: 20px 20px 0 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.02); border-bottom: 1px solid #eee;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .chat-header h2 { margin: 0; font-family: 'Playfair Display', serif; font-size: 20px; color: var(--primary-mint); font-weight: 700;}
+    .chat-header p { margin: 5px 0 0; font-size: 13px; color: #888; font-weight: 500;}
+    
+    .status-badge { padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .st-wait { background: #fff5e6; color: #f76707; }
+    .st-process { background: #e6fcf5; color: #0ca678; }
+    .st-done { background: #f1f3f5; color: #868e96; }
+
+    /* KHU VỰC TIN NHẮN */
+    .chat-box {
+        background: white; height: 500px; overflow-y: auto; padding: 30px;
+        display: flex; flex-direction: column; gap: 20px;
+    }
+    
+    .msg-row { display: flex; flex-direction: column; max-width: 70%; }
+    .msg-row.admin { align-self: flex-start; }
+    .msg-row.user { align-self: flex-end; align-items: flex-end; }
+    .msg-row.system { align-self: center; align-items: center; max-width: 90%; }
+
+    .msg-bubble { padding: 15px 20px; border-radius: 20px; font-size: 14px; line-height: 1.5; position: relative;}
+    .msg-row.admin .msg-bubble { background: #f1f3f5; color: #333; border-bottom-left-radius: 5px; }
+    .msg-row.user .msg-bubble { background: var(--primary-mint); color: white; border-bottom-right-radius: 5px; }
+    .msg-row.system .msg-bubble { background: #fff3cd; color: #856404; font-size: 12px; text-align: center; border-radius: 10px; border: 1px dashed #ffeeba;}
+
+    .msg-time { font-size: 11px; color: #adb5bd; margin-top: 5px; font-weight: 500; }
+    .sender-name { font-size: 12px; font-weight: 700; margin-bottom: 5px; color: #888; }
+
+    /* KHUNG NHẬP TIN NHẮN */
+    .chat-input-area {
+        background: white; padding: 20px 30px; border-radius: 0 0 20px 20px;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.02); border-top: 1px solid #eee;
+    }
+    .chat-form { display: flex; gap: 15px; }
+    .chat-input {
+        flex: 1; padding: 15px 20px; border: 1px solid #ddd; border-radius: 25px;
+        font-family: inherit; font-size: 14px; outline: none; transition: 0.3s;
+    }
+    .chat-input:focus { border-color: var(--primary-mint); }
+    .btn-send {
+        background: var(--primary-mint); color: white; border: none; width: 50px; height: 50px;
+        border-radius: 50%; cursor: pointer; transition: 0.3s; font-size: 16px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .btn-send:hover { background: #208b81; transform: scale(1.05); }
+    
+    .chat-closed-msg {
+        text-align: center; padding: 15px; background: #f8f9fa; color: #888;
+        border-radius: 10px; font-size: 13px; font-weight: 600; width: 100%;
+    }
+</style>
+
+<div class="chat-wrapper">
+    <div style="margin-bottom: 15px;">
+        <a href="javascript:history.back()" style="text-decoration: none; color: #888; font-weight: 600; font-size: 14px;">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <div class="chat-header">
+        <div>
+            <h2>Yêu cầu: @Model.IssueType</h2>
+            <p>Mã vé: #VS-@Model.Id | Bắt đầu: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+        @{
+            string badgeCls = "st-wait";
+            string stText = Model.Status ?? "Chờ xử lý";
+            if (stText == "Đang giải quyết") badgeCls = "st-process";
+            else if (stText == "Đã hoàn thành" || stText == "Closed") badgeCls = "st-done";
+        }
+        <span class="status-badge @badgeCls">@stText</span>
+    </div>
+
+    <div class="chat-box" id="chatBox">
+        @if (Model.TicketMessages != null && Model.TicketMessages.Any())
+        {
+            foreach (var msg in Model.TicketMessages.OrderBy(m => m.CreatedAt))
+            {
+                string rowClass = msg.Sender == "Admin" ? "admin" : (msg.Sender == "System" ? "system" : "user");
+                string senderName = msg.Sender == "Admin" ? "CSKH Velvy Skin" : (msg.Sender == "System" ? "Hệ thống" : "Bạn");
+
+                <div class="msg-row @rowClass">
+                    @if (rowClass != "system") { <div class="sender-name">@senderName</div> }
+                    <div class="msg-bubble">@Html.Raw(msg.Content)</div>
+                    <div class="msg-time">@msg.CreatedAt.ToString("HH:mm - dd/MM")</div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="chat-input-area">
+        @if (stText != "Đã hoàn thành" && stText != "Closed")
+        {
+            <form asp-controller="Account" asp-action="SendMessage" method="post" class="chat-form">
+                <input type="hidden" name="ticketId" value="@Model.Id" />
+                <input type="text" name="content" class="chat-input" placeholder="Nhập phản hồi của bạn..." required autocomplete="off" />
+                <button type="submit" class="btn-send"><i class="fa-solid fa-paper-plane"></i></button>
+            </form>
+        }
+        else
+        {
+            <div class="chat-closed-msg">
+                <i class="fa-solid fa-lock" style="margin-right: 5px;"></i> Yêu cầu hỗ trợ này đã được đóng.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+
+        var chatBox = document.getElementById("chatBox");
+        chatBox.scrollTop = chatBox.scrollHeight;
+    </script>
+}

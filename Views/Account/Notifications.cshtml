@@ -1,0 +1,118 @@
+@model IEnumerable<VelvySkinWeb.Models.Notification>
+@{
+    ViewData["Title"] = "Thông Báo Của Bạn";
+}
+
+<style>
+    .notif-container {
+        --primary-mint: #2ec4b6; --light-mint: #cbf3f0; --dark-mint: #208b81;
+        --accent-pink: #e993b0; --white: #ffffff; --text-gray: #444;
+        --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        font-family: 'Montserrat', sans-serif; color: var(--text-gray);
+        max-width: 800px; margin: 50px auto; padding: 0 20px;
+    }
+
+    .notif-container .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+    .notif-container .page-header h1 { font-family: 'Playfair Display', serif; font-size: 28px; color: #333; margin: 0;}
+    .notif-container .mark-read { font-size: 13px; color: var(--primary-mint); text-decoration: none; font-weight: 600; cursor: pointer; transition: 0.3s;}
+    .notif-container .mark-read:hover { color: var(--dark-mint); }
+
+    /* Danh sách thông báo */
+    .notif-container .notif-list { display: flex; flex-direction: column; gap: 15px; }
+
+    .notif-container .notif-item { background: var(--white); padding: 20px; border-radius: 15px; display: flex; gap: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); border: 1px solid #f0f0f0; transition: var(--transition); cursor: pointer; position: relative; }
+    .notif-container .notif-item:hover { transform: translateX(10px); border-color: var(--primary-mint); }
+    
+    /* Trạng thái chưa đọc */
+    .notif-container .notif-item.unread { background: #f0fdfc; border-left: 4px solid var(--primary-mint); }
+    .notif-container .notif-item.unread::after { content: ""; position: absolute; top: 20px; right: 20px; width: 10px; height: 10px; background: var(--accent-pink); border-radius: 50%; box-shadow: 0 0 10px rgba(233, 147, 176, 0.5);}
+
+    /* Icon cho từng loại thông báo */
+    .notif-container .notif-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .notif-container .icon-order { background: var(--light-mint); color: var(--dark-mint); }
+    .notif-container .icon-promo { background: #fff9db; color: #f08c00; }
+    .notif-container .icon-system { background: #fee2e2; color: #ef4444; }
+    .notif-container .icon-support { background: #e3f2fd; color: #0d6efd; }
+
+    .notif-container .notif-content { flex: 1; }
+    .notif-container .notif-content h3 { font-size: 16px; margin-bottom: 5px; color: #333; font-weight: 700;}
+    .notif-container .notif-content p { font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 10px; }
+    .notif-container .notif-time { font-size: 11px; color: #999; font-weight: 600; text-transform: uppercase; }
+
+    @@media (max-width: 600px) {
+        .notif-container .notif-item { gap: 15px; padding: 15px; }
+        .notif-container .notif-icon { width: 40px; height: 40px; font-size: 16px; }
+    }
+</style>
+
+<div class="notif-container">
+    <div class="page-header">
+        <h1>Thông báo của bạn</h1>
+        <span class="mark-read" onclick="markAllRead()"><i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc</span>
+    </div>
+
+    <div class="notif-list">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                string iconClass = "icon-system"; // Default
+                if (item.Type == "order") iconClass = "icon-order";
+                if (item.Type == "promo") iconClass = "icon-promo";
+                if (item.Type == "support") iconClass = "icon-support";
+
+             <a href="@(string.IsNullOrEmpty(item.TargetUrl) ? "#" : item.TargetUrl)" class="notif-item @(item.IsRead ? "" : "unread")" style="text-decoration: none; display: flex; color: inherit;">
+                    <div class="notif-icon @iconClass">
+                        <i class="fa-solid @item.Icon"></i>
+                    </div>
+                    <div class="notif-content">
+                        <h3>@item.Title</h3>
+                        <p>@item.Message</p>
+                        <span class="notif-time">@item.CreatedAt.ToString("HH:mm - dd/MM/yyyy")</span>
+                    </div>
+                </a>
+            }
+        }
+        else
+        {
+            <div style="text-align: center; padding: 50px; color: #888;">
+                <i class="fa-regular fa-bell-slash" style="font-size: 40px; color: #ddd; margin-bottom: 15px;"></i>
+                <p>Bạn chưa có thông báo nào mới.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function markAllRead() {
+            const unreadItems = document.querySelectorAll('.notif-item.unread');
+            if (unreadItems.length === 0) return;
+
+           
+            fetch('/Account/MarkAllAsRead', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(response => {
+                if(response.ok) {
+        
+                    unreadItems.forEach(item => item.classList.remove('unread'));
+                    
+                
+                    const headerBellCount = document.querySelector('.fa-bell').nextElementSibling;
+                    if(headerBellCount) headerBellCount.style.display = 'none';
+
+                    Swal.fire({
+                        title: "Thành công!",
+                        text: "Đã đánh dấu tất cả thông báo là đã đọc.",
+                        icon: "success",
+                        confirmButtonColor: "#2ec4b6",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+    </script>
+}

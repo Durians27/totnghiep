@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "Xác thực 2 bước";
+}
+<div class="container mt-5" style="max-width: 450px;">
+    <div class="card shadow-sm" style="border-radius: 20px; padding: 30px;">
+        <h3 class="text-center" style="color: var(--dark-mint); font-family: 'Playfair Display', serif;">Xác minh danh tính</h3>
+        <p class="text-center text-muted" style="font-size: 14px;">Hệ thống đã gửi một mã OTP gồm 6 chữ số đến Email của bạn. Vui lòng nhập vào bên dưới để hoàn tất đăng nhập.</p>
+        
+        <form asp-action="VerifyLogin2FA" method="post">
+            <input type="hidden" name="userId" value="@ViewBag.UserId" />
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+            <input type="hidden" name="rememberMe" value="@ViewBag.RememberMe" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3" style="font-size: 13px;"></div>
+
+            <div class="form-group mb-4">
+                <input type="text" name="otp" class="form-control" placeholder="Nhập mã 6 số" style="padding: 15px; border-radius: 12px; font-size: 20px; text-align: center; letter-spacing: 5px;" maxlength="6" required>
+            </div>
+            
+            <button type="submit" class="btn w-100" style="background: var(--mint); color: white; padding: 12px; border-radius: 12px; font-weight: bold;">Xác nhận Đăng nhập</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,80 @@
+@model VelvySkinWeb.Models.Category
+@{
+    ViewData["Title"] = "Thêm Danh Mục Mới";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Giữ lại Topbar và Sidebar
+}
+
+<style>
+    /* CSS Giao diện tạo mới của Như - Đã tinh gọn */
+    .create-cat-wrapper {
+        --primary-mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa;
+        --bg-gray: #f8f9fa; --gold: #c5a059; --danger: #ff5e5e;
+        font-family: 'Montserrat', sans-serif; color: #333;
+    }
+    
+    .create-cat-wrapper .page-header { margin-bottom: 30px; }
+    .create-cat-wrapper .page-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin: 0; }
+    .create-cat-wrapper .page-subtitle { font-size: 13px; color: #aaa; margin-top: 5px; }
+
+    .create-cat-wrapper .form-card { background: white; border-radius: 30px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.02); border: 1px solid #f1f1f1; max-width: 850px; margin: 0 auto;}
+
+    .create-cat-wrapper .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+    .create-cat-wrapper .form-group { margin-bottom: 20px; }
+    
+    .create-cat-wrapper label { display: block; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
+    
+    .create-cat-wrapper input, .create-cat-wrapper textarea { width: 100%; padding: 14px 18px; border-radius: 15px; border: 1px solid #eee; background: #fcfcfc; font-family: inherit; font-size: 14px; color: #444; outline: none; transition: 0.3s; box-sizing: border-box;}
+    .create-cat-wrapper input:focus, .create-cat-wrapper textarea:focus { border-color: var(--primary-mint); background: white; box-shadow: 0 0 0 4px var(--light-mint); }
+
+    .create-cat-wrapper .btn-group { display: flex; gap: 15px; margin-top: 40px; padding-top: 25px; border-top: 1px solid #f9f9f9; }
+    .create-cat-wrapper .btn { padding: 15px 30px; border-radius: 15px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: 0.3s; display: flex; align-items: center; gap: 10px; text-decoration: none;}
+    .create-cat-wrapper .btn-submit { background: var(--primary-mint); color: white; flex: 2; justify-content: center; box-shadow: 0 10px 20px rgba(46, 196, 182, 0.15); }
+    .create-cat-wrapper .btn-cancel { background: #f5f5f5; color: #888; flex: 1; justify-content: center; }
+    .create-cat-wrapper .btn-submit:hover { background: var(--dark-mint); transform: translateY(-2px); }
+</style>
+
+<div class="create-cat-wrapper">
+    <div style="max-width: 850px; margin: 0 auto;">
+        <div class="page-header">
+            <h1 class="page-title">Thêm Danh Mục Mới</h1>
+            <p class="page-subtitle">Khởi tạo phân loại mới cho kho sản phẩm Velvy Skin</p>
+        </div>
+
+        <div class="form-card">
+            <form asp-controller="Admin" asp-action="CreateCategory" method="post">
+          <div class="form-group">
+                    <label>Thuộc nhóm danh mục lớn <span style="color: var(--danger);">*</span></label>
+                    <select asp-for="CategoryGroup" required>
+                        <option value="">-- Chọn nhóm phân loại --</option>
+                        <option value="Chăm sóc da">Chăm sóc da</option>
+                        <option value="Chăm sóc tóc">Chăm sóc tóc</option>
+                        <option value="Trang điểm">Trang điểm</option>
+                    </select>
+                </div>      
+                <div class="form-group">
+                    <label>Tên danh mục <span style="color: var(--danger);">*</span></label>
+                    <input asp-for="Name" type="text" placeholder="Ví dụ: Kem dưỡng da, Sữa rửa mặt..." required>
+                    <span asp-validation-for="Name" class="text-danger" style="font-size: 12px; margin-top: 5px; display: block;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>Mô tả ngắn</label>
+                    <textarea asp-for="Description" rows="4" placeholder="Viết vài dòng giới thiệu về danh mục này..."></textarea>
+                </div>
+
+                <div class="form-group" style="max-width: 50%;">
+                    <label>Thứ tự hiển thị (Tùy chọn)</label>
+                    <input type="number" name="DisplayOrder" value="1" min="1" title="Tính năng này sẽ được kích hoạt ở bản cập nhật DB sau">
+                    <small style="color:#aaa; font-size: 11px;">Số nhỏ sẽ ưu tiên hiện lên đầu</small>
+                </div>
+
+                <div class="btn-group">
+                    <a asp-controller="Admin" asp-action="Categories" class="btn btn-cancel">Quay lại</a>
+                    <button type="submit" class="btn btn-submit">
+                        <i class="fa-solid fa-plus"></i> Khởi tạo danh mục
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

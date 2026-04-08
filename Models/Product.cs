@@ -1,7 +1,7 @@
 #nullable enable
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.AspNetCore.Http; // Đã cấy: Bắt buộc có để dùng IFormFile hứng ảnh
+using Microsoft.AspNetCore.Http;
 
 namespace VelvySkinWeb.Models
 {
@@ -15,7 +15,7 @@ namespace VelvySkinWeb.Models
         public string Name { get; set; } = string.Empty;
 
         [MaxLength(200)]
-        public string? Slug { get; set; } // Thêm ?: Cho phép trống lúc mới tạo
+        public string? Slug { get; set; }
 
         [Required(ErrorMessage = "Giá không được để trống")]
         [Column(TypeName = "decimal(18,2)")]
@@ -23,9 +23,13 @@ namespace VelvySkinWeb.Models
 
         public int StockQuantity { get; set; }
         
-        public string? Description { get; set; } // Thêm ?: Cho phép trống
+        public string? Description { get; set; }
         
-        public string? ImageUrl { get; set; } // Thêm ?: Cho phép trống vì ban đầu chưa có ảnh
+        public string? ImageUrl { get; set; } 
+        public string? ImageUrl2 { get; set; }
+        public string? ImageUrl3 { get; set; }
+        public string? ImageUrl4 { get; set; }
+        public string? ImageUrl5 { get; set; }
         
         public bool IsActive { get; set; }
         [Display(Name = "Danh mục")]
@@ -33,11 +37,11 @@ namespace VelvySkinWeb.Models
         
         public Category? Category { get; set; }
 
-        // ĐÃ CẤY: Biến này KHÔNG LƯU VÀO SQL, chỉ dùng làm "thùng chứa" file ảnh từ giao diện
+
         [NotMapped]
         public IFormFile? ImageFile { get; set; }
 
-        // Khóa ngoại nối sang bảng Category
+
         [Required(ErrorMessage = "Vui lòng chọn danh mục")]
         [Display(Name = "Mô tả ngắn")]
         public string? ShortDescription { get; set; }
@@ -51,5 +55,7 @@ namespace VelvySkinWeb.Models
         [Display(Name = "Hướng dẫn sử dụng")]
         public string? UsageInstructions { get; set; }
         public int BrandId { get; set; } 
+        public decimal? PriceLarge { get; set; }
+        public decimal DiscountPrice { get; set; }
     }
 }

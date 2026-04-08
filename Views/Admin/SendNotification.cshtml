@@ -1,0 +1,117 @@
+@{
+    ViewData["Title"] = "Gửi Thông Báo Hàng Loạt";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .broadcast-container { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); max-width: 800px; margin: 0 auto; }
+    .form-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--dark-mint); margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { font-size: 13px; font-weight: 700; color: #555; display: block; margin-bottom: 8px; }
+    .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 10px; font-family: inherit; font-size: 14px; outline: none; transition: 0.3s; }
+    .form-control:focus { border-color: var(--primary-mint); box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.1); }
+    
+    .type-options { display: flex; gap: 15px; margin-top: 10px; }
+    .type-card { flex: 1; border: 1px solid #ddd; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; position: relative; }
+    .type-card:hover { background: var(--light-mint); }
+    .type-card input { position: absolute; opacity: 0; cursor: pointer; }
+    .type-card i { font-size: 24px; margin-bottom: 10px; display: block; color: #aaa; transition: 0.3s;}
+    .type-card span { font-size: 13px; font-weight: 600; color: #888; transition: 0.3s;}
+    
+    /* HIỆU ỨNG KHI ADMIN BẤM CHỌN (CHUẨN TONE VELVY SKIN) */
+    .type-card:has(input[value="promo"]:checked) { border-color: var(--primary-mint); background: #f0fdfa; box-shadow: 0 4px 15px rgba(46, 196, 182, 0.1); }
+    .type-card input[value="promo"]:checked ~ .card-content i { color: var(--primary-mint); }
+    .type-card input[value="promo"]:checked ~ .card-content span { color: var(--dark-mint); }
+
+    .type-card:has(input[value="system"]:checked) { border-color: var(--accent-pink); background: #fdf5f7; box-shadow: 0 4px 15px rgba(233, 147, 176, 0.1); }
+    .type-card input[value="system"]:checked ~ .card-content i { color: var(--accent-pink); }
+    .type-card input[value="system"]:checked ~ .card-content span { color: #d47f9d; }
+
+    .type-card:has(input[value="news"]:checked) { border-color: var(--dark-mint); background: #f4fbf9; box-shadow: 0 4px 15px rgba(32, 139, 129, 0.1); }
+    .type-card input[value="news"]:checked ~ .card-content i { color: var(--dark-mint); }
+    .type-card input[value="news"]:checked ~ .card-content span { color: var(--dark-mint); }
+    
+    .btn-send-all { background: var(--primary-mint); color: white; padding: 14px 30px; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; width: 100%; transition: 0.3s; margin-top: 10px;}
+    .btn-send-all:hover { background: var(--dark-mint); transform: translateY(-2px); }
+</style>
+
+<div class="broadcast-container">
+    <h2 class="form-title"><i class="fa-solid fa-satellite-dish me-2"></i> Trạm Phát Sóng Thông Báo</h2>
+    
+    <form asp-action="SendNotification" method="post">
+        
+        <div class="form-group">
+            <label>1. Chọn phân loại thông báo</label>
+            <div class="type-options">
+                <label class="type-card">
+                    <input type="radio" name="notiType" value="promo" checked>
+                    <div class="card-content">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>Khuyến mãi / Voucher</span>
+                    </div>
+                </label>
+                <label class="type-card">
+                    <input type="radio" name="notiType" value="system">
+                    <div class="card-content">
+                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                        <span>Bảo trì / Hệ thống</span>
+                    </div>
+                </label>
+                <label class="type-card">
+                    <input type="radio" name="notiType" value="news">
+                    <div class="card-content">
+                        <i class="fa-solid fa-bullhorn"></i>
+                        <span>Tin tức / Cập nhật</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>2. Tiêu đề thông báo </label>
+            <input type="text" name="notiTitle" class="form-control" placeholder="" required maxlength="100">
+        </div>
+
+        <div class="form-group">
+            <label>3. Nội dung chi tiết</label>
+            <textarea name="notiMessage" class="form-control" rows="3" placeholder="" required></textarea>
+        </div>
+
+        <button type="submit" class="btn-send-all" id="btnSubmit">
+            <i class="fa-solid fa-paper-plane me-2"></i> Bắn thông báo ngay!
+        </button>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Form validate & loading effect
+        document.querySelector('form').addEventListener('submit', function() {
+            const btn = document.getElementById('btnSubmit');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Đang phát sóng...';
+            btn.style.pointerEvents = 'none';
+        });
+
+        // Xử lý thông báo an toàn bằng biến JS (Khắc phục triệt để lỗi gạch đỏ của Razor)
+        var successMsg = '@Html.Raw(TempData["SuccessMsg"])';
+        if (successMsg !== '') {
+            Swal.fire({
+                title: "Phát sóng thành công!",
+                text: successMsg,
+                icon: "success",
+                confirmButtonColor: "#2ec4b6"
+            });
+        }
+
+        var errorMsg = '@Html.Raw(TempData["ErrorMsg"])';
+        if (errorMsg !== '') {
+            Swal.fire({
+                title: "Lỗi phát sóng!",
+                text: errorMsg,
+                icon: "error",
+                confirmButtonColor: "#ef4444"
+            });
+        }
+    </script>
+}

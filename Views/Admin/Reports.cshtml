@@ -1,0 +1,260 @@
+@{
+    ViewData["Title"] = "Báo Cáo & Thống Kê";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .report-wrapper {
+        --gold-vip: #d4a017;
+        --blue-ship: #3498db;
+    }
+    
+    .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .page-title h1 { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin: 0; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+    
+    .summary-card { 
+        background: white; padding: 25px; border-radius: 25px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.02); border: 1px solid #f1f1f1;
+        position: relative; overflow: hidden; transition: 0.3s;
+    }
+    .summary-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(46, 196, 182, 0.1); border-color: var(--light-mint);}
+    .summary-card i { position: absolute; right: 20px; top: 20px; font-size: 40px; color: var(--light-mint); z-index: 1; }
+    .summary-data { position: relative; z-index: 2; }
+    .summary-val { display: block; font-size: 26px; font-weight: 700; color: #222; margin: 5px 0; }
+    .summary-lbl { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .trend { font-size: 12px; font-weight: 600; }
+    .up { color: #27ae60; }
+    .down { color: #e74c3c; }
+
+    .dashboard-row { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 25px; }
+    .chart-container { background: white; padding: 25px; border-radius: 25px; border: 1px solid #f1f1f1; box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .chart-header h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; color: var(--dark-mint); margin: 0; }
+
+    .ranking-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .ranking-table td { padding: 12px 5px; border-bottom: 1px solid #f9f9f9; font-size: 13px; }
+    .ranking-table th { padding: 12px 5px; font-size: 11px; color: #aaa; text-transform: uppercase; border-bottom: 2px solid #eee; text-align: left;}
+    .prod-img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #eee; border: 1px solid #ddd;}
+
+    .tag { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+    .tag-mint { background: var(--light-mint); color: var(--primary-mint); }
+    .tag-red { background: #fff5f5; color: #ff4d4d; }
+
+    .btn-export { background: white; border: 1px solid #eee; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; transition: 0.3s; color: var(--dark-mint);}
+    .btn-export:hover { background: var(--primary-mint); color: white; border-color: var(--primary-mint); }
+    
+    @@media (max-width: 1024px) {
+        .summary-grid { grid-template-columns: repeat(1, 1fr); }
+        .dashboard-row { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="report-wrapper">
+    <div class="header-flex">
+        <div class="page-title">
+            <h1>Báo Cáo Tổng Bộ Hệ Thống</h1>
+            <p style="font-size: 13px; color: #888; margin-top: 5px;">Cập nhật lần cuối: <span id="currentTime">Hôm nay</span></p>
+        </div>
+        <button class="btn-export" onclick="window.print()"><i class="fa-solid fa-file-export"></i> Xuất Báo Cáo</button>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <i class="fa-solid fa-wallet"></i>
+            <div class="summary-data">
+                <span class="summary-lbl">Doanh thu tháng này</span>
+                <span class="summary-val">@(ViewBag.ThisMonthRev != null ? ViewBag.ThisMonthRev.ToString("N0") : "0")đ</span>
+                
+                @if (ViewBag.RevTrend != null && ViewBag.RevTrend >= 0)
+                {
+                    <span class="trend up"><i class="fa-solid fa-caret-up"></i> @ViewBag.RevTrend% so với tháng trước</span>
+                }
+                else if (ViewBag.RevTrend != null)
+                {
+                    <span class="trend down"><i class="fa-solid fa-caret-down"></i> @Math.Abs((double)ViewBag.RevTrend)% so với tháng trước</span>
+                }
+            </div>
+        </div>
+        <div class="summary-card">
+            <i class="fa-solid fa-cart-shopping"></i>
+            <div class="summary-data">
+                <span class="summary-lbl">Tổng đơn hàng (Tháng)</span>
+                <span class="summary-val">@(ViewBag.ThisMonthOrders ?? 0)</span>
+                
+                @if (ViewBag.OrderTrend != null && ViewBag.OrderTrend >= 0)
+                {
+                    <span class="trend up"><i class="fa-solid fa-caret-up"></i> @ViewBag.OrderTrend%</span>
+                }
+                else if (ViewBag.OrderTrend != null)
+                {
+                    <span class="trend down"><i class="fa-solid fa-caret-down"></i> @Math.Abs((double)ViewBag.OrderTrend)%</span>
+                }
+            </div>
+        </div>
+        <div class="summary-card">
+            <i class="fa-solid fa-users"></i>
+            <div class="summary-data">
+                <span class="summary-lbl">Tổng Khách hàng Hệ thống</span>
+                <span class="summary-val">@(ViewBag.TotalCustomers ?? 0)</span>
+                <span class="trend up"><i class="fa-solid fa-circle-check"></i> Đã kích hoạt</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-row">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3><i class="fa-solid fa-chart-line"></i> Biểu đồ tăng trưởng doanh thu (6 tháng)</h3>
+            </div>
+            <canvas id="revenueChart" height="120"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3><i class="fa-solid fa-chart-pie"></i> Cơ cấu Tỷ suất lợi nhuận</h3>
+            </div>
+            <canvas id="profitChart"></canvas>
+        </div>
+    </div>
+
+    <div class="dashboard-row">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3><i class="fa-solid fa-fire" style="color: #ff4d4d;"></i> Top Sản phẩm bán chạy nhất</h3>
+            </div>
+            <table class="ranking-table">
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Đã bán</th>
+                        <th>Doanh thu đem lại</th>
+                        <th>Tình trạng kho</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ViewBag.TopProducts != null)
+                    {
+                        foreach (var item in ViewBag.TopProducts)
+                        {
+                            <tr>
+                                <td style="display: flex; align-items: center; gap: 10px;">
+                                    <img src="~/images/products/@(item.Product.Id).jpg" onerror="this.src='/images/02.png'" class="prod-img">
+                                    <span style="font-weight: 600;">@item.Product.Name</span>
+                                </td>
+                                <td>@item.TotalSold</td>
+                                <td style="font-weight: 700; color: var(--dark-mint);">@item.TotalRevenue.ToString("N0")đ</td>
+                                <td>
+                                    <span class="tag tag-mint">Đang kinh doanh</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" style="text-align:center; color: #888;">Chưa có dữ liệu bán hàng!</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3><i class="fa-solid fa-truck-fast" style="color: var(--blue-ship);"></i> Tình trạng Vận chuyển & Kho</h3>
+            </div>
+            <div style="margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                    <span>Tỉ lệ Giao hàng thành công</span>
+                    <span style="font-weight: 700; color: var(--primary-mint);">@(ViewBag.SuccessRate ?? 0)%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 25px;">
+                    <div style="width: @(ViewBag.SuccessRate?.ToString()?.Replace(",", ".") ?? "0")%; height: 100%; background: var(--primary-mint);"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                    <span>Đơn hàng đang chờ xác nhận/đóng gói</span>
+                    <span style="font-weight: 700; color: var(--blue-ship);">@(ViewBag.PendingOrders ?? 0) đơn</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 25px;">
+                    @{ int pending = ViewBag.PendingOrders ?? 0; int fillWidth = pending > 100 ? 100 : (pending > 0 ? pending * 5 : 5); }
+                    <div style="width: @(fillWidth)%; height: 100%; background: var(--blue-ship);"></div>
+                </div>
+
+                <div style="background: #fffcf0; border: 1px solid #fdf2ce; padding: 15px; border-radius: 15px; font-size: 12px; color: #856404; line-height: 1.6;">
+                    <i class="fa-solid fa-lightbulb" style="color: #f1c40f; font-size: 16px; margin-right: 5px;"></i> 
+                    <strong>AI Gợi ý vận hành:</strong> Lượng đơn hàng thường tăng vọt vào khung giờ 20:00 - 22:00. Khuyến nghị bổ sung thêm nhân sự trực kho vào ca tối.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('currentTime').innerText = new Date().toLocaleString('vi-VN');
+
+        // BẮT DỮ LIỆU TỪ C# NÉM XUỐNG CHO CHART.JS VẼ
+        var chartLabels = @Html.Raw(Json.Serialize(ViewBag.ChartLabels ?? new List<string>()));
+        var chartData = @Html.Raw(Json.Serialize(ViewBag.ChartData ?? new List<decimal>()));
+
+        // Chờ trang tải xong hết mới vẽ biểu đồ (Tránh treo giao diện)
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. VẼ BIỂU ĐỒ ĐƯỜNG (DOANH THU 6 THÁNG)
+            if(document.getElementById('revenueChart')) {
+                const ctxRev = document.getElementById('revenueChart').getContext('2d');
+                new Chart(ctxRev, {
+                    type: 'line',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Doanh thu (Triệu VNĐ)',
+                            data: chartData,
+                            borderColor: '#2ec4b6',
+                            backgroundColor: 'rgba(46, 196, 182, 0.1)',
+                            fill: true,
+                            tension: 0.4, 
+                            pointRadius: 5,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#2ec4b6',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#f5f5f5' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // 2. VẼ BIỂU ĐỒ TRÒN (CƠ CẤU TỶ SUẤT LỢI NHUẬN)
+            if(document.getElementById('profitChart')) {
+                const ctxProfit = document.getElementById('profitChart').getContext('2d');
+                new Chart(ctxProfit, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Lợi nhuận ròng (Net Profit)', 'Giá vốn hàng bán (COGS)', 'Chi phí Marketing & Vận hành'],
+                        datasets: [{
+                            data: [45, 35, 20], 
+                            backgroundColor: ['#2ec4b6', '#d4a017', '#ff6b6b'], 
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: { 
+                                position: 'bottom', 
+                                labels: { usePointStyle: true, padding: 20, font: { family: 'Montserrat', size: 11 } } 
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+        });
+    </script>
+}

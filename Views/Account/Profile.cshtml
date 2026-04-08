@@ -1,0 +1,333 @@
+@model VelvySkinWeb.Models.UserProfile
+@{
+    ViewData["Title"] = "Hồ Sơ Cá Nhân";
+
+    // 🔥 FIX LỖI SẬP WEB: Ép kiểu mềm mại và an toàn bằng từ khóa 'as'.
+    // Nếu Controller không gửi ra (bị null), tự động biến thành 1 danh sách rỗng để chống sập (?? new List...)
+    var supportTickets = ViewBag.SupportTickets as IEnumerable<VelvySkinWeb.Models.SupportTicket> ?? new List<VelvySkinWeb.Models.SupportTicket>();
+    var recentOrders = ViewBag.RecentOrders as IEnumerable<VelvySkinWeb.Models.Order> ?? new List<VelvySkinWeb.Models.Order>();
+}
+
+<style>
+    /* CSS CỦA NHƯ TẶNG KÈM BỘ STYLES MỚI CHO TRANG HỖ TRỢ */
+    :root { --mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa; --gold: #c5a059; --soft-gold: #fcfaf5; --bg: #f8fafb; --danger: #ff5e5e; --text: #333; --border: #eeeeee; }
+    body { background: var(--bg); }
+    .wrapper { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 320px 1fr; gap: 30px; }
+    .sidebar { background: white; border-radius: 30px; padding: 40px 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); height: fit-content; text-align: center; position: sticky; top: 120px; }
+    .avatar-box { position: relative; width: 140px; height: 140px; margin: 0 auto 20px; }
+    .avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 5px solid var(--light-mint); transition: 0.3s; }
+    .upload-btn { position: absolute; bottom: 5px; right: 5px; width: 38px; height: 38px; background: var(--mint); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid white; font-size: 16px; transition: 0.3s; }
+    .upload-btn:hover { background: var(--dark-mint); transform: scale(1.1); }
+    .user-info h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin: 10px 0 5px; color: var(--dark-mint); }
+    .user-info p { font-size: 13px; color: #aaa; margin-bottom: 30px; }
+    .nav-menu { text-align: left; border-top: 1px solid var(--border); padding-top: 20px; }
+    .nav-link { padding: 15px 20px; border-radius: 15px; cursor: pointer; color: #888; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; transition: 0.3s; text-decoration: none;}
+    .nav-link.active { background: var(--light-mint); color: var(--mint); }
+    .nav-link:hover:not(.active) { background: #f9f9f9; color: #444; }
+    .nav-link.logout { color: var(--danger); margin-top: 30px; }
+    .main-card { background: white; border-radius: 30px; padding: 45px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); min-height: 600px; }
+    .tab-content { display: none; animation: fadeIn 0.4s ease; }
+    .tab-content.active { display: block; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin-bottom: 35px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+    .section-header { font-size: 13px; font-weight: 700; color: var(--gold); border-left: 4px solid var(--gold); padding-left: 12px; margin: 30px 0 20px; text-transform: uppercase; letter-spacing: 1px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    .form-group { margin-bottom: 22px; }
+    label { display: block; font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
+    input, select, textarea { width: 100%; padding: 15px 20px; border-radius: 14px; border: 1px solid var(--border); background: #fcfcfc; font-family: inherit; font-size: 14px; outline: none; transition: 0.3s; box-sizing: border-box; }
+    input:focus, textarea:focus, select:focus { border-color: var(--mint); background: white; box-shadow: 0 0 0 4px var(--light-mint); }
+    input[readonly] { background: #f5f5f5; color: #999; cursor: not-allowed; }
+    .skin-profile-card { background: var(--soft-gold); border: 1px solid #f3ece0; padding: 25px; border-radius: 20px; margin: 20px 0; }
+    .support-alert { background: #fffcf0; border: 1px solid #fdf2ce; padding: 18px; border-radius: 15px; margin-bottom: 25px; color: #856404; font-size: 13px; display: flex; align-items: center; gap: 15px; }
+    .btn-mint { background: var(--mint); color: white; width: 100%; padding: 16px 40px; border-radius: 14px; font-weight: 700; font-size: 15px; cursor: pointer; border: none; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 10px 20px rgba(46, 196, 182, 0.15); }
+    .btn-mint:hover { background: var(--dark-mint); transform: translateY(-2px); }
+    @@media (max-width: 992px) { .wrapper { grid-template-columns: 1fr; } .sidebar { position: relative; top: 0; } }
+</style>
+
+<div class="wrapper">
+    <aside class="sidebar">
+        <div class="avatar-box">
+            <img src="~/images/avatars/@(Model.UserId).jpg" id="userAvatar" class="avatar-img" alt="User" onerror="this.src='https://i.pravatar.cc/300?u=@Model.Email'">
+            <label for="fileUpload" class="upload-btn"><i class="fa-solid fa-camera"></i></label>
+            <input type="file" id="fileUpload" name="avatarFile" form="profileForm" hidden onchange="changeAvatar(event)" accept="image/*">
+        </div>
+        
+        <div class="user-info">
+            <h2>@(string.IsNullOrEmpty(Model.FullName) ? "Khách hàng Velvy" : Model.FullName)</h2>
+            <p>Thành viên Velvy Skin</p>
+        </div>
+
+        <nav class="nav-menu">
+            <div class="nav-link @(TempData["ActiveTab"] == null || TempData["ActiveTab"].ToString() == "tab-profile" ? "active" : "")" onclick="switchTab(event, 'tab-profile')">
+                <i class="fa-solid fa-user-pen"></i> Thông tin cá nhân
+            </div>
+            <a asp-controller="Orders" asp-action="History" class="nav-link">
+                <i class="fa-solid fa-box-open"></i> Đơn hàng của tôi
+            </a>
+            <a asp-controller="Home" asp-action="Vouchers" class="nav-link">
+                <i class="fa-solid fa-ticket"></i> Kho mã giảm giá
+            </a>
+            
+            <div class="dropdown-divider" style="height: 1px; background-color: #eee; margin: 15px 0;"></div>
+            
+            <a asp-controller="Account" asp-action="Security" class="nav-link">
+                <i class="fa-solid fa-user-shield"></i> Bảo mật tài khoản
+            </a>
+            
+            <div class="nav-link @(TempData["ActiveTab"]?.ToString() == "tab-support" ? "active" : "")" onclick="switchTab(event, 'tab-support')">
+                <i class="fa-solid fa-headset"></i> Hỗ trợ & Khiếu nại
+            </div>
+
+            <div class="dropdown-divider" style="height: 1px; background-color: #eee; margin: 15px 0;"></div>
+            
+            <form asp-controller="Account" asp-action="Logout" method="post" style="margin: 0;">
+                <button type="submit" class="nav-link logout" style="width: 100%; background: none; border: none; font-family: inherit; cursor: pointer;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                </button>
+            </form>
+        </nav>
+    </aside>
+
+    <main class="main-card">
+        
+        <div id="tab-profile" class="tab-content @(TempData["ActiveTab"] == null || TempData["ActiveTab"].ToString() == "tab-profile" ? "active" : "")">
+            <form id="profileForm" asp-action="Profile" method="post" enctype="multipart/form-data">
+                <h1 class="title">Hồ Sơ Cá Nhân</h1>
+                
+                <div class="section-header">1. Thông tin định danh</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Họ và Tên</label>
+                        <input asp-for="FullName" type="text" placeholder="Nhập họ và tên của bạn">
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <input asp-for="PhoneNumber" type="text" placeholder="Ví dụ: 0912345678">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email (Không thể thay đổi)</label>
+                    <input asp-for="Email" type="email" readonly>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Ngày sinh</label>
+                        <input asp-for="DateOfBirth" type="date">
+                    </div>
+                    <div class="form-group">
+                        <label>Giới tính</label>
+                        <select asp-for="Gender">
+                            <option value="">-- Chọn giới tính --</option>
+                            <option value="Nam">Nam</option>
+                            <option value="Nữ">Nữ</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-header">2. Hồ sơ làn da (Velvy Skin Profile)</div>
+                <div class="skin-profile-card">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Loại da hiện tại</label>
+                            <select asp-for="SkinType">
+                                <option value="">--- Chọn loại da ---</option>
+                                <option value="Da dầu">Da dầu</option>
+                                <option value="Da khô">Da khô</option>
+                                <option value="Da hỗn hợp">Da hỗn hợp</option>
+                                <option value="Da nhạy cảm">Da nhạy cảm</option>
+                                <option value="Da thường">Da thường</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Vấn đề quan tâm</label>
+                            <select asp-for="SkinConcern">
+                                <option value="">--- Chọn vấn đề ---</option>
+                                <option value="Dưỡng ẩm & Phục hồi">Dưỡng ẩm & Phục hồi</option>
+                                <option value="Dưỡng trắng & Mờ thâm">Dưỡng trắng & Mờ thâm</option>
+                                <option value="Chống lão hóa sớm">Chống lão hóa sớm</option>
+                                <option value="Điều trị mụn">Điều trị mụn</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Tiền sử dị ứng thành phần mỹ phẩm</label>
+                        <input asp-for="Allergies" type="text" placeholder="Ví dụ: Cồn (Alcohol), Hương liệu, Paraben...">
+                    </div>
+                </div>
+
+                <div class="section-header">3. Thông tin nhận hàng</div>
+                <div class="form-group">
+                    <label>Địa chỉ mặc định</label>
+                    <textarea asp-for="DefaultAddress" rows="2" placeholder="Nhập địa chỉ giao hàng thường xuyên của bạn"></textarea>
+                </div>
+
+                <button type="submit" class="btn-mint"><i class="fa-solid fa-floppy-disk"></i> Lưu tất cả thay đổi</button>
+            </form>
+        </div>
+
+        <div id="tab-support" class="tab-content @(TempData["ActiveTab"]?.ToString() == "tab-support" ? "active" : "")">
+            <h1 class="title">Trung Tâm Hỗ Trợ & Khiếu Nại</h1>
+            
+            <div class="support-alert">
+                <i class="fa-solid fa-headset" style="font-size: 24px; color: var(--gold);"></i>
+                <span>Mọi vấn đề khiếu nại về đơn hàng sẽ được đội ngũ <strong>Velvy Skin</strong> xử lý và phản hồi trong 24 giờ làm việc.</span>
+            </div>
+
+            @if (supportTickets.Any())
+            {
+                <div class="section-header">Lịch sử yêu cầu của bạn</div>
+                <div style="background: white; border: 1px solid #eee; border-radius: 15px; overflow: hidden; margin-bottom: 40px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead style="background: #f9f9f9; font-size: 12px; color: #666; text-transform: uppercase;">
+                            <tr>
+                                <th style="padding: 15px;">Mã ĐH</th>
+                                <th style="padding: 15px;">Vấn đề</th>
+                                <th style="padding: 15px;">Ngày gửi</th>
+                                <th style="padding: 15px;">Trạng thái</th>
+                                <th style="padding: 15px; text-align: right;">Thao tác</th> 
+                           </tr>
+                        </thead>
+                        <tbody style="font-size: 13px;">
+                            @foreach (var ticket in supportTickets)
+                            {
+                                <tr style="border-top: 1px solid #eee;">
+                                    <td style="padding: 15px; font-weight: 600; color: var(--mint);">@(string.IsNullOrEmpty(ticket.OrderCode) ? "N/A" : ticket.OrderCode)</td>
+                                    <td style="padding: 15px;">@ticket.IssueType</td>
+                                    <td style="padding: 15px; color: #888;">@ticket.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td style="padding: 15px;">
+                                        @if (ticket.Status == "Pending" || ticket.Status == "Chờ xử lý") 
+                                        { 
+                                            <span style="background: #fff3cd; color: #856404; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">Chờ xử lý</span> 
+                                        }
+                                        else if (ticket.Status == "Replied" || ticket.Status == "Đang giải quyết") 
+                                        { 
+                                            <span style="background: #cce5ff; color: #004085; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">Có phản hồi mới</span> 
+                                        }
+                                        else 
+                                        { 
+                                            <span style="background: #d4edda; color: #155724; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;">Đã hoàn thành</span> 
+                                        }
+                                    </td>
+                                    
+                                    <td style="padding: 15px; text-align: right;">
+                                        <a asp-controller="Account" asp-action="ChatDetail" asp-route-id="@ticket.Id" style="background: var(--mint); color: white; padding: 8px 15px; border-radius: 10px; text-decoration: none; font-size: 12px; font-weight: 600; display: inline-block; transition: 0.3s;" onmouseover="this.style.background='var(--dark-mint)'" onmouseout="this.style.background='var(--mint)'">
+                                            Vào Chat <i class="fa-solid fa-arrow-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="section-header">Tạo yêu cầu hỗ trợ mới</div>
+            <form asp-controller="Account" asp-action="SubmitSupportTicket" method="post" enctype="multipart/form-data" style="background: var(--soft-gold); padding: 30px; border-radius: 20px; border: 1px solid #f3ece0;">
+                
+                <div class="form-group mb-3">
+                    <label for="IssueType" style="font-weight: 600; color: #333; margin-bottom: 8px;">Vấn đề bạn đang gặp phải? <span style="color: red;">*</span></label>
+                    <select name="IssueType" id="IssueType" class="form-control" style="padding: 12px; border-radius: 10px; border: 1px solid #ddd;" required>
+                        <option value="">-- Chọn loại khiếu nại / hỗ trợ --</option>
+                        <option value="Sản phẩm bị lỗi/hỏng/vỡ">Sản phẩm bị lỗi / hỏng / vỡ khi nhận</option>
+                        <option value="Giao thiếu sản phẩm/quà tặng">Giao thiếu sản phẩm / quà tặng</option>
+                        <option value="Sản phẩm không đúng mô tả">Sản phẩm không đúng mô tả / sai hàng</option>
+                        <option value="Sản phẩm hết hạn sử dụng">Sản phẩm cận date / hết hạn sử dụng</option>
+                        <option value="Khác">Vấn đề khác...</option>
+                    </select>
+                    
+                    <small style="color: #888; margin-top: 8px; display: block; background: #f9f9f9; padding: 10px; border-radius: 8px; border-left: 3px solid var(--primary-mint);">
+                        <i class="fa-solid fa-circle-info" style="color: var(--primary-mint);"></i> Nếu bạn cần hỗ trợ lộ trình <strong>Vận Chuyển</strong>, vui lòng vào mục <strong>Đơn hàng của tôi > Xem chi tiết > Liên hệ hỗ trợ</strong>.
+                    </small>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label style="font-weight: 600; color: #333; margin-bottom: 8px;">Đơn hàng bạn cần hỗ trợ (Tùy chọn)</label>
+                    <select name="OrderCode" class="form-control" style="padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
+                        <option value="">-- Không liên quan đến đơn hàng cụ thể --</option>
+                        
+                        @if (recentOrders.Any())
+                        {
+                            foreach (var order in recentOrders)
+                            {
+                                <option value="#VS-@order.OrderDate.ToString("yyMMdd")-@order.Id">
+                                    Đơn #VS-@order.OrderDate.ToString("yyMMdd")-@order.Id (Đặt ngày @order.OrderDate.ToString("dd/MM/yyyy") - @order.TotalAmount.ToString("N0")đ)
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Nội dung chi tiết <span style="color:red">*</span></label>
+                    <textarea name="Content" rows="4" placeholder="Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải để chúng tôi hỗ trợ tốt nhất..." required></textarea>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label style="font-weight: 600; color: #333; margin-bottom: 8px;">Đính kèm hình ảnh minh chứng (Tối đa 2MB)</label>
+                    <input type="file" name="attachment" accept="image/*" style="border: 2px dashed #2ec4b6; background: #f0fdfa; color: #208b81; padding: 12px; cursor: pointer; width: 100%; border-radius: 10px; outline: none; transition: 0.3s;" onmouseover="this.style.background='white'" onmouseout="this.style.background='#f0fdfa'">
+                </div>
+
+                <button type="submit" class="btn-mint"><i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu ngay</button>
+            </form>
+        </div>
+
+    </main>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Hàm chuyển đổi Tab xịn xò
+        function switchTab(e, tabId) {
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            if(e) e.currentTarget.classList.add('active');
+            else document.querySelector(`[onclick="switchTab(event, '${tabId}')"]`).classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            if(window.innerWidth < 992) {
+                document.querySelector('.main-card').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Preview ảnh đại diện
+        function changeAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('userAvatar').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+
+    @if (TempData["SuccessMsg"] != null)
+    {
+        <script>
+            Swal.fire({
+                title: "Thành công!",
+                text: "@Html.Raw(TempData["SuccessMsg"])",
+                icon: "success",
+                confirmButtonColor: "#2ec4b6"
+            });
+        </script>
+    }
+
+    @if (TempData["ErrorMsg"] != null)
+    {
+        <script>
+            Swal.fire({
+                title: "Lỗi!",
+                text: "@Html.Raw(TempData["ErrorMsg"])",
+                icon: "error",
+                confirmButtonColor: "#ff5e5e"
+            });
+        </script>
+    }
+}

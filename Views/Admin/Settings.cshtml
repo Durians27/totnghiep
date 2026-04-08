@@ -1,0 +1,264 @@
+@{
+    ViewData["Title"] = "Cài Đặt Hệ Thống";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Giữ lại Topbar và Sidebar
+}
+
+<style>
+    /* CSS Giao diện Cài đặt - Đã được Scope (Giới hạn) để không làm hỏng giao diện gốc */
+    .settings-wrapper {
+        --primary-mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa;
+        --bg-gray: #f8f9fa; --danger: #e74c3c;
+        font-family: 'Montserrat', sans-serif; color: #333;
+        padding: 10px 20px; max-width: 1100px; margin: 0 auto;
+    }
+    
+    .settings-wrapper .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .settings-wrapper .page-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin: 0; }
+
+    .settings-wrapper .settings-grid { display: grid; grid-template-columns: 280px 1fr; gap: 30px; }
+
+    /* Sidebar Menu trong Cài đặt */
+    .settings-wrapper .settings-sidebar { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); height: fit-content; }
+    .settings-wrapper .setting-tab-item { display: flex; align-items: center; gap: 12px; padding: 15px; border-radius: 15px; cursor: pointer; color: #888; font-weight: 600; font-size: 14px; transition: 0.3s; margin-bottom: 5px; }
+    .settings-wrapper .setting-tab-item:hover { background: var(--light-mint); color: var(--primary-mint); }
+    .settings-wrapper .setting-tab-item.active { background: var(--primary-mint); color: white; }
+
+    /* Main Content Card */
+    .settings-wrapper .settings-card { background: white; border-radius: 30px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); border: 1px solid #f1f1f1; min-height: 550px;}
+    .settings-wrapper .section-title { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; }
+
+    /* Tab Content Control */
+    .settings-wrapper .tab-content { display: none; }
+    .settings-wrapper .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Form Controls */
+    .settings-wrapper .form-group { margin-bottom: 25px; }
+    .settings-wrapper label { display: block; font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+    
+    .settings-wrapper input, .settings-wrapper select, .settings-wrapper textarea { width: 100%; padding: 14px 18px; border-radius: 12px; border: 1px solid transparent; background: #f9f9f9; font-family: inherit; font-size: 14px; color: #666; outline: none; transition: 0.3s; box-sizing: border-box; cursor: default; }
+
+    /* Chế độ đang chỉnh sửa */
+    .settings-wrapper .editing-mode input, .settings-wrapper .editing-mode select, .settings-wrapper .editing-mode textarea { background: white; border-color: #eee; color: #222; cursor: text; }
+    .settings-wrapper .editing-mode input:focus { border-color: var(--primary-mint); box-shadow: 0 0 0 4px var(--light-mint); }
+
+    /* Switch Toggle */
+    .settings-wrapper .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f9f9f9; }
+    .settings-wrapper .switch-label h4 { margin: 0; font-size: 14px; color: #444; }
+    .settings-wrapper .switch-label p { margin: 4px 0 0; font-size: 12px; color: #aaa; }
+
+    .settings-wrapper .switch { position: relative; display: inline-block; width: 44px; height: 24px; opacity: 0.5; pointer-events: none; }
+    .settings-wrapper .editing-mode .switch { opacity: 1; pointer-events: auto; }
+    .settings-wrapper .switch input { opacity: 0; width: 0; height: 0; }
+    .settings-wrapper .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #eee; transition: .4s; border-radius: 34px; }
+    .settings-wrapper .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    .settings-wrapper input:checked + .slider { background-color: var(--primary-mint); }
+    .settings-wrapper input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Buttons */
+    .settings-wrapper .btn-group { display: flex; gap: 10px; }
+    .settings-wrapper .btn { padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+    .settings-wrapper .btn-edit { background: var(--light-mint); color: var(--primary-mint); }
+    .settings-wrapper .btn-save { background: var(--primary-mint); color: white; display: none; }
+    .settings-wrapper .btn-cancel { background: #f5f5f5; color: #888; display: none; }
+</style>
+
+<div class="settings-wrapper">
+    <div class="page-header">
+        <h1 class="page-title" id="mainTitle">Cài Đặt Chung</h1>
+        <div class="btn-group">
+            <button class="btn btn-edit" id="masterEditBtn" onclick="enableGlobalEdit()">
+                <i class="fa-solid fa-lock-open"></i> Mở khóa chỉnh sửa
+            </button>
+            <button class="btn btn-cancel" id="cancelBtn" onclick="disableGlobalEdit()">Hủy</button>
+            <button class="btn btn-save" id="saveBtn" onclick="saveAllSettings()">Lưu cấu hình</button>
+        </div>
+    </div>
+
+    <div class="settings-grid">
+        <div class="settings-sidebar">
+            <div class="setting-tab-item active" onclick="switchSettingTab(this, 'tab-general', 'Cài Đặt Chung')"><i class="fa-solid fa-sliders"></i> Chung</div>
+            <div class="setting-tab-item" onclick="switchSettingTab(this, 'tab-security', 'Bảo Mật Chi Tiết')"><i class="fa-solid fa-shield-halved"></i> Bảo mật</div>
+            
+            <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="setting-tab-item" style="color: var(--danger); margin-top: 20px; border: none; background: none; width: 100%; text-align: left;">
+                    <i class="fa-solid fa-power-off"></i> Đăng xuất
+                </button>
+            </form>
+        </div>
+
+        <div class="settings-card" id="settingsContainer">
+            
+            <div id="tab-general" class="tab-content active">
+                <div class="section-title">Thông Tin Cửa Hàng</div>
+                <div class="form-group">
+                    <label>Tên Thương Hiệu</label>
+                    <input type="text" value="Velvy Skin - Mỹ phẩm cao cấp" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Email Nhận Báo Cáo</label>
+                    <input type="email" value="contact@velvyskin.vn" readonly>
+                </div>
+                
+                <div class="section-title" style="margin-top: 40px;">Cấu Hình Vận Hành</div>
+                <form asp-controller="Admin" asp-action="UpdateSettings" method="post" id="settingsForm">
+                    <div class="switch-row">
+                        <div class="switch-label">
+                            <h4>Chế độ bảo trì</h4>
+                            <p>Tạm thời đóng website đối với Khách hàng.</p>
+                        </div>
+                        <label class="switch" style="opacity: 1; pointer-events: auto;">
+                            <input type="checkbox" name="isMaintenance" value="true" @(VelvySkinWeb.Models.GlobalSettings.IsMaintenanceMode ? "checked" : "")>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="switch-row">
+                        <div class="switch-label">
+                            <h4>Tự động hóa khiếu nại</h4>
+                            <p>Hệ thống tự gửi email xin lỗi khi có khiếu nại mới.</p>
+                        </div>
+                        <label class="switch" style="opacity: 1; pointer-events: auto;">
+                            <input type="checkbox" name="isAutoReply" value="true" @(VelvySkinWeb.Models.GlobalSettings.AutoReplyComplaint ? "checked" : "")>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" id="realSubmitBtn" style="display: none;"></button>
+                </form>
+            </div> <div id="tab-ui" class="tab-content">
+                <div class="section-title">Tùy Chỉnh Hiển Thị</div>
+                <div class="form-group">
+                    <label>Màu sắc chủ đạo (Primary Theme)</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select disabled style="flex: 1;">
+                            <option>Mint Green (Mặc định)</option>
+                            <option>Ocean Blue</option>
+                            <option>Luxury Gold</option>
+                        </select>
+                        <span style="font-size: 11px; font-weight: 700; color: var(--gold-vip, #c5a059); background: #fffcf0; padding: 5px 10px; border-radius: 6px; border: 1px solid #fdf2ce;">
+                            <i class="fa-solid fa-palette"></i> Đang hoàn thiện CSS
+                        </span>
+                    </div>
+                </div>
+                <div class="switch-row">
+                    <div class="switch-label">
+                        <h4>Chế độ tối (Dark Mode)</h4>
+                        <p>Chuyển đổi toàn bộ giao diện sang màu tối.</p>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--gold-vip, #c5a059); background: #fffcf0; padding: 5px 10px; border-radius: 6px; border: 1px solid #fdf2ce;">
+                            <i class="fa-solid fa-moon"></i> Bản cập nhật Phase 2
+                        </span>
+                        <label class="switch"><input type="checkbox" disabled><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div> 
+            <div id="tab-security" class="tab-content">
+                <div class="section-title">An Toàn Hệ Thống</div>
+                
+                <form asp-controller="Admin" asp-action="ChangeAdminPassword" method="post">
+                    <div class="form-group">
+                        <label>Mật khẩu quản trị hiện tại</label>
+                        <input type="password" name="currentPassword" placeholder="Nhập mật khẩu cũ để xác thực" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Đổi mật khẩu mới</label>
+                        <input type="password" name="newPassword" placeholder="Nhập tối thiểu 6 ký tự" required readonly>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-save" style="margin-top: 15px; width: fit-content; display: none;" id="btnSavePassword">
+                        <i class="fa-solid fa-key me-2"></i> Xác nhận đổi mật khẩu
+                    </button>
+                </form>
+
+                <div class="section-title" style="margin-top: 40px;">Xác Thực & Truy Cập</div>
+                <div class="switch-row">
+                    <div class="switch-label">
+                        <h4>Xác thực 2 lớp (2FA)</h4>
+                        <p>Gửi mã qua Email/Telegram mỗi khi đăng nhập lạ.</p>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--gold-vip, #c5a059); background: #fffcf0; padding: 5px 10px; border-radius: 6px; border: 1px solid #fdf2ce;">
+                            <i class="fa-solid fa-shield"></i> Chờ cấp phép Email Server
+                        </span>
+                        <label class="switch"><input type="checkbox" checked disabled><span class="slider"></span></label>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; padding: 15px; background: #fff5f5; border-radius: 15px; font-size: 12px; color: var(--danger); border: 1px solid #ffebeb;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <strong>Cảnh báo tự động:</strong> Có 1 thiết bị lạ đang cố gắng truy cập từ TP.HCM vào lúc 02:00 AM.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const container = document.getElementById('settingsContainer');
+
+        function switchSettingTab(el, tabId, title) {
+            document.querySelectorAll('.setting-tab-item').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            el.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('mainTitle').innerText = title;
+            disableGlobalEdit();
+        }
+
+       function enableGlobalEdit() {
+            container.classList.add('editing-mode');
+            container.querySelectorAll('input, textarea, select').forEach(f => {
+                f.removeAttribute('readonly'); 
+                f.removeAttribute('disabled');
+            });
+            document.getElementById('masterEditBtn').style.display = 'none';
+            document.getElementById('saveBtn').style.display = 'flex';
+            document.getElementById('cancelBtn').style.display = 'flex';
+            
+            // Hiện nút lưu mật khẩu
+            if(document.getElementById('btnSavePassword')) {
+                document.getElementById('btnSavePassword').style.display = 'flex';
+            }
+        }
+       function disableGlobalEdit() {
+            container.classList.remove('editing-mode');
+            container.querySelectorAll('input, textarea, select').forEach(f => {
+                f.setAttribute('readonly', true);
+                if(f.tagName === 'SELECT') f.setAttribute('disabled', true);
+                // Khóa lại cái công tắc 2FA
+                if(f.type === 'checkbox' && f.closest('.switch-row') && f.closest('.switch-row').innerText.includes('2FA')) {
+                    f.setAttribute('disabled', true); 
+                }
+            });
+            document.getElementById('masterEditBtn').style.display = 'flex';
+            document.getElementById('saveBtn').style.display = 'none';
+            document.getElementById('cancelBtn').style.display = 'none';
+            
+            // Ẩn nút lưu mật khẩu
+            if(document.getElementById('btnSavePassword')) {
+                document.getElementById('btnSavePassword').style.display = 'none';
+            }
+        }
+
+        function saveAllSettings() {
+       
+            document.getElementById('realSubmitBtn').click();
+        }
+
+        // 🔥 Lắng nghe C# báo về: Nếu C# lưu thành công, nó gửi TempData xuống, lúc đó JS mới bung thông báo
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: '@Html.Raw(TempData["SuccessMsg"])',
+                    icon: 'success',
+                    confirmButtonColor: '#2ec4b6'
+                });
+            </text>
+        }
+    </script>
+}

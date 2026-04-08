@@ -1,0 +1,189 @@
+@model IEnumerable<VelvySkinWeb.Models.Product>
+@{
+    ViewData["Title"] = "Quản lý sản phẩm";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; 
+}
+
+<style>
+    /* ÉP BUỘC LAYOUT PHẢI HIỂN THỊ DỌC (CHỐNG VỠ GIAO DIỆN) */
+    .product-page-wrapper { display: block !important; width: 100%; clear: both; }
+
+    /* CSS CỐT LÕI */
+    .filter-section { display: flex; gap: 15px; margin-bottom: 25px; align-items: center; background: white; padding: 15px 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+    .search-wrapper { flex: 1; position: relative; }
+    .search-wrapper i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; }
+    .search-wrapper input { width: 100%; padding: 12px 15px 12px 40px; border-radius: 10px; border: 1px solid #eee; background: #f9f9f9; outline: none; font-family: inherit;}
+    .category-select { padding: 12px 15px; border-radius: 10px; border: 1px solid #eee; background: white; color: #555; outline: none; font-weight: 500; min-width: 180px; font-family: inherit;}
+
+    .table-wrapper { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); width: 100%; overflow-x: auto;}
+    .table-wrapper table { width: 100%; border-collapse: collapse; min-width: 800px;}
+    .table-wrapper th, .table-wrapper td { padding: 18px 15px; text-align: center; border-bottom: 1px solid #f8f9fa; vertical-align: middle; }
+    .table-wrapper th { color: var(--primary-mint); font-size: 12px; text-transform: uppercase; background: #fafafa; font-weight: 700; }
+    
+    .prod-img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eee;}
+    .sku-tag { background: #f1f5f9; color: #64748b; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-weight: 700; }
+    
+    .status-badge { padding: 6px 12px; border-radius: 30px; font-size: 11px; font-weight: 700; display: inline-block; min-width: 90px; }
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-inactive { background: #fee2e2; color: #991b1b; }
+
+    .action-group { display: flex; justify-content: center; gap: 8px; }
+    .action-btn { width: 34px; height: 34px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; text-decoration: none;}
+    .btn-view { background: #e0f2fe; color: #0369a1; }
+    .btn-edit { background: #fef3c7; color: #92400e; }
+    .btn-delete { background: #fee2e2; color: #991b1b; }
+    .action-btn:hover { transform: scale(1.1); filter: brightness(0.95); }
+
+    .btn-add { background: var(--primary-mint); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-block;}
+    .btn-add:hover { background: var(--dark-mint); color: white;}
+</style>
+
+<div class="product-page-wrapper">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; width: 100%;">
+        <div>
+            <h1 style="font-size:24px; font-family: 'Playfair Display', serif; color: var(--dark-mint); margin-bottom: 5px;">Danh sách sản phẩm</h1>
+            <p style="color:#aaa; font-size:13px; margin: 0;">Sản phẩm đang được đồng bộ trực tiếp từ Database</p>
+        </div>
+        
+        <a asp-controller="Products" asp-action="Create" class="btn-add"><i class="fa-solid fa-plus me-1"></i> Thêm sản phẩm mới</a>
+        
+    </div>
+
+    <form method="get" asp-action="Products" class="filter-section">
+        <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="search" value="@ViewBag.CurrentSearch" placeholder="Tìm theo mã sản phẩm hoặc tên sản phẩm...">
+        </div>
+        <select name="categoryId" class="category-select" onchange="this.form.submit()">
+            <option value="">Tất cả danh mục</option>
+            @if(ViewBag.Categories != null)
+            {
+                foreach(var cat in ViewBag.Categories)
+                {
+                    <option value="@cat.Id" selected="@(ViewBag.CurrentCategory == cat.Id ? "selected" : null)">@cat.Name</option>
+                }
+            }
+        </select>
+        <button type="submit" class="btn-add" style="padding: 12px 20px;"><i class="fa-solid fa-filter"></i> Lọc</button>
+        <a asp-action="Products" class="action-btn" style="background: #eee; text-decoration: none; width: 42px; height: 42px;" title="Xóa bộ lọc">
+            <i class="fa-solid fa-rotate-right" style="color: #666;"></i>
+        </a>
+    </form>
+
+    <div class="table-wrapper">
+        @if (!Model.Any())
+        {
+            <div style="text-align: center; padding: 50px; color: #888;">
+                <i class="fa-solid fa-box-open" style="font-size: 50px; color: #ddd; margin-bottom: 15px; display: block;"></i>
+                Không tìm thấy sản phẩm nào!
+            </div>
+        }
+        else
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ảnh</th>
+                        <th>Mã SP</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Giá bán</th>
+                        <th>Kho</th>
+                        <th>Danh mục</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var item in Model)
+                    {
+                        string statusClass = "";
+                        string statusText = "";
+
+                        if (item.IsActive == false) {
+                            statusClass = "status-inactive"; 
+                            statusText = "Tạm ẩn";
+                        } else if (item.StockQuantity <= 0) {
+                            statusClass = "status-inactive"; 
+                            statusText = "Hết hàng";
+                        } else {
+                            statusClass = "status-active"; 
+                            statusText = "Đang bán";
+                        }
+
+                        string catName = item.Category != null ? item.Category.Name : "Chưa phân loại";
+
+                        <tr>
+                            <td>
+                                <img src="@item.ImageUrl" class="prod-img" onerror="this.src='https://via.placeholder.com/50'">
+                            </td>
+                            <td><span class="sku-tag">#@item.Id</span></td>
+                            <td style="font-weight:600; color:#334155; text-align: center;">@item.Name</td>
+                            <td style="font-weight:700; color:var(--dark-mint);">@item.Price.ToString("N0")₫</td>
+                            <td>
+                                <strong style="font-size:15px; color: @(item.StockQuantity == 0 ? "#ff4d4d" : "#333")">@item.StockQuantity</strong>
+                            </td>
+                            <td><span style="color:#666; font-size:13px;">@catName</span></td>
+                            <td>
+                                <span class="status-badge @statusClass">@statusText</span>
+                            </td>
+                            <td>
+                                <div class="action-group">
+                                    
+                                    <a asp-controller="Products" asp-action="Edit" asp-route-id="@item.Id" class="action-btn btn-edit" title="Sửa"><i class="fa-solid fa-pen"></i></a>
+                                    
+                                    <form id="delete-form-@item.Id" asp-controller="Products" asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline;">
+                                        <button type="button" class="action-btn btn-delete" title="Xóa" onclick="confirmDelete('@item.Id', '@item.Name.Replace("'", "\\'")')">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // 1. THÔNG BÁO THÀNH CÔNG KIỂU MỚI (Xịn hơn Alert localhost)
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: '@Html.Raw(TempData["SuccessMsg"])',
+                    icon: 'success',
+                    confirmButtonColor: '#2ec4b6',
+                    timer: 3000 // Tự động tắt sau 3 giây
+                });
+            </text>
+        }
+
+        // 2. GIAO DIỆN HỎI XÓA CHUYÊN NGHIỆP TRONG WEB
+        function confirmDelete(id, name) {
+            Swal.fire({
+                title: 'Xác nhận xóa?',
+                html: `Bạn có chắc chắn muốn xóa vĩnh viễn sản phẩm <br/><b>${name}</b> không?<br/><span style='color:red;'>Hành động này không thể hoàn tác!</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2ec4b6',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: '<i class="fa-solid fa-trash"></i> Vâng, xóa ngay!',
+                cancelButtonText: 'Hủy bỏ',
+                backdrop: `rgba(0,0,0,0.5)` // Làm tối nền web
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Nếu admin bấm "Vâng, xóa ngay!" thì mới ra lệnh chạy Form C#
+                    document.getElementById('delete-form-' + id).submit();
+                }
+            });
+        }
+    </script>
+}

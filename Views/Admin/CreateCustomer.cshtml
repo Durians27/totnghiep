@@ -1,0 +1,136 @@
+@model VelvySkinWeb.Models.UserProfile
+@{
+    ViewData["Title"] = "Thêm Khách Hàng Mới";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    /* Chống vỡ khung bằng class tùy chỉnh */
+    .create-customer-wrapper {
+        --mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa; --gold: #c5a059; --soft-gold: #fcfaf5; --bg: #f8fafb; --text: #333; --border: #eeeeee;
+        font-family: 'Montserrat', sans-serif; color: var(--text); padding: 20px; box-sizing: border-box; max-width: 900px; margin: 0 auto;
+    }
+
+    .create-customer-wrapper .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+    .create-customer-wrapper .page-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin: 0; font-weight: 700;}
+    .create-customer-wrapper .back-link { text-decoration: none; color: #888; font-size: 13px; font-weight: 600; transition: 0.3s; display: flex; align-items: center; gap: 8px;}
+    .create-customer-wrapper .back-link:hover { color: var(--mint); }
+
+    /* Form Card */
+    .create-customer-wrapper .form-card { background: white; border-radius: 30px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); border: 1px solid #f1f1f1; }
+    
+    .create-customer-wrapper .section-tag { 
+        display: inline-block; padding: 6px 15px; background: var(--light-mint); 
+        color: var(--mint); border-radius: 8px; font-size: 11px; font-weight: 700; 
+        text-transform: uppercase; margin-bottom: 25px; letter-spacing: 1px;
+    }
+
+    .create-customer-wrapper .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    .create-customer-wrapper .form-group { margin-bottom: 25px; }
+    .create-customer-wrapper label { display: block; font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; margin-bottom: 10px; }
+    
+    .create-customer-wrapper input, .create-customer-wrapper select, .create-customer-wrapper textarea { 
+        width: 100%; padding: 15px 18px; border-radius: 15px; border: 1px solid var(--border); 
+        background: #fafafa; font-family: inherit; font-size: 14px; outline: none; transition: 0.3s; box-sizing: border-box;
+    }
+    .create-customer-wrapper input:focus, .create-customer-wrapper select:focus, .create-customer-wrapper textarea:focus { border-color: var(--mint); background: white; box-shadow: 0 0 0 3px var(--light-mint); }
+
+    /* Skin Profile Custom Area */
+    .create-customer-wrapper .skin-analysis-box { background: var(--soft-gold); border: 1px solid #f3ece0; padding: 30px; border-radius: 20px; margin: 10px 0 30px; }
+    .create-customer-wrapper .skin-analysis-box h4 { margin-top: 0; font-family: 'Playfair Display', serif; color: #a67c00; font-size: 18px; margin-bottom: 20px; font-weight: 700;}
+
+    /* Buttons */
+    .create-customer-wrapper .action-bar { border-top: 1px solid #f5f5f5; padding-top: 30px; display: flex; gap: 15px; }
+    .create-customer-wrapper .btn { 
+        padding: 16px 35px; border-radius: 15px; font-weight: 700; font-size: 14px; 
+        cursor: pointer; border: none; transition: 0.3s; display: flex; align-items: center; gap: 10px; font-family: inherit;
+    }
+    .create-customer-wrapper .btn-save { background: var(--mint); color: white; flex: 2; justify-content: center; box-shadow: 0 10px 20px rgba(46, 196, 182, 0.15); }
+    .create-customer-wrapper .btn-cancel { background: #f5f5f5; color: #888; flex: 1; justify-content: center; text-decoration: none;}
+    .create-customer-wrapper .btn-save:hover { background: var(--dark-mint); transform: translateY(-2px); }
+    .create-customer-wrapper .btn-cancel:hover { background: #e0e0e0; color: #333; }
+
+    
+    @@media (max-width: 768px) { .create-customer-wrapper .grid-2 { grid-template-columns: 1fr; } }
+</style>
+
+<div class="create-customer-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Thêm Khách Hàng Mới</h1>
+        <a asp-controller="Admin" asp-action="Customers" class="back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a>
+    </div>
+
+    <form asp-controller="Admin" asp-action="CreateCustomer" method="post" class="form-card">
+        
+        <span class="section-tag">Thông tin định danh</span>
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Họ và Tên khách hàng <span style="color:red">*</span></label>
+                <input asp-for="FullName" type="text" placeholder="Nhập tên đầy đủ..." required>
+            </div>
+            <div class="form-group">
+                <label>Số điện thoại <span style="color:red">*</span></label>
+                <input asp-for="PhoneNumber" type="tel" placeholder="09xx xxx xxx" required>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Email (Tùy chọn)</label>
+                <input name="Email" type="email" placeholder="Nhập email nếu có...">
+            </div>
+            <div class="form-group">
+                <label>Ngày sinh</label>
+                <input asp-for="DateOfBirth" type="date">
+            </div>
+        </div>
+
+        <span class="section-tag">Hồ sơ làn da (Skin Profile)</span>
+        <div class="skin-analysis-box">
+            <h4>Phân tích tình trạng da</h4>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Loại da</label>
+                    <select asp-for="SkinType">
+                        <option value="">-- Chọn loại da --</option>
+                        <option value="Da thường">Da thường</option>
+                        <option value="Da dầu">Da dầu</option>
+                        <option value="Da khô">Da khô</option>
+                        <option value="Da hỗn hợp">Da hỗn hợp</option>
+                        <option value="Da nhạy cảm">Da nhạy cảm</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Vấn đề cần ưu tiên</label>
+                    <select asp-for="SkinConcern">
+                        <option value="">-- Chọn vấn đề --</option>
+                        <option value="Mụn / Thâm">Mụn / Thâm</option>
+                        <option value="Lão hóa / Nếp nhăn">Lão hóa / Nếp nhăn</option>
+                        <option value="Sạm nám / Tàn nhang">Sạm nám / Tàn nhang</option>
+                        <option value="Lỗ chân lông to">Lỗ chân lông to</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Ghi chú tư vấn (Tiền sử dị ứng, Sản phẩm đang dùng...)</label>
+                <textarea asp-for="Allergies" rows="3" placeholder="Nhập các lưu ý đặc biệt để Velvy Skin tư vấn tốt hơn..."></textarea>
+            </div>
+        </div>
+
+        <span class="section-tag">Địa chỉ nhận hàng</span>
+        <div class="form-group">
+            <label>Địa chỉ chi tiết</label>
+            <input asp-for="DefaultAddress" type="text" placeholder="Số nhà, tên đường, phường/xã, Tỉnh/Thành phố...">
+        </div>
+
+        <div style="background: #e6fcf5; color: #0ca678; padding: 15px; border-radius: 12px; margin-bottom: 25px; font-size: 13px; font-weight: 600; border: 1px dashed #20c997;">
+            <i class="fa-solid fa-key"></i> Tài khoản của khách sẽ được khởi tạo với mật khẩu mặc định là: <span style="font-size: 15px; color: #087f5b; user-select: all;">Velvy@123</span>
+        </div>
+
+        <div class="action-bar">
+            <a asp-controller="Admin" asp-action="Customers" class="btn btn-cancel">Hủy bỏ</a>
+            <button type="submit" class="btn btn-save">
+                <i class="fa-solid fa-user-plus"></i> Lưu thông tin khách hàng
+            </button>
+        </div>
+    </form>
+</div>

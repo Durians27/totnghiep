@@ -1,6 +1,6 @@
 @model VelvySkinWeb.Models.Order
 @{
-    ViewData["Title"] = "Chi tiết đơn hàng #" + Model.Id;
+    ViewData["Title"] = "Chi tiết đơn hàng #VS-" + Model.OrderDate.ToString("yyMMdd") + "-" + Model.Id;
 
     int step = 1;
     string statusText = "Chờ xác nhận";
@@ -76,7 +76,7 @@
 
     <div class="order-detail-header">
         <div>
-            <div class="order-id-big">Mã đơn: #@Model.Id</div>
+            <div class="order-id-big">Mã đơn: #VS-@Model.OrderDate.ToString("yyMMdd")-@Model.Id</div>
             <p style="margin-top: 8px; color:#888; font-size:14px;">
                 <strong>Ngày đặt:</strong> @Model.OrderDate.ToString("dd/MM/yyyy • HH:mm")
             </p>
@@ -192,9 +192,15 @@
         <button onclick="trackOrder()" class="btn-detail btn-primary">
             <i class="fa-solid fa-truck"></i> Theo dõi vận chuyển
         </button>
-        <button onclick="contactSupport()" class="btn-detail btn-outline">
-            <i class="fa-solid fa-headset"></i> Liên hệ hỗ trợ
-        </button>
+
+        <form asp-controller="Account" asp-action="AutoCreateOrderTicket" method="post" style="margin: 0;">
+            <input type="hidden" name="orderCode" value="#VS-@Model.OrderDate.ToString("yyMMdd")-@Model.Id" /> 
+            
+            <button type="submit" class="btn-detail btn-outline" style="cursor: pointer;">
+                <i class="fa-solid fa-headset"></i> Liên hệ hỗ trợ
+            </button>
+        </form>
+
         <a asp-controller="Products" asp-action="Skincare" class="btn-detail btn-outline">
             <i class="fa-solid fa-rotate-right"></i> Mua lại
         </a>
@@ -206,9 +212,6 @@
 
 <script>
     function trackOrder() {
-        alert('📦 Đang mở trang theo dõi vận chuyển...\n\nMã vận đơn: VELVY-TRK-@Model.OrderDate.ToString("yyMMdd")@Model.Id\nTrạng thái: @statusText');
-    }
-    function contactSupport() {
-        alert('💬 Bạn đang kết nối với đội ngũ hỗ trợ Velvy Skin.\nChúng tôi sẽ gọi lại vào số @Model.PhoneNumber trong vòng 5 phút!');
+        alert('📦 Đang kết nối tới đơn vị vận chuyển...\n\nMã vận đơn: VELVY-TRK-@Model.OrderDate.ToString("yyMMdd")@Model.Id\nTrạng thái: @statusText');
     }
 </script>

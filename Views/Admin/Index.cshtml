@@ -1,0 +1,132 @@
+@{
+    ViewData["Title"] = "Bảng điều khiển";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; 
+}
+
+<style>
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    .stat-card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); transition: var(--transition); border: 1px solid #f0f0f0;}
+    .stat-card:hover { transform: translateY(-8px); }
+    .stat-icon { width: 55px; height: 55px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 15px; }
+    .stat-number { font-size: 28px; font-weight: 700; color: #222; }
+    .stat-label { font-size: 14px; color: #666; font-weight: 500;}
+
+    /* CSS CHO TRẠNG THÁI (Đồng bộ với trang Đơn hàng) */
+    .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .status-pending { background: #fff5e6; color: #ffa500; } /* Vàng - Chờ xác nhận */
+    .status-shipping { background: #e1f5fe; color: #3498db; }    /* Xanh dương - Đang giao */
+    .status-completed { background: #f0fdfa; color: #2ec4b6; } /* Xanh lá mint - Hoàn thành */
+    .status-cancelled { background: #ffebee; color: #ff4d4d; }  /* Đỏ - Đã hủy */
+</style>
+
+<h1 style="font-family:'Playfair Display',serif;font-size:32px;margin-bottom:8px;color:#222;">Xin chào, Admin Velvy </h1>
+<p style="color:#888;margin-bottom:35px;">Hôm nay là @DateTime.Now.ToString("dd/MM/yyyy")</p>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#d1ecf1;color:#0c5460;"><i class="fa-solid fa-box"></i></div>
+        <div class="stat-number">@ViewBag.TotalOrders</div>
+        <div class="stat-label">Tổng đơn hàng tháng này</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#d4edda;color:#155724;"><i class="fa-solid fa-money-bill-wave"></i></div>
+        <div class="stat-number">@ViewBag.TotalRevenue.ToString("N0")đ</div>
+        <div class="stat-label">Doanh thu tháng này</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#fff3cd;color:#856404;"><i class="fa-solid fa-flask"></i></div>
+        <div class="stat-number">@ViewBag.TotalProducts</div>
+        <div class="stat-label">Sản phẩm đang bán</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:#e993b0;color:white;"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-number">@ViewBag.TotalCustomers</div>
+        <div class="stat-label">Khách hàng đã đăng ký</div>
+    </div>
+</div>
+
+<div class="chart-container">
+    <h3 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:20px; color: var(--dark-mint);">Doanh thu 7 ngày gần nhất</h3>
+    <canvas id="salesChart" height="100"></canvas>
+</div>
+
+<div class="table-container">
+    <h3 style="margin-bottom:20px;font-size:20px; color: var(--dark-mint); font-family: 'Playfair Display', serif;">Đơn hàng gần đây</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Mã đơn</th>
+                <th>Khách hàng</th>
+                <th>Ngày đặt</th>
+                <th>Sản phẩm</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if(ViewBag.RecentOrders != null)
+            {
+                foreach(var order in ViewBag.RecentOrders)
+                {
+                    // 🔥 THUẬT TOÁN ĐỔI MÀU & DỊCH TIẾNG VIỆT ĐỒNG BỘ 🔥
+                    string badgeClass = "status-pending";
+                    string statusText = order.OrderStatus ?? "Pending";
+                    string statusLower = statusText.ToLower();
+
+                    if (statusLower == "shipping" || statusLower == "đang giao") { badgeClass = "status-shipping"; statusText = "Đang giao"; }
+                    else if (statusLower == "completed" || statusLower == "đã giao" || statusLower == "thành công") { badgeClass = "status-completed"; statusText = "Hoàn thành"; }
+                    else if (statusLower == "cancelled" || statusLower == "đã hủy") { badgeClass = "status-cancelled"; statusText = "Đã hủy"; }
+                    else { badgeClass = "status-pending"; statusText = "Chờ xác nhận"; } 
+
+                    // Lấy tên 1 sản phẩm đại diện
+                    var firstProduct = Enumerable.FirstOrDefault(order.OrderDetails);
+                    string productName = firstProduct != null ? firstProduct.Product.Name : "N/A";
+                    if (order.OrderDetails.Count > 1) productName += $" (+{order.OrderDetails.Count - 1} sp khác)";
+
+                    <tr>
+                        <td><strong>#@order.Id</strong></td>
+                        <td>@order.CustomerName</td>
+                        <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@productName</td>
+                        <td style="font-weight:700;color:var(--primary-mint);">@order.TotalAmount.ToString("N0")đ</td>
+                        
+                        <td><span class="status-badge @badgeClass">@statusText</span></td>
+                        
+                        <td>
+                            <a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" style="background:var(--primary-mint);color:white;text-decoration:none;padding:6px 14px;border-radius:30px;font-size:12px; cursor: pointer; transition: 0.3s;">Xem</a>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        // Code vẽ biểu đồ giữ nguyên
+        var chartLabels = @Html.Raw(Json.Serialize(ViewBag.ChartLabels));
+        var chartData = @Html.Raw(Json.Serialize(ViewBag.ChartData));
+
+        const ctx = document.getElementById('salesChart');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{ 
+                    label: 'Doanh thu (triệu VNĐ)', 
+                    data: chartData,
+                    borderColor: '#2ec4b6', 
+                    backgroundColor: 'rgba(46, 196, 182, 0.15)', 
+                    fill: true,
+                    tension: 0.4, 
+                    borderWidth: 3,
+                    pointBackgroundColor: '#208b81',
+                    pointRadius: 4
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    </script>
+}

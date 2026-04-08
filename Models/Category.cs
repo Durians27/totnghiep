@@ -15,7 +15,11 @@ namespace VelvySkinWeb.Models
         [Display(Name = "Mô tả")]
         public string Description { get; set; }
 
-        // Sợi dây liên kết: 1 Danh mục có thể chứa NHIỀU Sản phẩm
+
+        [Display(Name = "Nhóm danh mục")]
+        public string? CategoryGroup { get; set; } 
+
+
         public ICollection<Product>? Products { get; set; }
     }
 }

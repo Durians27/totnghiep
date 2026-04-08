@@ -1,0 +1,180 @@
+@{
+    ViewData["Title"] = "Hệ Thống Vận Hành";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .helpdesk-container {
+        --primary-mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa;
+        --bg-gray: #f8f9fa; --warning: #f39c12; --danger: #ff4d4d;
+        font-family: 'Montserrat', sans-serif; color: #333;
+    }
+
+    .helpdesk-container .main-content { max-width: 1000px; margin: 0 auto; padding-top: 10px; }
+
+    .helpdesk-container .page-header { text-align: center; margin-bottom: 50px; }
+    .helpdesk-container .page-title { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--dark-mint); margin: 0; }
+    .helpdesk-container .page-subtitle { color: #888; margin-top: 10px; font-size: 15px; }
+
+    /* Khối liên hệ nhanh */
+    .helpdesk-container .support-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+    .helpdesk-container .support-card { background: white; padding: 30px; border-radius: 25px; text-align: center; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.02); border: 1px solid #f1f1f1; cursor: pointer; }
+    .helpdesk-container .support-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(46, 196, 182, 0.1); border-color: var(--primary-mint); }
+    .helpdesk-container .support-card i { font-size: 40px; color: var(--primary-mint); margin-bottom: 20px; }
+    .helpdesk-container .support-card h3 { font-size: 16px; margin: 0 0 10px 0; color: var(--dark-mint); }
+    .helpdesk-container .support-card p { font-size: 13px; color: #777; margin: 0; }
+
+    /* Câu hỏi thường gặp FAQ */
+    .helpdesk-container .faq-section { background: white; border-radius: 30px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.05); }
+    .helpdesk-container .section-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--dark-mint); margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
+    
+    .helpdesk-container .faq-item { border-bottom: 1px solid #f5f5f5; padding: 20px 0; }
+    .helpdesk-container .faq-item:last-child { border-bottom: none; }
+    .helpdesk-container .faq-question { font-weight: 700; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: #444; transition: 0.3s; }
+    .helpdesk-container .faq-answer { margin-top: 12px; font-size: 14px; color: #777; line-height: 1.6; display: none; }
+    .helpdesk-container .faq-item.active .faq-answer { display: block; animation: fadeIn 0.3s ease; }
+    .helpdesk-container .faq-item.active .fa-chevron-down { transform: rotate(180deg); color: var(--primary-mint); }
+    .helpdesk-container .fa-chevron-down { transition: transform 0.3s ease; }
+
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Footer hỗ trợ (Đã sửa lại cho chuẩn quyền uy Admin) */
+    .helpdesk-container .support-footer { margin-top: 40px; background: #fff5f5; border: 1px solid #ffebeb; padding: 30px; border-radius: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(255, 77, 77, 0.05); }
+    .helpdesk-container .footer-text h4 { margin: 0; font-size: 18px; color: var(--danger); }
+    .helpdesk-container .footer-text p { margin: 5px 0 0 0; font-size: 13px; color: #666; }
+    .helpdesk-container .btn-contact { background: var(--danger); color: white; padding: 12px 25px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 14px; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; }
+    .helpdesk-container .btn-contact:hover { background: #d32f2f; transform: translateY(-2px); }
+
+    @@media (max-width: 768px) {
+        .helpdesk-container .support-grid { grid-template-columns: 1fr; }
+        .helpdesk-container .support-footer { flex-direction: column; text-align: center; gap: 20px; }
+    }
+</style>
+
+<div class="helpdesk-container">
+    <div class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">Hệ Thống Hỗ Trợ Kỹ Thuật</h1>
+            <p class="page-subtitle">Trung tâm điều hành và xử lý sự cố dành riêng cho Admin Velvy Skin</p>
+        </div>
+
+        <div class="support-grid">
+            <div class="support-card" onclick="openModule('tailieu')">
+                <i class="fa-solid fa-book-open"></i>
+                <h3>Tài liệu vận hành</h3>
+                <p>Hướng dẫn quản lý đơn hàng, kho và khuyến mãi.</p>
+            </div>
+            <div class="support-card" onclick="openModule('kythuat')">
+                <i class="fa-solid fa-server"></i>
+                <h3>Hỗ trợ kỹ thuật</h3>
+                <p>Liên hệ đội ngũ Tech khi gặp lỗi hệ thống.</p>
+            </div>
+            <div class="support-card" onclick="openModule('baomat')">
+             <i class="fa-solid fa-shield-halved"></i>
+                <h3>Chính sách & Bảo mật</h3>
+                <p>Các quy định về bảo vệ dữ liệu khách hàng.</p>
+            </div>
+        </div>
+
+        <div class="faq-section">
+            <h2 class="section-title"><i class="fa-solid fa-circle-question"></i> Câu hỏi thường gặp (Dành cho Quản trị viên)</h2>
+            
+            <div class="faq-item">
+                <div class="faq-question">Dữ liệu Website được sao lưu (Backup) vào thời gian nào? <i class="fa-solid fa-chevron-down"></i></div>
+                <div class="faq-answer">
+                    Hệ thống tự động thực hiện sao lưu toàn bộ Database (Đơn hàng, Khách hàng, Sản phẩm) vào lúc <strong>02:00 AM mỗi ngày</strong>. Các bản sao lưu được lưu trữ an toàn trên Cloud trong vòng 30 ngày gần nhất.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Xử lý thế nào khi hệ thống cảnh báo có thiết bị lạ đăng nhập? <i class="fa-solid fa-chevron-down"></i></div>
+                <div class="faq-answer">
+                    Ngay lập tức truy cập vào mục <strong>Cài đặt > Bảo mật</strong> để kiểm tra địa chỉ IP lạ. Nếu không phải nhân viên của Velvy Skin, hãy bấm "Buộc đăng xuất tất cả thiết bị" và tiến hành đổi mật khẩu Admin ngay lập tức.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Làm thế nào để cấp quyền quản lý kho cho nhân viên mới? <i class="fa-solid fa-chevron-down"></i></div>
+                <div class="faq-answer">
+                    Hiện tại, tính năng Phân quyền nhân viên (Role Management) đang được đội ngũ Kỹ sư hoàn thiện và sẽ ra mắt trong bản cập nhật V1.2. Tạm thời chỉ có Admin tổng mới có quyền can thiệp vào kho hàng.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Web bị sập hoặc load rất chậm vào giờ cao điểm (Flash Sale)? <i class="fa-solid fa-chevron-down"></i></div>
+                <div class="faq-answer">
+                    Đây là hiện tượng quá tải băng thông Server. Vui lòng bấm vào nút "Gọi kỹ thuật khẩn cấp" phía dưới để đội ngũ Dev tiến hành kích hoạt tính năng Cân bằng tải (Load Balancing) ngay lập tức.
+                </div>
+            </div>
+        </div>
+
+        <div class="support-footer">
+            <div class="footer-text">
+                <h4>Phát hiện sự cố hệ thống nghiêm trọng?</h4>
+                <p>Đừng lo lắng! Đội ngũ Kỹ sư trưởng (Dev Team) luôn trực ban 24/7 để bảo vệ dữ liệu.</p>
+            </div>
+            <button class="btn-contact" onclick="callDevTeam()">
+                <i class="fa-solid fa-phone-volume" style="animation: pulse-animation 1.5s infinite;"></i> Gọi Hotline Kỹ Thuật
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Xử lý đóng mở FAQ mượt mà
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            question.addEventListener('click', () => {
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item) otherItem.classList.remove('active');
+                });
+                item.classList.toggle('active');
+            });
+        });
+
+        // Xử lý sự kiện khi Admin bấm vào 3 khối chức năng
+        function openModule(type) {
+            if (type === 'tailieu') {
+                Swal.fire({
+                    title: 'Tài liệu vận hành',
+                    text: 'Hệ thống đang trích xuất file PDF Hướng dẫn sử dụng Velvy Skin V1.0...',
+                    icon: 'info',
+                    confirmButtonColor: '#2ec4b6',
+                    confirmButtonText: 'Đóng'
+                });
+            } 
+            else if (type === 'kythuat') {
+                Swal.fire({
+                    title: 'Hỗ trợ kỹ thuật',
+                    html: 'Vui lòng mô tả lỗi hệ thống và gửi email trực tiếp đến:<br><b style="color:#208b81;">devteam@velvyskin.vn</b>',
+                    icon: 'question',
+                    confirmButtonColor: '#2ec4b6',
+                    confirmButtonText: 'Đã hiểu'
+                });
+            }
+            else if (type === 'baomat') {
+                Swal.fire({
+                    title: 'Chính sách & Bảo mật',
+                    text: 'Tất cả dữ liệu khách hàng đều được mã hóa theo tiêu chuẩn. Nội quy bảo mật nội bộ đang được tải...',
+                    icon: 'success',
+                    confirmButtonColor: '#2ec4b6',
+                    confirmButtonText: 'Xem tài liệu'
+                });
+            }
+        }
+
+        // Xử lý sự kiện bấm nút Gọi Dev
+        function callDevTeam() {
+            Swal.fire({
+                title: 'Hotline Khẩn Cấp',
+                html: '<h1 style="color:#ff4d4d; letter-spacing: 2px;">0123.456.789</h1><p>Vui lòng chỉ gọi số này trong trường hợp sập Web hoặc mất dữ liệu.</p>',
+                icon: 'warning',
+                confirmButtonColor: '#ff4d4d',
+                confirmButtonText: 'Đóng'
+            });
+        }
+    </script>
+}

@@ -1,0 +1,125 @@
+@model VelvySkinWeb.Models.SupportTicket
+@{
+    ViewData["Title"] = "Chi Tiết Yêu Cầu Hỗ Trợ";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Dùng Layout của User
+}
+
+<style>
+    .user-chat-wrapper {
+        --mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa; --gold: #c5a059;
+        font-family: 'Montserrat', sans-serif; background: #f8fafb; padding: 40px 20px;
+    }
+    .chat-card { max-width: 800px; margin: 0 auto; background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); overflow: hidden; border: 1px solid #eee; }
+    
+    .chat-header { background: var(--light-mint); padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e0f9f6; }
+    .chat-header h2 { margin: 0; color: var(--dark-mint); font-family: 'Playfair Display', serif; font-size: 22px; }
+    .status-badge { padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-processing { background: #eef2ff; color: #4f46e5; }
+    .status-resolved { background: #d4edda; color: #155724; }
+
+    .chat-body { height: 450px; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 15px; background: #fdfdfd; }
+    
+    .message { max-width: 75%; padding: 14px 20px; border-radius: 20px; font-size: 14px; line-height: 1.5; position: relative; }
+    .msg-admin { align-self: flex-start; background: #f1f5f9; color: #333; border-bottom-left-radius: 4px; border: 1px solid #e2e8f0; }
+    .msg-user { align-self: flex-end; background: var(--mint); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(46, 196, 182, 0.2); }
+    .msg-system { align-self: center; background: #fff8e1; color: #b07d00; border: 1px dashed #ffeeba; border-radius: 30px; padding: 8px 20px; font-size: 12px; font-weight: 600; text-align: center; }
+    
+    .msg-time { font-size: 10px; margin-top: 8px; opacity: 0.7; display: block; }
+    .sender-name { font-size: 11px; font-weight: 700; margin-bottom: 5px; opacity: 0.8; }
+
+    .chat-footer { padding: 20px 30px; background: white; border-top: 1px solid #eee; display: flex; gap: 15px; }
+    .chat-input { flex: 1; padding: 15px 20px; border-radius: 15px; border: 1px solid #ddd; outline: none; font-family: inherit; font-size: 14px; transition: 0.3s; resize: none; }
+    .chat-input:focus { border-color: var(--mint); box-shadow: 0 0 0 4px var(--light-mint); }
+    .btn-send { background: var(--mint); color: white; border: none; padding: 0 30px; border-radius: 15px; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+    .btn-send:hover { background: var(--dark-mint); transform: translateY(-2px); }
+
+    .back-link { display: inline-flex; align-items: center; gap: 8px; color: #888; text-decoration: none; font-weight: 600; font-size: 14px; margin-bottom: 20px; transition: 0.3s; }
+    .back-link:hover { color: var(--mint); }
+</style>
+
+<div class="user-chat-wrapper">
+    <div style="max-width: 800px; margin: 0 auto;">
+        <a asp-controller="Home" asp-action="Support" class="back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại Hồ sơ của tôi</a>
+        
+        <div class="chat-card">
+            <div class="chat-header">
+                <div>
+                    <h2>Hỗ Trợ: @Model.IssueType</h2>
+                    <div style="font-size: 13px; color: #666; margin-top: 5px;">Mã đơn: <strong>@(string.IsNullOrEmpty(Model.OrderCode) ? "N/A" : Model.OrderCode)</strong></div>
+                </div>
+                
+                @if (Model.Status == "Pending" || Model.Status == "Chờ xử lý") { <span class="status-badge status-pending">Đang chờ Admin</span> }
+                else if (Model.Status == "Replied" || Model.Status == "Đang giải quyết") { <span class="status-badge status-processing">Đã phản hồi</span> }
+                else { <span class="status-badge status-resolved"><i class="fa-solid fa-check"></i> Đã hoàn thành</span> }
+            </div>
+
+            <div class="chat-body" id="chatBox">
+                @if (Model.TicketMessages != null && Model.TicketMessages.Any())
+                {
+                    foreach (var msg in Model.TicketMessages.OrderBy(m => m.CreatedAt))
+                    {
+                        if (msg.Sender == "Admin")
+                        {
+                            <div class="message msg-admin">
+                                <div class="sender-name"><i class="fa-solid fa-headset"></i> Velvy Skin CSKH</div>
+                                @msg.Content
+                                <span class="msg-time">@msg.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        }
+                        else if (msg.Sender == "User")
+                        {
+                            <div class="message msg-user">
+                                @msg.Content
+                                <span class="msg-time">@msg.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        }
+                        else if (msg.Sender == "System")
+                        {
+                            <div class="message msg-system">
+                                @Html.Raw(msg.Content)
+                                <span class="msg-time" style="color: #888;">@msg.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+
+            @if (Model.Status != "Đã hoàn thành")
+            {
+                <form asp-controller="Account" asp-action="ReplyTicketUser" method="post" class="chat-footer">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <textarea name="replyContent" class="chat-input" rows="2" placeholder="Nhập câu hỏi hoặc phản hồi của bạn..." required></textarea>
+                    <button type="submit" class="btn-send">Gửi <i class="fa-solid fa-paper-plane"></i></button>
+                </form>
+            }
+            else
+            {
+                <div style="padding: 20px; text-align: center; background: #fafafa; color: #888; font-size: 14px; font-weight: 500; border-top: 1px solid #eee;">
+                    <i class="fa-solid fa-lock"></i> Yêu cầu hỗ trợ này đã được giải quyết và đóng lại.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Cuộn xuống cuối
+        const chatBox = document.getElementById('chatBox');
+        if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: '@Html.Raw(TempData["SuccessMsg"])',
+                    icon: 'success',
+                    confirmButtonColor: '#2ec4b6'
+                });
+            </text>
+        }
+    </script>
+}

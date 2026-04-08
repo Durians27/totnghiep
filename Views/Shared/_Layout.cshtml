@@ -1,6 +1,8 @@
 ﻿<!DOCTYPE html>
 @using VelvySkinWeb.Extensions
 @using VelvySkinWeb.Models
+@using System.Security.Claims
+@inject VelvySkinWeb.Data.ApplicationDbContext _context
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -19,18 +21,28 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Montserrat', sans-serif; background-color: #fdfdfd; overflow-x: hidden; color: var(--text-gray); scroll-behavior: smooth; }
 
-        /* HEADER STYLES */
-        header { background-color: var(--primary-mint); padding: 0 5%; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1001; color: white; transition: var(--transition); height: 100px; }
-        header.scrolled { height: 75px; background-color: #26a69a; box-shadow: 0 2px 15px rgba(0,0,0,0.1); }
-        .logo-img { max-height: 100px; width: auto; transition: var(--transition); cursor: pointer; }
-        header.scrolled .logo-img { max-height: 65px; }
+        /* 🔥 FIX LỖI GIẬT LẮC (JANK): BAO BỌC CHUNG CHO HEADER & NAV */
+        .header-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+        }
+
+        /* HEADER STYLES ĐÃ FIX */
+        header { background-color: var(--primary-mint); padding: 0 5%; display: flex; align-items: center; justify-content: space-between; color: white; transition: height 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), background-color 0.4s ease; height: 100px; }
+        .header-wrapper.scrolled header { height: 75px; background-color: #26a69a; }
+        
+        .logo-img { max-height: 100px; width: auto; transition: max-height 0.4s ease; cursor: pointer; }
+        .header-wrapper.scrolled .logo-img { max-height: 65px; }
+        
         .search-container { position: relative; flex: 1; max-width: 450px; margin: 0 40px; }
         .search-container input { width: 100%; height: 42px; padding: 0 15px 0 45px; border-radius: 25px; border: none; outline: none; background: rgba(255, 255, 255, 0.95); }
         .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
         
-        /* FIX LỆCH ICON TẠI ĐÂY */
-        .header-right { display: flex; gap: 30px; align-items: flex-end; height: 100%; padding-bottom: 25px;}
-        header.scrolled .header-right { padding-bottom: 12px; }
+        .header-right { display: flex; gap: 30px; align-items: flex-end; height: 100%; padding-bottom: 25px; transition: padding 0.4s ease;}
+        .header-wrapper.scrolled .header-right { padding-bottom: 12px; }
+        
         .nav-icon-item { cursor: pointer; font-size: 11px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;}
         .nav-icon-item i { font-size: 22px; margin-bottom: 6px; }
         
@@ -59,9 +71,8 @@
         .dropdown-content a:hover, .dropdown-content button:hover { background-color: var(--light-mint); color: var(--dark-mint); }
         .dropdown-divider { height: 1px; background-color: #eee; margin: 8px 0; }
 
-        /* NAV STYLES MỚI CỦA NHƯ */
-        .main-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #eee; position: sticky; top: 100px; z-index: 1000; transition: var(--transition); }
-        header.scrolled + .main-nav { top: 75px; }
+        /* NAV STYLES ĐÃ FIX (Bỏ position sticky đi vì thằng cha wrapper đã làm việc đó) */
+        .main-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid #eee; position: relative; transition: var(--transition); z-index: 1000;}
         .nav-links { list-style: none; display: flex; justify-content: center; }
         .nav-links li { position: relative; }
         .nav-links li a { text-decoration: none; color: var(--text-gray); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 18px 25px; display: block; transition: var(--transition); }
@@ -69,7 +80,6 @@
         .nav-links li a.active::after { content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px; background-color: var(--primary-mint); border-radius: 10px 10px 0 0; }
         .nav-links li a:hover { color: var(--primary-mint); background: rgba(46, 196, 182, 0.05); }
         
-       
         .dropdown-menu { 
             display: block !important; 
             position: absolute; top: 100%; left: 0; background-color: white; 
@@ -104,143 +114,173 @@
     </style>
 </head>
 <body>
-    <header id="main-header">
-        <a asp-controller="Home" asp-action="Index" class="logo-container">
-            <img src="~/images/01.png" alt="Velvy Skin" class="logo-img" style="max-height: 80px; width: auto; transition: var(--transition);">
-        </a>
-        
-        <div class="search-container" style="position: relative;">
-            <i class="fa fa-search"></i>
-            <input type="text" id="liveSearchInput" placeholder="Tìm kiếm mỹ phẩm " autocomplete="off">
-            <div id="searchSuggestions" class="search-suggestions-box"></div>
-        </div>
-
-        <div class="header-right">
-            <div class="nav-icon-item account-dropdown">
-                <div style="position:relative;">
-                    <i class="fa-regular fa-circle-user"></i>
-                </div>
-                
-                <span style="display: block; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
-                    {
-                        string userName = User.Identity.Name ?? "";
-                        if (userName.Contains("@"))
-                        {
-                            userName = userName.Split('@')[0]; 
-                        }
-                        <text>Chào, @userName</text>
-                    }
-                    else
-                    {
-                        <text>Tài khoản</text>
-                    }
-                </span>
-
-                <div class="dropdown-content">
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
-                    {
-                        <div style="padding: 12px 20px; font-weight: bold; color: var(--primary-mint); border-bottom: 1px solid #eee; text-align: center; font-size: 13px; word-break: break-all;">
-                            @User.Identity.Name
-                        </div>
-                        <a asp-controller="Orders" asp-action="History"><i class="fa-solid fa-box-open"></i> Đơn hàng</a>
-                        
-                        <a href="/Home/Logout" style="color: var(--text-gray); padding: 12px 20px; text-decoration: none; display: block; font-size: 13px; font-weight: 500; text-align: left; transition: 0.3s; width: 100%;" onmouseover="this.style.backgroundColor='var(--light-mint)'; this.style.color='var(--dark-mint)'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--text-gray)'">
-                            <i class="fa-solid fa-right-from-bracket" style="font-size: 14px !important; display: inline-block !important; margin-right: 10px; margin-bottom: 0 !important; width: 16px; color: var(--primary-mint);"></i> Đăng xuất
-                        </a>
-                    }
-                    else
-                    {
-                        <a href="/Account/Login"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</a>
-                        <a href="/Account/Register"><i class="fa-solid fa-user-plus"></i> Đăng ký</a>
-                    }
-                </div>
-            </div>
-
-            <div class="nav-icon-item" onclick="location.href='@Url.Action("Index", "Wishlist")'">
-                <div style="position:relative;">
-                    <i class="fa-regular fa-heart"></i>
-                    @{
-                        int wishCount = 0;
-                        var sessionWish = Context.Session.GetString("Wishlist");
-                        if (!string.IsNullOrEmpty(sessionWish))
-                        {
-                            var wishList = System.Text.Json.JsonSerializer.Deserialize<List<int>>(sessionWish);
-                            wishCount = wishList?.Count ?? 0;
-                        }
-                    }
-                    @if (wishCount > 0)
-                    {
-                        <span style="position:absolute;top:-6px;right:-10px;background:var(--accent-pink);color:white;padding:2px 6px;border-radius:50%;font-size:10px;font-weight:bold;">@wishCount</span>
-                    }
-                </div>
-                <span style="display: block;">Yêu thích</span>
-            </div>
-
-            <div class="nav-icon-item" onclick="location.href='@Url.Action("Index", "Cart")'">
-                <div style="position:relative;">
-                    <i class="fa fa-shopping-cart"></i>
-                    @{
-                        int cartCount = 0;
-                        var sessionCart = Context.Session.GetString("Cart");
-                        if (!string.IsNullOrEmpty(sessionCart))
-                        {
-                            var cart = System.Text.Json.JsonSerializer.Deserialize<List<VelvySkinWeb.Models.CartItem>>(sessionCart);
-                            cartCount = cart?.Sum(c => c.Quantity) ?? 0;
-                        }
-                    }
-                    @if (cartCount > 0)
-                    {
-                        <span style="position:absolute;top:-6px;right:-10px;background:var(--accent-pink);color:white;padding:2px 6px;border-radius:50%;font-size:10px;font-weight:bold;">@cartCount</span>
-                    }
-                </div>
-                <span style="display: block;">Giỏ hàng</span>
-            </div>
-        </div>
-    </header>
-
-    <nav class="main-nav">
-        <ul class="nav-links">
-            <li><a asp-controller="Home" asp-action="Index" class="active">Trang chủ</a></li>
-            <li><a asp-controller="Home" asp-action="AiConsultation">Tư vấn AI <i class="fa-solid fa-sparkles text-warning" style="font-size:10px;"></i></a></li>
-            <li class="has-dropdown">
-            <a asp-controller="Products" asp-action="Skincare">Chăm sóc da <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+    <div id="headerWrapper" class="header-wrapper">
+        <header id="main-header">
+            <a asp-controller="Home" asp-action="Index" class="logo-container">
+                <img src="~/images/01.png" alt="Velvy Skin" class="logo-img" style="max-height: 80px; width: auto; transition: var(--transition);">
+            </a>
             
-            <ul class="dropdown-menu">
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="1">Sữa rửa mặt</a></li>
-                
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="2">Tẩy tế bào chết</a></li>
-                
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="4">Serum & Đặc trị</a></li>
-                
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="3">Kem dưỡng ẩm</a></li>
-                
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="5">Chống nắng</a></li>
-            </ul>
-        </li>
-           <li class="has-dropdown">
-            <a asp-controller="Products" asp-action="Haircare">Chăm sóc tóc <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
-            <ul class="dropdown-menu">
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="6">Dầu gội & Xả</a></li>
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="7">Tinh dầu dưỡng</a></li>
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="8">Mặt nạ tóc</a></li>
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="9">Xịt dưỡng tóc</a></li>
-            </ul>
-        </li>
-            <li class="has-dropdown">
-            <a asp-controller="Products" asp-action="Makeup">Trang điểm <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
-            <ul class="dropdown-menu">
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="10">Trang điểm mặt</a></li>
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="11">Trang điểm mắt</a></li>
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="12">Son môi</a></li>
-                <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="13">Dụng Cụ Trang Điểm </a></li>
-            </ul>
-        </li>
-            <li><a asp-controller="Home" asp-action="About">Về chúng tôi</a></li>
-        </ul>
-    </nav>
+            <div class="search-container" style="position: relative;">
+                <i class="fa fa-search"></i>
+                <input type="text" id="liveSearchInput" placeholder="Tìm kiếm mỹ phẩm " autocomplete="off">
+                <div id="searchSuggestions" class="search-suggestions-box"></div>
+            </div>
 
-    <main role="main">
+            <div class="header-right">
+                <div class="nav-icon-item account-dropdown">
+                    <div style="position:relative;">
+                        <i class="fa-regular fa-circle-user"></i>
+                    </div>
+                    
+                    <span style="display: block; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            string userName = User.Identity.Name ?? "";
+                            if (userName.Contains("@"))
+                            {
+                                userName = userName.Split('@')[0]; 
+                            }
+                            <text>Chào, @userName</text>
+                        }
+                        else
+                        {
+                            <text>Tài khoản</text>
+                        }
+                    </span>
+
+                  <div class="dropdown-content">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-controller="Admin" asp-action="Index" style="color: var(--primary-mint); font-weight: 700; background: rgba(46, 196, 182, 0.1);">
+                                    <i class="fa-solid fa-gauge-high"></i> Vào trang Quản trị
+                                </a>
+                                <div class="dropdown-divider"></div>
+                            }
+                            
+                            <a asp-controller="Account" asp-action="Profile"><i class="fa-regular fa-id-card"></i> Hồ sơ của tôi</a>
+                            
+                            <a asp-controller="Orders" asp-action="History"><i class="fa-solid fa-box-open"></i> Đơn hàng của tôi</a>
+                            
+                            <a asp-controller="Home" asp-action="Vouchers"><i class="fa-solid fa-ticket"></i> Mã giảm giá</a>
+                            
+                            <div class="dropdown-divider"></div>
+                            <form asp-controller="Account" asp-action="Logout" method="post" style="margin: 0;">
+                                <button type="submit" style="width: 100%; text-align: left; background: none; border: none; padding: 12px 20px; font-size: 13px; font-weight: 500; color: #010000; cursor: pointer; display: flex; align-items: center;">
+                                    <i class="fa-solid fa-right-from-bracket" style="font-size: 14px; margin-right: 10px; width: 16px;"></i> Đăng xuất
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a asp-controller="Account" asp-action="Login"><i class="fa-solid fa-right-to-bracket"></i> Đăng nhập</a>
+                            <a asp-controller="Account" asp-action="Register"><i class="fa-solid fa-user-plus"></i> Đăng ký</a>
+                        }
+                    </div>
+                </div>
+                <a asp-controller="Account" asp-action="Notifications" class="nav-icon-item" style="text-decoration: none; color: inherit;">
+                    <div style="position:relative;">
+                        <i class="fa-regular fa-bell"></i>
+                        @{
+                            int unreadCount = 0;
+                            if (User.Identity != null && User.Identity.IsAuthenticated)
+                            {
+                                var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                                // Đếm số thông báo CHƯA ĐỌC trong Database
+                                unreadCount = _context.Notifications.Count(n => n.UserId == uid && !n.IsRead);
+                            }
+                        }
+                        @if (unreadCount > 0)
+                        {
+                            <span style="position:absolute;top:-6px;right:-10px;background:var(--accent-pink);color:white;padding:2px 6px;border-radius:50%;font-size:10px;font-weight:bold;">@unreadCount</span>
+                        }
+                    </div>
+                    <span style="display: block;">Thông báo</span>
+                </a>
+          <div class="nav-icon-item" onclick="location.href='@Url.Action("Index", "Wishlist")'">
+                    <div style="position:relative;">
+                        <i class="fa-regular fa-heart"></i>
+                        @{
+                            int wishCount = 0;
+                            var sessionWish = Context.Session.GetString("Wishlist");
+                            if (!string.IsNullOrEmpty(sessionWish))
+                            {
+                                var wishList = System.Text.Json.JsonSerializer.Deserialize<List<int>>(sessionWish);
+                                wishCount = wishList?.Count ?? 0;
+                            }
+                        }
+                        @if (wishCount > 0)
+                        {
+                            <span style="position:absolute;top:-6px;right:-10px;background:var(--accent-pink);color:white;padding:2px 6px;border-radius:50%;font-size:10px;font-weight:bold;">@wishCount</span>
+                        }
+                    </div>
+                    <span style="display: block;">Yêu thích</span>
+                </div>
+
+                <div class="nav-icon-item" onclick="location.href='@Url.Action("Index", "Cart")'">
+                    <div style="position:relative;">
+                        <i class="fa fa-shopping-cart"></i>
+                        @{
+                            int cartCount = 0;
+                            var sessionCart = Context.Session.GetString("Cart");
+                            if (!string.IsNullOrEmpty(sessionCart))
+                            {
+                                var cart = System.Text.Json.JsonSerializer.Deserialize<List<VelvySkinWeb.Models.CartItem>>(sessionCart);
+                                cartCount = cart?.Sum(c => c.Quantity) ?? 0;
+                            }
+                        }
+                        @if (cartCount > 0)
+                        {
+                            <span style="position:absolute;top:-6px;right:-10px;background:var(--accent-pink);color:white;padding:2px 6px;border-radius:50%;font-size:10px;font-weight:bold;">@cartCount</span>
+                        }
+                    </div>
+                    <span style="display: block;">Giỏ hàng</span>
+                </div>
+            </div>
+        </header>
+
+        <nav class="main-nav">
+            <ul class="nav-links">
+                <li><a asp-controller="Home" asp-action="Index" class="active">Trang chủ</a></li>
+                <li><a asp-controller="Home" asp-action="AiConsultation">Tư vấn AI <i class="fa-solid fa-sparkles text-warning" style="font-size:10px;"></i></a></li>
+                <li class="has-dropdown">
+                <a asp-controller="Products" asp-action="Skincare">Sản phẩm chăm sóc da <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+                
+                <ul class="dropdown-menu">
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="1">Sữa rửa mặt</a></li>
+                    
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="2">Tẩy tế bào chết</a></li>
+                    
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="4">Serum & Đặc trị</a></li>
+                    
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="3">Kem dưỡng ẩm</a></li>
+                    
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="5">Chống nắng</a></li>
+                </ul>
+            </li>
+               <li class="has-dropdown">
+                <a asp-controller="Products" asp-action="Haircare">Sản phẩm chăm sóc tóc <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="6">Dầu gội & Xả</a></li>
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="7">Tinh dầu dưỡng</a></li>
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="8">Mặt nạ tóc</a></li>
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="9">Xịt dưỡng tóc</a></li>
+                </ul>
+            </li>
+                <li class="has-dropdown">
+                <a asp-controller="Products" asp-action="Makeup">Sản phẩm trang điểm <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="10">Trang điểm mặt</a></li>
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="11">Trang điểm mắt</a></li>
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="12">Son môi</a></li>
+                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="13">Dụng Cụ Trang Điểm </a></li>
+                </ul>
+            </li>
+                <li><a asp-controller="Home" asp-action="About">Về chúng tôi</a></li>
+            </ul>
+        </nav>
+    </div> <main role="main">
         <div class="container" style="max-width: 1200px; margin: 20px auto 0; padding: 0 5%; position: relative; z-index: 1000;">
             @if (TempData["SuccessMsg"] != null)
             {
@@ -365,9 +405,10 @@
         });
     </script>
     <script>
+        /* 🔥 CẬP NHẬT JS ÁP DỤNG CHO WRAPPER THAY VÌ HEADER ĐỂ CHỐNG GIẬT 🔥 */
         window.addEventListener('scroll', () => {
-            const header = document.getElementById('main-header');
-            header.classList.toggle('scrolled', window.scrollY > 50);
+            const wrapper = document.getElementById('headerWrapper');
+            wrapper.classList.toggle('scrolled', window.scrollY > 50);
         });
 
         const observer = new IntersectionObserver((entries) => {

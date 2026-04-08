@@ -1,80 +1,220 @@
 @model VelvySkinWeb.Models.Product
-
 @{
     ViewData["Title"] = "Thêm Sản Phẩm Mới";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<div class="container mt-5 mb-5">
-    <h2 style="color: var(--primary-mint); font-family: 'Playfair Display';">Thêm Mỹ Phẩm Lên Kệ</h2>
-    <hr />
-    <div class="row">
-        <div class="col-md-8 bg-white p-4 rounded shadow-sm">
-            <form asp-action="Create" enctype="multipart/form-data">
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                
-                <div class="row">
-                    <div class="col-md-6 form-group mb-3">
-                        <label asp-for="Name" class="control-label fw-bold">Tên sản phẩm</label>
-                        <input asp-for="Name" class="form-control" placeholder="" />
-                        <span asp-validation-for="Name" class="text-danger"></span>
-                    </div>
-                    <div class="form-group mb-3">
-    <label asp-for="Price" class="control-label fw-bold">Giá bán (VNĐ)</label>
-    <input asp-for="Price" class="form-control" type="number" min="0" step="1" />
-    <span asp-validation-for="Price" class="text-danger"></span>
-</div>
-                <div class="row">
-                    <div class="col-md-6 form-group mb-3">
-                        <label asp-for="CategoryId" class="control-label fw-bold">Thuộc danh mục nào?</label>
-                        <select asp-for="CategoryId" class="form-control" asp-items="ViewBag.CategoryId">
-                            <option value="">-- Chọn danh mục --</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 form-group mb-3">
-                        <label asp-for="StockQuantity" class="control-label fw-bold">Số lượng nhập kho</label>
-                        <input asp-for="StockQuantity" type="number" class="form-control" value="" />
-                        <span asp-validation-for="StockQuantity" class="text-danger"></span>
-                    </div>
-                </div>
+<style>
+    /* Đã đổi tên class để CHỐNG XUNG ĐỘT với Bootstrap của AdminLayout */
+    .create-wrapper { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.05); }
 
-                <div class="form-group mb-3">
-                    <label asp-for="ImageFile" class="control-label fw-bold">Tải ảnh sản phẩm lên</label>
-                    <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" required />
-                </div>
+    .page-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--dark-mint); margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid var(--light-mint); display: flex; align-items: center; gap: 10px; }
 
-                <div class="form-group mb-4">
-                    <label asp-for="Description" class="control-label fw-bold">Mô tả chi tiết</label>
-                    <textarea asp-for="Description" class="form-control" rows="4" placeholder="Nhập công dụng, thành phần của mỹ phẩm..."></textarea>
-                </div>
+    .section-label { font-weight: 700; display: block; margin-bottom: 15px; color: var(--dark-mint); text-transform: uppercase; font-size: 12px; letter-spacing: 1px; margin-top: 30px; }
 
-                <div class="form-group">
-                    <div class="form-group" style="margin-bottom: 15px;">
-                <label class="control-label" style="font-weight: 600; color: var(--dark-mint);">Mô tả ngắn (Hiển thị ngay dưới giá tiền)</label>
-                <textarea asp-for="ShortDescription" class="form-control" rows="2" placeholder="Ví dụ: Sữa rửa mặt dạng bọt siêu mịn giúp làm sạch sâu..."></textarea>
-            </div>
+    /* Gallery 5 Ảnh */
+    .gallery-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 10px; }
+    .upload-box { position: relative; height: 140px; background: #f9f9f9; border: 2px dashed #ddd; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; transition: 0.3s; }
+    .upload-box:hover { border-color: var(--primary-mint); background: var(--light-mint); }
+    .upload-box input[type="file"] { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
+    .upload-box img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; display: none; }
+    .upload-box i { font-size: 20px; color: #aaa; margin-bottom: 5px; }
+    .upload-box span { font-size: 10px; color: #aaa; font-weight: 600; text-align: center; }
+    .box-main { border-color: var(--primary-mint); border-style: solid; background: var(--light-mint); }
+    .box-main::after { content: "CHÍNH"; position: absolute; bottom: 0; width: 100%; background: var(--primary-mint); color: white; font-size: 9px; text-align: center; font-weight: 700; z-index: 3; }
 
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label class="control-label" style="font-weight: 600; color: var(--dark-mint);">Mô tả chi tiết (Tab 1)</label>
-                <textarea asp-for="FullDescription" class="form-control" rows="4" placeholder="Ghi công dụng, cơ chế hoạt động chi tiết (có thể xuống dòng)..."></textarea>
-            </div>
+    /* Thành phần động */
+    .ingredients-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px; }
+    .ing-item { display: flex; align-items: center; background: var(--light-mint); border-radius: 12px; border: 1px solid transparent; transition: 0.3s; }
+    .ing-item:focus-within { border-color: var(--primary-mint); background: #fff; box-shadow: 0 4px 12px rgba(46, 196, 182, 0.1); }
+    .ing-item i.fa-square-check { padding: 0 12px; color: var(--primary-mint); font-size: 14px; }
+    .ing-item input { border: none; background: transparent; padding: 10px 0; font-size: 13px; font-weight: 500; width: 100%; outline: none; font-family: inherit; }
+    
+    .btn-remove { background: transparent; border: none; color: var(--danger); padding: 0 12px; cursor: pointer; opacity: 0.5; transition: 0.3s; }
+    .btn-remove:hover { opacity: 1; }
+    
+    .btn-add-more { background: white; border: 1px dashed var(--primary-mint); color: var(--primary-mint); width: 100%; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
+    .btn-add-more:hover { background: var(--light-mint); }
 
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label class="control-label" style="font-weight: 600; color: var(--dark-mint);">Thành phần (Tab 2)</label>
-                <textarea asp-for="Ingredients" class="form-control" rows="3" placeholder="Ví dụ: Nước, Glycerin, Trà xanh..."></textarea>
-            </div>
+    /* Form Grid */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .full-width { grid-column: span 2; }
+    
+    /* Đổi .input-group thành .custom-input-box để chống vỡ khung */
+    .custom-input-box { display: flex; flex-direction: column; gap: 6px; }
+    .custom-input-box label { font-weight: 700; font-size: 12px; color: #555; }
+    .custom-input-box input, .custom-input-box select, .custom-input-box textarea {
+        padding: 10px 15px; border: 1px solid #eee; border-radius: 10px; font-family: inherit; outline: none; transition: 0.3s; font-size: 14px;
+    }
+    .custom-input-box input:focus, .custom-input-box textarea:focus, .custom-input-box select:focus { border-color: var(--primary-mint); box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.1); }
 
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label class="control-label" style="font-weight: 600; color: var(--dark-mint);">Hướng dẫn sử dụng (Tab 3)</label>
-                <textarea asp-for="UsageInstructions" class="form-control" rows="3" placeholder="Bước 1: Rửa mặt... Bước 2: Thoa kem..."></textarea>
-            </div>
-                    <input type="submit" value="Lưu Sản Phẩm" class="btn btn-lg w-100 mb-2" style="background-color: var(--primary-mint); color: white; font-weight: bold;" />
-                    <a asp-action="Index" class="btn btn-outline-secondary w-100">Hủy và quay lại danh sách</a>
-                </div>
-            </form>
-        </div>
+    select#status { font-weight: 600; }
+
+    /* Actions */
+    .actions { margin-top: 50px; display: flex; gap: 12px; justify-content: flex-end; }
+    .btn { padding: 10px 25px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; border: none; font-size: 13px; font-family: inherit; text-decoration: none; display: flex; align-items: center;}
+    .btn-cancel { background: #f1f1f1; color: #777; }
+    .btn-cancel:hover { background: #e5e5e5; }
+    .btn-save { background: var(--primary-mint); color: white; }
+    .btn-save:hover { background: var(--dark-mint); transform: translateY(-1px); }
+
+    @@media (max-width: 768px) {
+        .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+        .ingredients-container, .form-grid { grid-template-columns: 1fr; }
+        .full-width { grid-column: span 1; }
+    }
+</style>
+
+<div class="create-wrapper">
+    <div class="page-title">
+        <i class="fa-solid fa-circle-plus"></i> Thêm sản phẩm mới
     </div>
+
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        
+        <label class="section-label">Hình ảnh sản phẩm (1 Chính - 4 Phụ)</label>
+        <div class="gallery-grid">
+            <div class="upload-box box-main" id="b1">
+                <i class="fa-solid fa-camera"></i><span>Ảnh chính</span>
+                <input type="file" name="imageFile" accept="image/*" onchange="handlePreview(this, 'b1')" required>
+                <img id="v1">
+            </div>
+            <div class="upload-box" id="b2">
+                <i class="fa-solid fa-plus"></i><span>Ảnh phụ 1</span>
+                <input type="file" name="imageFile2" accept="image/*" onchange="handlePreview(this, 'b2')">
+                <img id="v2">
+            </div>
+            <div class="upload-box" id="b3">
+                <i class="fa-solid fa-plus"></i><span>Ảnh phụ 2</span>
+                <input type="file" name="imageFile3" accept="image/*" onchange="handlePreview(this, 'b3')">
+                <img id="v3">
+            </div>
+            <div class="upload-box" id="b4">
+                <i class="fa-solid fa-plus"></i><span>Ảnh phụ 3</span>
+                <input type="file" name="imageFile4" accept="image/*" onchange="handlePreview(this, 'b4')">
+                <img id="v4">
+            </div>
+            <div class="upload-box" id="b5">
+                <i class="fa-solid fa-plus"></i><span>Ảnh phụ 4</span>
+                <input type="file" name="imageFile5" accept="image/*" onchange="handlePreview(this, 'b5')">
+                <img id="v5">
+            </div>
+        </div>
+
+        <label class="section-label">Thành phần chủ chốt</label>
+        <div id="ing-container" class="ingredients-container">
+            <div class="ing-item">
+                <i class="fa-solid fa-square-check"></i>
+                <input type="text" placeholder="Ví dụ: 5% Vitamin B5..." name="ingredient">
+                <button type="button" class="btn-remove" onclick="removeIng(this)"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        </div>
+        <button type="button" class="btn-add-more" onclick="addIng()">
+            <i class="fa-solid fa-circle-plus"></i> Thêm thành phần khác
+        </button>
+
+        <div class="custom-input-box full-width" style="margin-top: 20px; background: #f9f9f9; padding: 15px; border-radius: 12px; border: 1px dashed #ccc;">
+            <label style="color: var(--dark-mint);"><i class="fa-solid fa-align-left"></i> Mô tả chi tiết các thành phần</label>
+            <textarea name="ingredientDetail" rows="3" placeholder="Nhập chi tiết công dụng của các thành phần phía trên..."></textarea>
+        </div>
+
+        <div class="form-grid" style="margin-top: 20px;">
+            <div class="custom-input-box full-width">
+                <label>Tên sản phẩm *</label>
+                <input asp-for="Name" placeholder="Nhập tên sản phẩm..." required>
+            </div>
+            <div class="custom-input-box">
+                <label>Giá Bản Tiêu chuẩn (VNĐ)  *</label>
+                <input asp-for="Price" type="number" placeholder="Ví dụ: 500000" required>
+            </div>
+            
+            <div class="custom-input-box">
+                <label style="color: #3498db;">Giá Bản Lớn (VNĐ) <span style="font-weight: normal; color: #999;">(Tùy chọn)</span></label>
+                <input asp-for="PriceLarge" type="number" placeholder="Ví dụ: 800000">
+            </div>
+            <div class="custom-input-box">
+                <label>Trạng thái kinh doanh</label>
+                <select asp-for="IsActive" id="status">
+                    <option value="true" selected>● Đang kinh doanh</option>
+                    <option value="false">● Tạm ẩn / Ngừng bán</option>
+                </select>
+            </div>
+            <div class="custom-input-box">
+                <label>Danh mục *</label>
+                <select asp-for="CategoryId" asp-items="ViewBag.CategoryId" required>
+                    <option value="">-- Chọn danh mục --</option>
+                </select>
+            </div>
+            <div class="custom-input-box">
+                <label>Số lượng kho *</label>
+                <input asp-for="StockQuantity" type="number" placeholder="Ví dụ: 100" required>
+            </div>
+            
+            <div class="custom-input-box full-width">
+                <label>Mô tả ngắn</label>
+                <input asp-for="ShortDescription" placeholder="Tóm tắt công dụng chính trong 1 câu...">
+            </div>
+            
+            <div class="custom-input-box full-width">
+                <label>Mô tả chi tiết sản phẩm</label>
+                <textarea asp-for="FullDescription" rows="5" placeholder="Nhập chi tiết về sản phẩm, công nghệ, lợi ích..."></textarea>
+            </div>
+            
+            <div class="custom-input-box full-width">
+                <label>Hướng dẫn sử dụng</label>
+                <textarea asp-for="UsageInstructions" rows="3" placeholder="Cách dùng B1, B2, B3..."></textarea>
+            </div>
+        </div>
+
+       <div class="actions" style="display: flex; justify-content: flex-end; gap: 15px; width: 100%; margin-top: 30px;">
+            <a asp-controller="Admin" asp-action="Products" class="btn btn-cancel">Hủy bỏ</a>
+            <button type="submit" class="btn btn-save"><i class="fa-solid fa-plus me-1"></i> Thêm Sản Phẩm Mới</button>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // JS Xem trước ảnh chuẩn chỉnh
+        function handlePreview(input, boxId) {
+            const file = input.files[0];
+            const box = document.getElementById(boxId);
+            const img = box.querySelector('img');
+            const icon = box.querySelector('i');
+            const span = box.querySelector('span');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    if(icon) icon.style.display = 'none';
+                    if(span) span.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // JS Thêm thành phần
+        function addIng() {
+            const container = document.getElementById('ing-container');
+            const div = document.createElement('div');
+            div.className = 'ing-item';
+            div.innerHTML = `
+                <i class="fa-solid fa-square-check"></i>
+                <input type="text" placeholder="Nhập thành phần..." name="ingredient">
+                <button type="button" class="btn-remove" onclick="removeIng(this)"><i class="fa-solid fa-trash-can"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeIng(btn) {
+            if(document.querySelectorAll('.ing-item').length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert("Sản phẩm nên có ít nhất một thành phần.");
+            }
+        }
+      
+    </script>
 }

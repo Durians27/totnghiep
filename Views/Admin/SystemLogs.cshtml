@@ -1,0 +1,37 @@
+@model IEnumerable<VelvySkinWeb.Models.AuditLog>
+@{
+    ViewData["Title"] = "Nhật ký hệ thống";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div style="padding: 30px; font-family: 'Montserrat', sans-serif;">
+    <h2 style="font-family: 'Playfair Display', serif; color: var(--dark-mint); font-weight: 700; margin-bottom: 25px;">
+        <i class="fa-solid fa-shield-halved"></i> NHẬT KÝ HỆ THỐNG (AUDIT LOG)
+    </h2>
+
+    <div style="background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--primary-mint); text-align: left; font-size: 13px; color: #888;">
+                    <th style="padding: 15px;">THỜI GIAN</th>
+                    <th style="padding: 15px;">NGƯỜI THỰC HIỆN</th>
+                    <th style="padding: 15px;">HÀNH ĐỘNG</th>
+                    <th style="padding: 15px;">CHI TIẾT THAO TÁC</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr style="border-bottom: 1px solid #f5f5f5; font-size: 14px;">
+                        <td style="padding: 15px; color: #666;">@log.Timestamp.ToString("HH:mm - dd/MM/yyyy")</td>
+                        <td style="padding: 15px; font-weight: 600;">@log.Username</td>
+                        <td style="padding: 15px;">
+                            <span style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">@log.ActionType</span>
+                        </td>
+                        <td style="padding: 15px;">@log.Description</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

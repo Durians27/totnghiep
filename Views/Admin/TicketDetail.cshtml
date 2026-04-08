@@ -1,0 +1,209 @@
+@model VelvySkinWeb.Models.SupportTicket
+@{
+    // Tự động đổi Title trang web theo IssueType
+    ViewData["Title"] = "Xử Lý " + (Model.IssueType ?? "Hỗ trợ");
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .complaint-wrapper {
+        --primary-mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa;
+        --bg-gray: #f8f9fa; --danger-red: #ff4d4d;
+        font-family: 'Montserrat', sans-serif; color: #333;
+    }
+    
+    .complaint-wrapper .main-content { padding: 30px; max-width: 1000px; margin: 0 auto; }
+    
+    .complaint-wrapper .back-btn { text-decoration: none; color: #888; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; transition: 0.3s; }
+    .complaint-wrapper .back-btn:hover { color: var(--primary-mint); }
+
+    .complaint-wrapper .grid-layout { display: grid; grid-template-columns: 1fr 350px; gap: 25px; }
+
+    .complaint-wrapper .card { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); border: 1px solid #f1f1f1; margin-bottom: 25px; }
+    .complaint-wrapper .card-title { font-weight: 700; font-size: 14px; text-transform: uppercase; color: var(--dark-mint); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f9f9f9; padding-bottom: 15px; }
+
+    .complaint-wrapper .chat-container { height: 400px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+    .complaint-wrapper .message { max-width: 80%; padding: 12px 18px; border-radius: 18px; font-size: 14px; line-height: 1.5; }
+    .complaint-wrapper .msg-customer { align-self: flex-start; background: #f1f1f1; color: #333; border-bottom-left-radius: 4px; }
+    .complaint-wrapper .msg-admin { align-self: flex-end; background: var(--primary-mint); color: white; border-bottom-right-radius: 4px; }
+    .complaint-wrapper .msg-system { align-self: center; background: #fff3cd; color: #856404; padding: 5px 15px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px dashed #ffeeba; }
+    .complaint-wrapper .msg-time { font-size: 10px; margin-top: 5px; opacity: 0.7; display: block; }
+
+    .complaint-wrapper .input-area { display: flex; gap: 12px; margin: 0; }
+    .complaint-wrapper textarea { flex: 1; padding: 15px; border-radius: 15px; border: 1px solid #eee; outline: none; font-family: inherit; resize: none; transition: 0.3s; }
+    .complaint-wrapper textarea:focus { border-color: var(--primary-mint); }
+    .complaint-wrapper .btn-send { background: var(--primary-mint); color: white; border: none; padding: 0 25px; border-radius: 15px; cursor: pointer; font-weight: 700; transition: 0.3s; }
+    .complaint-wrapper .btn-send:hover { background: var(--dark-mint); }
+
+    .complaint-wrapper .customer-card { text-align: center; padding-bottom: 20px; }
+    .complaint-wrapper .customer-avatar { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 15px; border: 3px solid var(--light-mint); background-size: cover; background-position: center; }
+    .complaint-wrapper .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; text-align: left;}
+    .complaint-wrapper .info-label { color: #888; }
+    .complaint-wrapper .info-value { font-weight: 600; text-align: right; max-width: 180px; }
+
+    .complaint-wrapper .tag-complaint { background: #fff5f5; color: var(--danger-red); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+    .complaint-wrapper .quick-btn { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #eee; background: white; margin-bottom: 10px; cursor: pointer; text-align: left; font-size: 13px; font-weight: 600; transition: 0.3s; color: #555; }
+    .complaint-wrapper .quick-btn:hover { background: var(--light-mint); border-color: var(--primary-mint); color: var(--dark-mint); }
+</style>
+
+<div class="complaint-wrapper">
+    <div class="main-content">
+        <a asp-controller="Admin" asp-action="Support" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách hỗ trợ</a>
+
+        <div class="grid-layout">
+            <div class="left-col">
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fa-solid fa-comments"></i> 
+                        Hộp thoại xử lý @(Model.IssueType?.ToLower() ?? "hỗ trợ")
+                        <span class="tag-complaint" style="margin-left: auto;">Trạng thái: @Model.Status</span>
+                    </div>
+                    
+                    <div class="chat-container" id="chatBox">
+                        @if (Model.TicketMessages != null && Model.TicketMessages.Any())
+                        {
+                            foreach (var msg in Model.TicketMessages.OrderBy(m => m.CreatedAt))
+                            {
+                                if (msg.Sender == "User")
+                                {
+                                    <div class="message msg-customer">
+                                        @msg.Content
+                                        <span class="msg-time">@msg.CreatedAt.ToString("HH:mm - dd/MM/yyyy")</span>
+                                    </div>
+                                }
+                                else if (msg.Sender == "Admin")
+                                {
+                                    <div class="message msg-admin">
+                                        @msg.Content
+                                        <span class="msg-time" style="color: #cbf3f0;">@msg.CreatedAt.ToString("HH:mm - dd/MM/yyyy")</span>
+                                    </div>
+                                }
+                                else if (msg.Sender == "System")
+                                {
+                                    <div class="msg-system">
+                                        @Html.Raw(msg.Content)
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
+
+                    @if (Model.Status != "Đã hoàn thành")
+                    {
+                        <form asp-controller="Admin" asp-action="ReplyTicket" method="post" class="input-area">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <textarea name="replyContent" rows="2" placeholder="Nhập nội dung phản hồi..." required></textarea>
+                            <button type="submit" class="btn-send"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div style="text-align: center; color: var(--danger-red); font-size: 13px; font-weight: 600; padding: 15px; background: #fff5f5; border-radius: 15px;">
+                            <i class="fa-solid fa-lock"></i> Phiên hỗ trợ này đã được đóng lại.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="card customer-card">
+                    <div class="customer-avatar" style="background-image: url('https://i.pravatar.cc/150?u=@Model.UserEmail')"></div>
+                    <h3 style="margin: 0; font-family: 'Playfair Display', serif; color: var(--dark-mint);">@Model.UserFullName</h3>
+                    <p style="font-size: 12px; color: #aaa; margin-top: 5px;">@Model.UserEmail</p>
+                    
+                    <hr style="border: 0; border-top: 1px solid #f9f9f9; margin: 20px 0;">
+                    
+                    <div class="info-row">
+                        <span class="info-label">Đơn hàng:</span>
+                        <span class="info-value">@(string.IsNullOrEmpty(Model.OrderCode) ? "Không có" : Model.OrderCode)</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Vấn đề:</span>
+                        <span class="info-value" style="color: var(--danger-red);">@Model.IssueType</span>
+                    </div>
+                </div>
+
+                @if(Model.IssueType == "Kháng cáo" && Model.Status != "Đã hoàn thành")
+                {
+                    <div class="card" style="background: #fff0f0; border-color: #f5c2c7; text-align: center;">
+                        <h4 style="color: #d32f2f; font-weight: 700; font-size: 14px; margin-bottom: 10px;"><i class="fa-solid fa-gavel"></i> THẨM QUYỀN QUẢN TRỊ</h4>
+                        <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Tài khoản này đang bị khóa. Bạn có chấp nhận giải trình và mở khóa không?</p>
+                        
+                        <form id="unlockAccountForm" asp-controller="Admin" asp-action="UnlockAccountFromTicket" method="post" style="margin: 0;">
+                            <input type="hidden" name="ticketId" value="@Model.Id" />
+                            <input type="hidden" name="userId" value="@Model.UserId" />
+                            <button type="button" onclick="confirmUnlock()" style="background: #d32f2f; color: white; border: none; padding: 12px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(211,47,47,0.3);" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                                <i class="fa-solid fa-unlock-keyhole"></i> CHẤP NHẬN ÂN XÁ
+                            </button>
+                        </form>
+                    </div>
+                }
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-bolt"></i> Thao tác nhanh</div>
+                    
+                    @if(Model.IssueType != "Kháng cáo")
+                    {
+                        <form asp-controller="Admin" asp-action="QuickAction" method="post" style="margin: 0;">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="actionType" value="ReturnOrder" />
+                            <button type="submit" class="quick-btn"><i class="fa-solid fa-rotate-left"></i> Tạo lệnh đổi trả mới</button>
+                        </form>
+                        
+                        <form asp-controller="Admin" asp-action="QuickAction" method="post" style="margin: 0;">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="actionType" value="Coupon" />
+                            <button type="submit" class="quick-btn"><i class="fa-solid fa-ticket"></i> Tặng mã giảm giá 15%</button>
+                        </form>
+                    }
+                    
+                    <form asp-controller="Admin" asp-action="ResolveTicket" method="post" style="margin: 0;">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="quick-btn" style="color: var(--primary-mint); border-color: var(--primary-mint); margin-bottom: 0;">
+                            <i class="fa-solid fa-circle-check"></i> Đánh dấu: Đã giải quyết
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 🔥 ĐÃ FIX: Hàm gọi Bảng xác nhận bằng SweetAlert2 🔥
+        function confirmUnlock() {
+            Swal.fire({
+                title: 'XÁC NHẬN MỞ KHÓA?',
+                html: 'Khách hàng sẽ ngay lập tức được <b>cấp quyền đăng nhập trở lại</b>!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2ec4b6', // Nút đồng ý màu xanh Mint của sếp
+                cancelButtonColor: '#aaa',
+                confirmButtonText: '<i class="fa-solid fa-unlock"></i> Chấp nhận Ân Xá',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Nếu admin bấm OK thì mới cho form chạy (Submit)
+                    document.getElementById('unlockAccountForm').submit();
+                }
+            });
+        }
+
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: '@Html.Raw(TempData["SuccessMsg"])',
+                    icon: 'success',
+                    confirmButtonColor: '#2ec4b6'
+                });
+            </text>
+        }
+    </script>
+}

@@ -1,0 +1,222 @@
+@model IEnumerable<VelvySkinWeb.Models.Coupon>
+@{
+    ViewData["Title"] = "Quản Lý Khuyến Mãi";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    :root {
+        --primary-mint: #2ec4b6;
+        --dark-mint: #208b81;
+        --light-mint: #f0fdfa;
+        --bg-gray: #f8f9fa;
+        --danger: #ff4d4d;
+    }
+
+    /* 🔥 ĐÃ FIX: Đổi tên class để CHỐNG XUNG ĐỘT với Layout của Admin 🔥 */
+    .coupon-wrapper { display: block !important; width: 100%; clear: both; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--dark-mint); margin: 0; display: flex; align-items: center; gap: 12px; }
+
+    .btn-add { background: var(--primary-mint); color: white; padding: 12px 25px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(46,196,182,0.2); }
+    .btn-add:hover { background: var(--dark-mint); transform: translateY(-2px); color: white; box-shadow: 0 6px 15px rgba(46,196,182,0.3);}
+
+    /* Thanh tìm kiếm */
+    .filter-bar { background: white; padding: 15px 25px; border-radius: 20px; margin-bottom: 25px; display: flex; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); align-items: center; }
+    .search-box { flex: 1; position: relative; }
+    .search-box input { width: 100%; padding: 12px 15px 12px 45px; border: 1px solid #eee; border-radius: 12px; outline: none; font-family: inherit; transition: 0.3s; box-sizing: border-box; }
+    .search-box input:focus { border-color: var(--primary-mint); box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.1); }
+    .search-box i { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #aaa; }
+
+    .filter-bar select { padding: 12px 20px; border-radius: 12px; border: 1px solid #eee; outline: none; font-family: inherit; cursor: pointer; background: white; color: #555; font-weight: 500;}
+    .filter-bar select:focus { border-color: var(--primary-mint); }
+
+    /* Bảng danh sách VIP */
+    .card-table { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px;}
+    th { text-align: left; padding: 18px 15px; font-size: 12px; text-transform: uppercase; color: var(--dark-mint); letter-spacing: 1px; border-bottom: 2px solid #f0f0f0; }
+    td { padding: 18px 15px; border-bottom: 1px solid #f8f9fa; font-size: 14px; vertical-align: middle; }
+    tbody tr { transition: 0.2s; }
+    tbody tr:hover { background-color: #fcfcfc; }
+
+    .coupon-code { font-family: 'monospace'; background: var(--light-mint); color: var(--dark-mint); padding: 8px 15px; border-radius: 8px; font-weight: 700; border: 1px dashed var(--primary-mint); display: inline-block; font-size: 15px; letter-spacing: 1px;}
+    
+    .coupon-desc { font-size: 13px; color: #777; line-height: 1.5; max-width: 280px; display: block; margin-top: 5px;}
+
+    .status-badge { padding: 8px 15px; border-radius: 30px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; letter-spacing: 0.5px;}
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-expired { background: #fee2e2; color: #991b1b; }
+
+    .usage-info { font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #555;}
+    .usage-bar-bg { width: 100px; height: 8px; background: #eee; border-radius: 10px; overflow: hidden; }
+    .usage-bar-fill { height: 100%; background: var(--primary-mint); border-radius: 10px; transition: width 0.5s ease-in-out;}
+
+    .btn-icon { width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; text-decoration: none; font-size: 14px;}
+    .btn-edit { background: #e0f2fe; color: #0369a1; }
+    .btn-delete { background: #fee2e2; color: #991b1b; }
+    .btn-edit:hover { background: #0369a1; color: white; transform: scale(1.05); }
+    .btn-delete:hover { background: #991b1b; color: white; transform: scale(1.05); }
+
+    @@media (max-width: 768px) {
+        .filter-bar { flex-direction: column; align-items: stretch; }
+    }
+</style>
+
+<div class="coupon-wrapper">
+    <div class="page-header">
+        <h1 class="page-title"><i class="fa-solid fa-tags"></i> Quản lý mã khuyến mãi</h1>
+        
+        <a asp-action="Create" class="btn-add"><i class="fa-solid fa-plus"></i> Tạo mã mới</a>
+    </div>
+
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="couponSearch" placeholder="Tìm tên chương trình hoặc mã code..." onkeyup="filterTable()">
+        </div>
+        <select id="statusFilter" onchange="filterTable()">
+            <option value="">Tất cả trạng thái</option>
+            <option value="ĐANG CHẠY">Đang hoạt động</option>
+            <option value="HẾT HẠN">Đã hết hạn</option>
+        </select>
+    </div>
+
+    <div class="card-table">
+        <table id="couponTable">
+            <thead>
+                <tr>
+                    <th>Chương trình & Mô tả</th>
+                    <th>Mã code</th>
+                    <th>Giảm giá</th>
+                    <th>Thời hạn</th>
+                    <th>Sử dụng</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 60px 20px; color: #888;">
+                            <i class="fa-solid fa-ticket-simple" style="font-size: 50px; color: #e2e8f0; margin-bottom: 20px; display: block;"></i>
+                            <span style="font-size: 16px; font-weight: 500; color: #64748b;">Chưa có mã khuyến mãi nào được tạo!</span>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        bool isExpired = (DateTime.Now > item.EndDate) || !item.IsActive;
+                        string statusClass = isExpired ? "status-expired" : "status-active";
+                        string statusText = isExpired ? "HẾT HẠN" : "ĐANG CHẠY";
+
+                        string discountDisplay = item.DiscountType == "Percent" ? $"-{item.DiscountValue}%" : $"-{item.DiscountValue:N0}đ";
+
+                        double usagePercent = item.MaxUses > 0 ? ((double)item.UsedCount / item.MaxUses) * 100 : 0;
+                        if (usagePercent > 100) usagePercent = 100;
+                        string barColor = usagePercent >= 100 ? "#ef4444" : "var(--primary-mint)"; 
+
+                        <tr>
+                            <td>
+                                <strong style="display: block; color: #334155; font-size: 15px;">@item.Name</strong>
+                                <span class="coupon-desc">@(string.IsNullOrEmpty(item.Description) ? "Không có mô tả" : item.Description)</span>
+                            </td>
+                            <td><span class="coupon-code">@item.Code</span></td>
+                            <td style="font-weight: 700; color: var(--primary-mint); font-size: 16px;">@discountDisplay</td>
+                            <td style="font-size: 13px; color: #64748b; font-weight: 500;">
+                                <i class="fa-regular fa-calendar-check" style="margin-right: 5px; color: #cbd5e1;"></i>@item.StartDate.ToString("dd/MM/yyyy") <br>
+                                <i class="fa-regular fa-calendar-xmark" style="margin-right: 5px; color: #cbd5e1; margin-top: 8px;"></i>@item.EndDate.ToString("dd/MM/yyyy")
+                            </td>
+                            <td>
+                                <div class="usage-info">Đã dùng: @item.UsedCount / @item.MaxUses</div>
+                                <div class="usage-bar-bg">
+                                    <div class="usage-bar-fill" style="width: @usagePercent%; background: @barColor;"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge @statusClass">
+                                    <i class="fa-solid @(isExpired ? "fa-circle-xmark" : "fa-circle-check")"></i> @statusText
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <a asp-controller="Coupons" asp-action="Details" asp-route-id="@item.Id" class="btn-icon btn-edit" title="Xem chi tiết & Sửa"><i class="fa-solid fa-id-card"></i></a>
+                                    
+                                    <form id="delete-form-@item.Id" asp-controller="Coupons" asp-action="Delete" asp-route-id="@item.Id" method="post" style="margin:0;">
+                                        <button type="button" class="btn-icon btn-delete" title="Xóa" onclick="confirmDelete('@item.Id', '@item.Code')">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        function filterTable() {
+            const searchText = document.getElementById("couponSearch").value.toUpperCase();
+            const statusFilter = document.getElementById("statusFilter").value;
+            const table = document.getElementById("couponTable");
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                const tdName = tr[i].getElementsByTagName("td")[0];
+                const tdCode = tr[i].getElementsByTagName("td")[1];
+                const tdStatus = tr[i].getElementsByTagName("td")[5];
+
+                if (tdName && tdCode && tdStatus) {
+                    const nameValue = tdName.textContent || tdName.innerText;
+                    const codeValue = tdCode.textContent || tdCode.innerText;
+                    const statusValue = tdStatus.textContent || tdStatus.innerText;
+
+                    const matchesSearch = (nameValue.toUpperCase().indexOf(searchText) > -1 || codeValue.toUpperCase().indexOf(searchText) > -1);
+                    const matchesStatus = (statusFilter === "" || statusValue.indexOf(statusFilter) > -1);
+
+                    tr[i].style.display = (matchesSearch && matchesStatus) ? "" : "none";
+                }
+            }
+        }
+
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: '@Html.Raw(TempData["SuccessMsg"])',
+                    icon: 'success',
+                    confirmButtonColor: '#2ec4b6',
+                    timer: 3000
+                });
+            </text>
+        }
+
+        function confirmDelete(id, code) {
+            Swal.fire({
+                title: 'Xóa mã khuyến mãi?',
+                html: `Bạn có chắc muốn xóa vĩnh viễn mã <b>${code}</b> không?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: '<i class="fa-solid fa-trash"></i> Xóa ngay!',
+                cancelButtonText: 'Hủy bỏ',
+                backdrop: `rgba(0,0,0,0.5)`
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + id).submit();
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,124 @@
+@{
+    Layout = null; // Bắt buộc phải có dòng này để tắt Header/Footer
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đang Bảo Trì | Velvy Skin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --mint: #2ec4b6;
+            --dark-mint: #208b81;
+            --gold: #c5a059;
+            --bg: #f8fafb;
+        }
+
+        body, html { height: 100%; margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg); display: flex; align-items: center; justify-content: center; color: #333; }
+
+        .maintenance-container { text-align: center; padding: 40px; max-width: 600px; width: 90%; }
+
+        /* Icon Animation */
+        .icon-box { position: relative; display: inline-block; margin-bottom: 30px; }
+        .fa-tools { font-size: 60px; color: var(--mint); animation: wrench 2.5s ease infinite; }
+        @@keyframes wrench {
+            0%, 100% { transform: rotate(-12deg); }
+            50% { transform: rotate(12deg); }
+        }
+
+        .logo-text { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--dark-mint); margin-bottom: 10px; letter-spacing: 2px; }
+        h1 { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 20px; color: var(--gold); }
+        p { line-height: 1.8; color: #666; margin-bottom: 40px; }
+
+        /* Countdown Timer */
+        .countdown { display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; }
+        .time-box { background: white; padding: 15px; border-radius: 15px; min-width: 80px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .time-box span { display: block; font-size: 24px; font-weight: 700; color: var(--mint); }
+        .time-box label { font-size: 10px; text-transform: uppercase; color: #aaa; font-weight: 600; letter-spacing: 1px; }
+
+        /* Social Links */
+        .social-links { display: flex; justify-content: center; gap: 15px; }
+        .social-item { 
+            width: 45px; height: 45px; background: white; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            text-decoration: none; color: var(--dark-mint); font-size: 18px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s;
+        }
+        .social-item:hover { background: var(--mint); color: white; transform: translateY(-5px); }
+
+        .footer-note { margin-top: 50px; font-size: 12px; color: #bbb; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+<div class="maintenance-container">
+    <div class="icon-box">
+        <i class="fa-solid fa-tools"></i>
+    </div>
+    
+    <div class="logo-text">VELVY SKIN</div>
+    <h1>Chúng tôi đang nâng cấp trải nghiệm</h1>
+    <p>Trang web đang được bảo trì định kỳ để mang lại dịch vụ tốt hơn cho làn da của bạn. Chúng tôi sẽ sớm quay lại sau ít phút nữa.</p>
+
+    <div class="countdown">
+        <div class="time-box">
+            <span id="hours">00</span>
+            <label>Giờ</label>
+        </div>
+        <div class="time-box">
+            <span id="minutes">45</span>
+            <label>Phút</label>
+        </div>
+        <div class="time-box">
+            <span id="seconds">00</span>
+            <label>Giây</label>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px; font-size: 13px; font-weight: 600;">Theo dõi chúng tôi để cập nhật thông tin mới nhất:</div>
+    <div class="social-links">
+        <a href="#" class="social-item" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+        <a href="#" class="social-item" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" class="social-item" title="Zalo"><i class="fa-solid fa-comment"></i></a>
+    </div>
+
+    <div class="footer-note">© 2026 Velvy Skin - Chăm sóc da chuyên sâu</div>
+</div>
+
+<script>
+    // Giả lập đồng hồ đếm ngược (45 phút)
+    let timeLeft = 45 * 60; 
+    const hoursEl = document.getElementById('hours');
+    const minutesEl = document.getElementById('minutes');
+    const secondsEl = document.getElementById('seconds');
+
+    function updateTimer() {
+        let h = Math.floor(timeLeft / 3600);
+        let m = Math.floor((timeLeft % 3600) / 60);
+        let s = timeLeft % 60;
+
+        // Thêm số 0 đằng trước nếu số nhỏ hơn 10 cho đẹp
+        hoursEl.innerText = h < 10 ? '0' + h : h;
+        minutesEl.innerText = m < 10 ? '0' + m : m;
+        secondsEl.innerText = s < 10 ? '0' + s : s;
+
+        if (timeLeft > 0) {
+            timeLeft--;
+        } else {
+            clearInterval(timerInterval);
+            // Hết giờ tự động F5 tải lại trang để check xem Admin mở web lại chưa
+            location.reload(); 
+        }
+    }
+
+    // Cứ mỗi 1000ms (1 giây) là chạy hàm updateTimer 1 lần
+    const timerInterval = setInterval(updateTimer, 1000);
+    // Gọi liền 1 lần lúc vừa load web để không bị delay 1 giây đầu tiên
+    updateTimer(); 
+</script>
+
+</body>
+</html>

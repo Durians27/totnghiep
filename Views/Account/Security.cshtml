@@ -1,0 +1,213 @@
+@model VelvySkinWeb.Models.ViewModels.ChangePasswordViewModel
+@{
+    ViewData["Title"] = "Bảo Mật Tài Khoản";
+}
+
+<style>
+    /* CSS CƠ BẢN */
+    :root { --mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa; --gold: #c5a059; --bg: #f8fafb; --danger: #dc3545; --text: #333; --border: #eeeeee; }
+    body { background: var(--bg); }
+    .wrapper { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: grid; grid-template-columns: 320px 1fr; gap: 30px; }
+    
+    /* SIDEBAR */
+    .sidebar { background: white; border-radius: 30px; padding: 40px 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); height: fit-content; text-align: center; position: sticky; top: 120px; }
+    .avatar-box { position: relative; width: 140px; height: 140px; margin: 0 auto 20px; }
+    .avatar-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 5px solid var(--light-mint); }
+    .user-info h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin: 10px 0 5px; color: var(--dark-mint); }
+    .user-info p { font-size: 13px; color: #aaa; margin-bottom: 30px; }
+    .nav-menu { text-align: left; border-top: 1px solid var(--border); padding-top: 20px; }
+    .nav-link { padding: 15px 20px; border-radius: 15px; cursor: pointer; color: #888; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; transition: 0.3s; text-decoration: none;}
+    .nav-link.active { background: var(--light-mint); color: var(--mint); }
+    .nav-link:hover:not(.active) { background: #f9f9f9; color: #444; }
+    
+    /* MAIN CARD */
+    .main-card { background: white; border-radius: 30px; padding: 45px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); min-height: 600px; }
+    .title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin-bottom: 35px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+    .section-header { font-size: 13px; font-weight: 700; color: var(--gold); border-left: 4px solid var(--gold); padding-left: 12px; margin: 30px 0 20px; text-transform: uppercase; letter-spacing: 1px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    .form-group { margin-bottom: 22px; }
+    label { display: block; font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
+    input { width: 100%; padding: 15px 20px; border-radius: 14px; border: 1px solid var(--border); background: #fcfcfc; font-family: inherit; font-size: 14px; outline: none; transition: 0.3s; box-sizing: border-box; }
+    input:focus { border-color: var(--mint); background: white; box-shadow: 0 0 0 4px var(--light-mint); }
+    .btn-mint { background: var(--mint); color: white; padding: 14px 30px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+    .btn-mint:hover { background: var(--dark-mint); transform: translateY(-2px); }
+
+    /* UI CÔNG TẮC 2FA */
+    .switch-box { display: flex; align-items: center; justify-content: space-between; background: #fdfdfd; padding: 20px; border-radius: 15px; border: 1px solid #eee; margin-bottom: 30px;}
+    .switch-info h4 { margin: 0 0 5px; font-size: 16px; color: #333; }
+    .switch-info p { margin: 0; font-size: 13px; color: #888; }
+    .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--mint); }
+    input:checked + .slider:before { transform: translateX(22px); }
+
+    .danger-zone { border: 1px dashed var(--danger); background: #fff5f5; padding: 25px; border-radius: 15px; margin-top: 10px; }
+    .btn-danger { background: var(--danger); color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+    .btn-danger:hover { background: #c82333; }
+</style>
+
+<div class="wrapper">
+    <aside class="sidebar">
+        <div class="avatar-box">
+            <img src="~/images/avatars/@(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value).jpg" id="userAvatar" class="avatar-img" alt="User" onerror="this.src='https://i.pravatar.cc/300?u=@User.Identity.Name'">
+        </div>
+        
+        <div class="user-info">
+            <h2>Thiết lập An ninh</h2>
+            <p>@User.Identity.Name</p>
+        </div>
+
+        <nav class="nav-menu">
+            <a asp-controller="Account" asp-action="Profile" class="nav-link">
+                <i class="fa-solid fa-user-pen"></i> Thông tin cá nhân
+            </a>
+            <a asp-controller="Orders" asp-action="History" class="nav-link">
+                <i class="fa-solid fa-box-open"></i> Đơn hàng của tôi
+            </a>
+            <a asp-controller="Home" asp-action="Vouchers" class="nav-link">
+                <i class="fa-solid fa-ticket"></i> Kho mã giảm giá
+            </a>
+            
+            <div class="dropdown-divider" style="height: 1px; background-color: #eee; margin: 15px 0;"></div>
+            
+            <div class="nav-link active">
+                <i class="fa-solid fa-user-shield"></i> Bảo mật tài khoản
+            </div>
+            
+            <a asp-controller="Home" asp-action="Support" class="nav-link">
+                <i class="fa-solid fa-headset"></i> Hỗ trợ & Khiếu nại
+            </a>
+
+            <div class="dropdown-divider" style="height: 1px; background-color: #eee; margin: 15px 0;"></div>
+            
+            <form asp-controller="Account" asp-action="Logout" method="post" style="margin: 0;">
+                <button type="submit" class="nav-link logout" style="width: 100%; background: none; border: none; font-family: inherit; cursor: pointer;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                </button>
+            </form>
+        </nav>
+    </aside>
+
+    <main class="main-card">
+        <h1 class="title">Bảo Mật Tài Khoản</h1>
+        
+        <div class="section-header">1. Thay đổi mật khẩu</div>
+        <form asp-action="Security" method="post" style="margin-bottom: 40px;">
+            <div asp-validation-summary="ModelOnly" class="text-danger" style="color: #ff5e5e; font-size: 14px; font-weight: 600; margin-bottom: 15px;"></div>
+
+            <div class="form-group" style="max-width: 500px;">
+                <label>Mật khẩu hiện tại</label>
+                <input asp-for="CurrentPassword" placeholder="Nhập mật khẩu đang dùng">
+                <span asp-validation-for="CurrentPassword" style="color: #ff5e5e; font-size: 12px;"></span>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Mật khẩu mới</label>
+                    <input asp-for="NewPassword" placeholder="Tối thiểu 6 ký tự">
+                    <span asp-validation-for="NewPassword" style="color: #ff5e5e; font-size: 12px;"></span>
+                </div>
+                <div class="form-group">
+                    <label>Xác nhận mật khẩu mới</label>
+                    <input asp-for="ConfirmPassword" placeholder="Nhập lại mật khẩu mới">
+                    <span asp-validation-for="ConfirmPassword" style="color: #ff5e5e; font-size: 12px;"></span>
+                </div>
+            </div>
+            <button type="submit" class="btn-mint"><i class="fa-solid fa-key"></i> Cập nhật mật khẩu</button>
+        </form>
+
+        <div class="section-header">2. Xác thực 2 bước (2FA)</div>
+        <div class="switch-box">
+            <div class="switch-info">
+                <h4>Bảo vệ bằng mã OTP</h4>
+                <p>Yêu cầu nhập mã xác nhận gửi về Email mỗi khi đăng nhập trên thiết bị lạ.</p>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="toggle2FA" onchange="update2FA(this.checked)" @(ViewBag.Is2FAEnabled ? "checked" : "")>
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="section-header" style="color: var(--danger); border-color: var(--danger);">3. Thiết lập nâng cao</div>
+        <div class="danger-zone">
+            <h4 style="color: var(--danger); margin: 0 0 10px; font-size: 16px;">Yêu cầu xóa tài khoản</h4>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px;">Việc xóa tài khoản sẽ xóa vĩnh viễn toàn bộ dữ liệu cá nhân, điểm tích lũy và lịch sử mua hàng của bạn. Hành động này không thể hoàn tác.</p>
+            <button type="button" class="btn-danger" onclick="confirmDelete()"><i class="fa-solid fa-trash-can"></i> Xóa tài khoản vĩnh viễn</button>
+        </div>
+    </main>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Bắt sự kiện đổi mật khẩu thành công
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({ title: 'Thành công!', text: '@Html.Raw(TempData["SuccessMsg"])', icon: 'success', confirmButtonColor: '#2ec4b6' });
+            </text>
+        }
+
+        // ===============================================
+        // BỘ NÃO JAVASCRIPT ĐỂ BẬT/TẮT 2FA
+        // ===============================================
+        function update2FA(isEnable) {
+            $.ajax({
+                url: '/Account/Toggle2FA',
+                type: 'POST',
+                data: { enable: isEnable },
+                success: function(res) {
+                    if(res.success) {
+                        Swal.fire({
+                            title: isEnable ? 'Bật 2FA thành công!' : 'Đã tắt 2FA',
+                            text: res.message,
+                            icon: 'success',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+                    } else {
+                        Swal.fire('Lỗi', res.message, 'error');
+                    }
+                },
+                error: function() {
+                    Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ.', 'error');
+                }
+            });
+        }
+
+        // ===============================================
+        // BỘ NÃO XÓA TÀI KHOẢN
+        // ===============================================
+        function confirmDelete() {
+            Swal.fire({
+                title: 'Xác nhận xóa tài khoản?',
+                text: "Toàn bộ dữ liệu mua hàng, hồ sơ làn da và thông tin cá nhân sẽ bị xóa vĩnh viễn. Bạn không thể khôi phục lại dữ liệu này!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2ec4b6',
+                cancelButtonColor: '#888',
+                confirmButtonText: '<i class="fa-solid fa-trash"></i> Vâng, Xóa vĩnh viễn',
+                cancelButtonText: 'Hủy bỏ',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Đang xử lý...',
+                        text: 'Vui lòng chờ trong giây lát.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading()
+                        }
+                    });
+                    
+                    window.location.href = '/Account/DeleteAccount'; 
+                }
+            })
+        }
+    </script>
+}

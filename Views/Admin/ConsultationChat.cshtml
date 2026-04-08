@@ -1,0 +1,218 @@
+@model VelvySkinWeb.Models.SupportTicket
+@{
+    ViewData["Title"] = "Tư Vấn Khách Hàng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    
+    // Ép kiểu dữ liệu lấy từ Database qua ViewBag
+    var profile = ViewBag.UserProfile as VelvySkinWeb.Models.UserProfile;
+    var suggests = ViewBag.SuggestedProducts as List<VelvySkinWeb.Models.Product>;
+}
+
+<style>
+    .consult-wrapper {
+        --primary-mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa; --bg-gray: #f8f9fa;
+        font-family: 'Montserrat', sans-serif; color: #333;
+    }
+    
+    .consult-wrapper .main-content { padding: 30px; max-width: 1100px; margin: 0 auto; }
+    
+    .consult-wrapper .back-btn { text-decoration: none; color: #888; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; transition: 0.3s;}
+    .consult-wrapper .back-btn:hover { color: var(--primary-mint); }
+
+    .consult-wrapper .grid-layout { display: grid; grid-template-columns: 1fr 380px; gap: 25px; }
+
+    /* Card styles */
+    .consult-wrapper .card { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); border: 1px solid #f1f1f1; margin-bottom: 25px; }
+    .consult-wrapper .card-title { font-weight: 700; font-size: 14px; text-transform: uppercase; color: var(--dark-mint); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f9f9f9; padding-bottom: 15px; }
+
+    /* Chat Interface */
+    .consult-wrapper .chat-container { height: 450px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+    .consult-wrapper .message { max-width: 75%; padding: 12px 18px; border-radius: 18px; font-size: 14px; line-height: 1.5; position: relative; }
+    .consult-wrapper .msg-customer { align-self: flex-start; background: #f1f1f1; color: #333; border-bottom-left-radius: 4px; }
+    .consult-wrapper .msg-admin { align-self: flex-end; background: var(--primary-mint); color: white; border-bottom-right-radius: 4px; }
+    .consult-wrapper .msg-time { font-size: 10px; margin-top: 5px; opacity: 0.7; display: block; text-align: right; }
+
+    /* Quick Reply Tags */
+    .consult-wrapper .quick-replies { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;}
+    .consult-wrapper .quick-replies::-webkit-scrollbar { display: none; }
+    .consult-wrapper .reply-tag { background: var(--light-mint); color: var(--primary-mint); border: 1px solid #e0f9f6; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.3s; }
+    .consult-wrapper .reply-tag:hover { background: var(--primary-mint); color: white; }
+
+    /* Input Area */
+    .consult-wrapper .input-area { display: flex; gap: 12px; align-items: flex-end; margin: 0; width: 100%;}
+    .consult-wrapper textarea { flex: 1; padding: 12px 15px; border-radius: 15px; border: 1px solid #eee; outline: none; font-family: inherit; resize: none; font-size: 14px; transition: 0.3s;}
+    .consult-wrapper textarea:focus { border-color: var(--primary-mint); }
+    .consult-wrapper .btn-send { background: var(--primary-mint); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: 0.3s; }
+    .consult-wrapper .btn-send:hover { background: var(--dark-mint); transform: scale(1.05); }
+
+    /* Sidebar Product Suggestions */
+    .consult-wrapper .product-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 15px; border: 1px solid #f9f9f9; margin-bottom: 10px; transition: 0.3s; cursor: pointer; }
+    .consult-wrapper .product-item:hover { border-color: var(--primary-mint); background: var(--light-mint); }
+    .consult-wrapper .product-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; }
+    .consult-wrapper .product-info { flex: 1; }
+    .consult-wrapper .product-name { font-size: 13px; font-weight: 700; color: #444; }
+    .consult-wrapper .product-price { font-size: 12px; color: var(--primary-mint); font-weight: 600; }
+
+    .consult-wrapper .btn-suggest { padding: 4px 8px; border-radius: 6px; border: 1px solid var(--primary-mint); background: transparent; color: var(--primary-mint); font-size: 10px; font-weight: 700; cursor: pointer; transition: 0.3s;}
+    .consult-wrapper .btn-suggest:hover { background: var(--primary-mint); color: white; }
+
+    .consult-wrapper .tag-advice { background: var(--light-mint); color: var(--primary-mint); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;}
+</style>
+
+<div class="consult-wrapper">
+    <div class="main-content">
+        <a asp-controller="Admin" asp-action="Support" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a>
+
+        <div class="grid-layout">
+            <div class="left-col">
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 
+                        Tư vấn làm đẹp
+                        <span class="tag-advice" style="margin-left: auto;">Trạng thái: @Model.Status</span>
+                    </div>
+                    
+                    <div class="chat-container" id="chatBox">
+                        @if (Model.TicketMessages != null && Model.TicketMessages.Any())
+                        {
+                            foreach (var msg in Model.TicketMessages.OrderBy(m => m.CreatedAt))
+                            {
+                                if (msg.Sender == "User")
+                                {
+                                    <div class="message msg-customer">
+                                        @msg.Content
+                                        <span class="msg-time">@msg.CreatedAt.ToString("HH:mm - dd/MM")</span>
+                                    </div>
+                                }
+                                else if (msg.Sender == "Admin")
+                                {
+                                    <div class="message msg-admin">
+                                        @msg.Content
+                                        <span class="msg-time" style="color: #cbf3f0;">@msg.CreatedAt.ToString("HH:mm - dd/MM")</span>
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
+
+                    @if (Model.Status != "Đã hoàn thành")
+                    {
+                        <div class="quick-replies">
+                            <div class="reply-tag" onclick="fillQuickMsg('Dạ shop chào bạn, Velvy Skin có thể tư vấn gì cho bạn ạ?')">👋 Chào hỏi</div>
+                            <div class="reply-tag" onclick="fillQuickMsg('Sản phẩm này phù hợp nhất với da dầu và da hỗn hợp ạ.')">✨ Da dầu mụn</div>
+                            <div class="reply-tag" onclick="fillQuickMsg('Dạ dòng này dùng sau bước Toner và trước bước Kem dưỡng bạn nhé!')">📖 Cách sử dụng</div>
+                            <div class="reply-tag" onclick="fillQuickMsg('Cảm ơn bạn đã tin tưởng Velvy Skin. Chúc bạn một ngày tốt lành!')">❤️ Cảm ơn</div>
+                        </div>
+
+                        <form asp-controller="Admin" asp-action="ReplyTicket" method="post" class="input-area">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <textarea id="chatInput" name="replyContent" rows="1" placeholder="Nhập tin nhắn tư vấn chuyên sâu..." required></textarea>
+                            <button type="submit" class="btn-send"><i class="fa-solid fa-paper-plane"></i></button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div style="text-align: center; color: #888; font-size: 13px; font-weight: 500; padding: 15px; background: #f9f9f9; border-radius: 15px;">
+                            <i class="fa-solid fa-lock"></i> Phiên tư vấn này đã kết thúc.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="card" style="position: relative;">
+                    <form asp-controller="Admin" asp-action="ResolveTicket" method="post" style="position: absolute; top: 20px; right: 20px; margin: 0;">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" style="background: #fff5f5; border: 1px solid #ffebeb; padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; color: #ff4d4d; transition: 0.3s;" title="Đóng phiên chat">
+                            <i class="fa-solid fa-power-off"></i> Kết thúc
+                        </button>
+                    </form>
+
+                    <div class="card-title"><i class="fa-solid fa-user-tag"></i> Khách hàng</div>
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                        <img src="https://i.pravatar.cc/150?u=@Model.UserEmail" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--light-mint);" alt="avatar">
+                        <div>
+                            <div style="font-weight: 700; font-size: 15px; color: var(--dark-mint);">@Model.UserFullName</div>
+                            <div style="font-size: 12px; color: #888;">@Model.UserEmail</div>
+                        </div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(Model.Subject))
+                    {
+                        <div style="font-size: 13px; line-height: 1.6; color: #666; background: var(--bg-gray); padding: 12px; border-radius: 12px; border-left: 3px solid var(--primary-mint); margin-bottom: 15px;">
+                            <i class="fa-solid fa-magnifying-glass"></i> Đang quan tâm: <strong>@Model.Subject.Replace("Tư vấn sản phẩm: ", "")</strong>
+                        </div>
+                    }
+
+                    <div style="font-size: 12px; line-height: 1.8; color: #555; background: #fffcf0; padding: 15px; border-radius: 12px; border: 1px solid #fdf2ce;">
+                        <div style="font-weight: 700; color: #856404; margin-bottom: 8px; font-size: 11px; text-transform: uppercase;">
+                            <i class="fa-solid fa-clipboard-user"></i> Hồ sơ làn da (Velvy Profile)
+                        </div>
+                        
+                        @if (profile != null)
+                        {
+                            <div><span style="color: #888;">Loại da:</span> <strong style="color: var(--dark-mint);">@(string.IsNullOrEmpty(profile.SkinType) ? "Chưa cập nhật" : profile.SkinType)</strong></div>
+                            <div><span style="color: #888;">Quan tâm:</span> <strong>@(string.IsNullOrEmpty(profile.SkinConcern) ? "Chưa cập nhật" : profile.SkinConcern)</strong></div>
+                            <div><span style="color: #888;">Dị ứng:</span> <strong>@(string.IsNullOrEmpty(profile.Allergies) ? "Không có" : profile.Allergies)</strong></div>
+                        }
+                        else
+                        {
+                            <div style="color: #888; font-style: italic;">Khách hàng chưa cập nhật hồ sơ làn da.</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-lightbulb"></i> Gợi ý sản phẩm</div>
+                    
+                    @if (suggests != null && suggests.Any())
+                    {
+                        foreach (var sp in suggests)
+                        {
+                            <div class="product-item">
+                                <img src="@sp.ImageUrl" class="product-img" onerror="this.src='https://via.placeholder.com/50'" alt="@sp.Name">
+                                <div class="product-info">
+                                    <div class="product-name" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                                        @sp.Name
+                                    </div>
+                                    <div class="product-price">@sp.Price.ToString("N0")đ</div>
+                                </div>
+                                <button type="button" class="btn-suggest" onclick="fillQuickMsg('Dạ shop gợi ý bạn tham khảo dòng sản phẩm [@(sp.Name.Replace("'", "\\'"))] này ạ. Bạn xem chi tiết tại link này nhé: /Products/Details/@sp.Id')">Gửi link</button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div style="text-align: center; color: #aaa; font-size: 12px;">Chưa có dữ liệu sản phẩm.</div>
+                    }
+
+                    <a asp-controller="Products" asp-action="Skincare" target="_blank" style="display: block; width: 100%; border: none; background: none; color: var(--primary-mint); font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 10px; text-align: center; text-decoration: none;">
+                        Đến kho sản phẩm <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tự động cuộn xuống cuối hộp chat
+        const chatBox = document.getElementById('chatBox');
+        if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+        // Hàm điền tự động câu trả lời
+        function fillQuickMsg(text) {
+            const input = document.getElementById('chatInput');
+            if(input) {
+                // Nếu đã có chữ thì nối tiếp vào, nếu trống thì ghi đè
+                if(input.value && !input.value.endsWith(' ')) {
+                    input.value += ' ' + text;
+                } else {
+                    input.value += text;
+                }
+                input.focus();
+            }
+        }
+    </script>
+}

@@ -1,0 +1,221 @@
+@model IEnumerable<VelvySkinWeb.Models.Order>
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; 
+}
+
+<style>
+    .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--dark-mint); margin: 0; }
+
+    /* Bộ lọc đơn hàng */
+    .filter-bar { background: white; padding: 20px; border-radius: 20px; display: flex; gap: 15px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
+    .filter-item { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+    .filter-item label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; }
+    .filter-item select, .filter-item input { padding: 10px; border: 1px solid #eee; border-radius: 10px; font-family: inherit; font-size: 13px; outline: none; }
+
+    /* Bảng đơn hàng */
+    .order-container { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 15px 40px rgba(0,0,0,0.03); }
+    .order-table { width: 100%; border-collapse: collapse; }
+    .order-table th { text-align: left; padding: 15px; font-size: 12px; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #eee; }
+    .order-table td { padding: 18px 15px; font-size: 13px; border-bottom: 1px solid #f9f9f9; }
+    
+    .customer-info { display: flex; flex-direction: column; }
+    .customer-name { font-weight: 700; color: var(--dark-mint); }
+    .customer-phone { font-size: 11px; color: #888; margin-top: 3px;}
+
+    /* Trạng thái đơn hàng (Badge) */
+    .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .status-pending { background: #fff5e6; color: #ffa500; } /* Chờ xác nhận */
+    .status-shipping { background: #e1f5fe; color: #3498db; }    /* Đang giao */
+    .status-completed { background: #f0fdfa; color: #2ec4b6; } /* Hoàn thành */
+    .status-cancelled { background: #ffebee; color: #ff4d4d; }  /* Đã hủy */
+
+    .order-id { font-family: monospace; font-weight: 700; color: #555; }
+    .total-amount { font-weight: 700; color: #333; }
+
+    /* 🔥 CSS MỚI: Dành cho Cụm nút Thao tác 🔥 */
+    .action-cell { display: flex; gap: 8px; align-items: center; }
+    .btn-process { border: 1px solid #3498db; color: #3498db; background: transparent; padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 700; text-decoration: none; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-process:hover { background: #3498db; color: white; }
+    
+    .btn-trash { border: 1px solid #ff4d4d; color: #ff4d4d; background: transparent; width: 32px; height: 32px; border-radius: 50%; font-size: 13px; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; outline: none; }
+    .btn-trash:hover { background: #ff4d4d; color: white; }
+
+    /* Nút lọc */
+    .btn-action { background: #f8f9fa; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; color: #666; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;}
+    .btn-action:hover { background: var(--primary-mint); color: white; }
+
+    @@media (max-width: 1024px) {
+        .filter-bar { flex-wrap: wrap; }
+    }
+</style>
+
+<div class="header-flex">
+    <h1 class="page-title">Quản lý đơn hàng</h1>
+    <div style="font-size: 13px; font-weight: 600; color: #888;">
+        Hôm nay: <span style="color: var(--primary-mint);">@DateTime.Now.ToString("dd Tháng MM, yyyy")</span>
+    </div>
+</div>
+
+<form method="get" asp-action="Orders" class="filter-bar">
+    <div class="filter-item">
+        <label>Tìm kiếm</label>
+        <input type="text" name="search" value="@ViewBag.CurrentSearch" placeholder="Mã đơn, Tên, SĐT...">
+    </div>
+    <div class="filter-item">
+        <label>Trạng thái</label>
+        <select name="status">
+            <option value="">Tất cả đơn hàng</option>
+            <option value="Pending" selected="@(ViewBag.CurrentStatus == "Pending" ? "selected" : null)">Chờ xác nhận</option>
+            <option value="Shipping" selected="@(ViewBag.CurrentStatus == "Shipping" ? "selected" : null)">Đang giao hàng</option>
+            <option value="Completed" selected="@(ViewBag.CurrentStatus == "Completed" ? "selected" : null)">Đã hoàn thành</option>
+            <option value="Cancelled" selected="@(ViewBag.CurrentStatus == "Cancelled" ? "selected" : null)">Đã hủy</option>
+        </select>
+    </div>
+    <div class="filter-item">
+        <label>Ngày đặt</label>
+        <input type="date" name="date" value="@ViewBag.CurrentDate">
+    </div>
+    <div style="align-self: flex-end; display: flex; gap: 10px;">
+        <button type="submit" class="btn-action" style="width: auto; padding: 0 20px; font-weight: 600; font-size: 12px; background: var(--primary-mint); color: white;">
+            <i class="fa-solid fa-filter me-1"></i> Lọc dữ liệu
+        </button>
+        <a asp-action="Orders" class="btn-action" style="width: auto; padding: 0 15px; background: #eee; text-decoration: none; font-size: 12px; font-weight: 600;" title="Xóa bộ lọc">
+            <i class="fa-solid fa-rotate-right"></i>
+        </a>
+    </div>
+</form>
+
+<div class="order-container">
+    @if (!Model.Any())
+    {
+        <div style="text-align: center; padding: 40px; color: #888;">
+            <i class="fa-solid fa-box-open" style="font-size: 40px; color: #ddd; margin-bottom: 15px; display: block;"></i>
+            Không tìm thấy đơn hàng nào phù hợp với bộ lọc!
+        </div>
+    }
+    else
+    {
+        <table class="order-table">
+            <thead>
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Khách Hàng</th>
+                    <th>Ngày Đặt</th>
+                    <th>Tổng Tiền</th>
+                    <th>Trạng Thái</th>
+                    <th>Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var item in Model)
+                {
+                    string badgeClass = "status-pending";
+                    string statusText = item.OrderStatus ?? "Pending";
+                    string statusLower = statusText.ToLower();
+
+                    if (statusLower == "shipping" || statusLower == "đang giao") { badgeClass = "status-shipping"; statusText = "Đang giao"; }
+                    else if (statusLower == "completed" || statusLower == "đã giao" || statusLower == "thành công") { badgeClass = "status-completed"; statusText = "Hoàn thành"; }
+                    else if (statusLower == "cancelled" || statusLower == "đã hủy") { badgeClass = "status-cancelled"; statusText = "Đã hủy"; }
+                    else { statusText = "Chờ xác nhận"; } 
+
+                    <tr>
+                        <td class="order-id">#@item.Id</td>
+                        <td>
+                            <div class="customer-info">
+                                <span class="customer-name">@item.CustomerName</span>
+                                <span class="customer-phone">@item.PhoneNumber</span>
+                            </div>
+                        </td>
+                        <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="total-amount">@item.TotalAmount.ToString("N0")đ</td>
+                        <td><span class="status-badge @badgeClass">@statusText</span></td>
+                        
+                        <td>
+                            <div class="action-cell">
+                                @if (statusLower == "shipping" || statusLower == "đang giao")
+                                {
+                                    <a asp-controller="Orders" asp-action="ShippingDetails" asp-route-id="@item.Id" class="btn-process" style="border-color: #3498db; color: #3498db;">
+                                        Giao hàng <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
+                                }
+                                else if (statusLower == "completed" || statusLower == "thành công" || statusLower == "đã giao")
+                                {
+                                    <a asp-controller="Orders" asp-action="CompletedDetails" asp-route-id="@item.Id" class="btn-process" style="border-color: var(--primary-mint); color: var(--primary-mint);">
+                                        <i class="fa-solid fa-check"></i> Hoàn tất
+                                    </a>
+                                }
+                                else if (statusLower == "cancelled" || statusLower == "đã hủy")
+                                {
+                                    <a asp-controller="Orders" asp-action="Details" asp-route-id="@item.Id" class="btn-process" style="border-color: #999; color: #999;">
+                                        <i class="fa-solid fa-eye"></i> Xem
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Orders" asp-action="Details" asp-route-id="@item.Id" class="btn-process">
+                                        Xử lý <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
+                                }
+
+                                @if (statusLower != "completed" && statusLower != "đã giao" && statusLower != "thành công" && statusLower != "cancelled" && statusLower != "đã hủy")
+                                {
+                                    <form id="cancel-form-@item.Id" asp-controller="Orders" asp-action="UpdateStatus" method="post" style="margin: 0;">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        
+                                        <input type="hidden" name="newStatus" value="Cancelled" />
+                                        
+                                        <button type="button" class="btn-trash" title="Hủy bỏ đơn hàng này" onclick="confirmCancel('@item.Id', '@item.CustomerName.Replace("'", "\\'")')">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // Bắt thông báo từ TempData nếu C# gửi về
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({
+                    title: 'Cập nhật thành công!',
+                    text: '@Html.Raw(TempData["SuccessMsg"])',
+                    icon: 'success',
+                    confirmButtonColor: '#2ec4b6',
+                    timer: 3000
+                });
+            </text>
+        }
+
+        // Logic Popup Hủy đơn chuyên nghiệp
+        function confirmCancel(orderId, customerName) {
+            Swal.fire({
+                title: 'Xác nhận hủy đơn?',
+                html: `Bạn có chắc muốn chuyển đơn hàng <b>#${orderId}</b> của khách <b>${customerName}</b> sang trạng thái <br/><span style='color:#ff4d4d; font-weight:bold; font-size:18px;'>ĐÃ HỦY</span> không?`,
+                icon: 'warning',
+                showCancelButton: true,
+                 confirmButtonColor: '#2ec4b6',
+                cancelButtonColor: '#ef4444',
+                confirmButtonText: '<i class="fa-solid fa-ban"></i> Vâng, Hủy ngay!',
+                cancelButtonText: 'Không, để sau',
+                backdrop: `rgba(0,0,0,0.4)`
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Kích hoạt form C# ẩn
+                    document.getElementById('cancel-form-' + orderId).submit();
+                }
+            });
+        }
+    </script>
+}

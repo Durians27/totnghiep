@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Velvy Skin Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-mint: #2ec4b6; --light-mint: #cbf3f0; --dark-mint: #208b81;
+            --accent-pink: #e993b0; --text-gray: #444; --transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Montserrat', sans-serif; background: #f8f9fa; color: var(--text-gray); }
+
+        .admin-wrapper { display: flex; min-height: 100vh; }
+
+        .sidebar { width: 260px; background: white; box-shadow: 2px 0 15px rgba(0,0,0,0.08); position: fixed; height: 100vh; z-index: 1000; padding-top: 20px; display: flex; flex-direction: column; }
+        .logo-admin { padding: 0 25px 30px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+        .logo-admin img { height: 55px; }
+        .sidebar-title { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--primary-mint); font-weight: 700; }
+
+        .menu-item { padding: 14px 25px; display: flex; align-items: center; gap: 12px; color: #555; text-decoration: none; font-weight: 500; font-size: 13.5px; transition: var(--transition); cursor: pointer; }
+        .menu-item:hover, .menu-item.active { background: var(--light-mint); color: var(--dark-mint); border-right: 4px solid var(--primary-mint);}
+        .menu-item i { font-size: 13px; width: 24px; text-align: center;}
+
+        .support-box { position: absolute; bottom: 30px; width: 100%; padding: 0 25px; }
+        .support-box div { background: #cbf3f0; padding: 20px; border-radius: 12px; text-align: center; }
+        .support-box i { font-size: 28px; color: var(--primary-mint); margin-bottom: 8px; }
+
+        .topbar { height: 75px; background: white; box-shadow: 0 2px 15px rgba(0,0,0,0.08); position: fixed; top: 0; left: 260px; right: 0; z-index: 999; display: flex; align-items: center; padding: 0 30px; justify-content: space-between; }
+        .topbar-search { width: 320px; padding: 10px 15px; border-radius: 30px; border: 1px solid #ddd; background: #f9f9f9; outline: none;}
+
+        .main-content { margin-left: 260px; padding-top: 75px; flex: 1; padding: 105px 40px 40px; }
+
+        .chart-container, .table-container, .voucher-form { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); margin-bottom: 40px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px 10px; font-weight: 600; color: #666; border-bottom: 2px solid #eee; font-size: 14px;}
+        td { padding: 16px 10px; border-bottom: 1px solid #f0f0f0; font-size: 14px;}
+        .status-badge { padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 700; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-expired { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #fff3cd; color: #856404; }
+
+        /* ======================================================== */
+        /* 🔥 CSS CUSTOM CHO CHUÔNG THÔNG BÁO VÀ DROPDOWN MENU 🔥 */
+        /* ======================================================== */
+        .notif-wrapper { position: relative; display: inline-block; }
+        .notif-bell-btn { background: none; border: none; cursor: pointer; position: relative; padding: 5px; outline: none; }
+        .notif-badge { position: absolute; top: 0px; right: -5px; background: #e993b0; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 50%; border: 2px solid white; display: none; }
+        
+        .notif-dropdown {
+            position: absolute; top: 50px; right: -10px; width: 340px; background: white; border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15); opacity: 0; visibility: hidden;
+            transform: translateY(10px); transition: all 0.3s ease; z-index: 1001; overflow: hidden; border: 1px solid #eee;
+        }
+        .notif-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        
+        /* Mũi tên chỉ lên cho đẹp */
+        .notif-dropdown::before {
+            content: ''; position: absolute; top: -8px; right: 20px; width: 16px; height: 16px;
+            background: white; transform: rotate(45deg); border-left: 1px solid #eee; border-top: 1px solid #eee; z-index: -1;
+        }
+
+        .notif-header { background: var(--primary-mint); padding: 15px; color: white; font-weight: 700; text-align: center; font-size: 14px; letter-spacing: 1px; }
+        .notif-list { max-height: 380px; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+        
+        .notif-item { display: flex; gap: 15px; padding: 16px 20px; border-bottom: 1px solid #f5f5f5; text-decoration: none; transition: background 0.2s; align-items: flex-start; }
+        .notif-item:hover { background: #fafafa; }
+        .notif-item-danger { background: #fff0f0 !important; border-left: 4px solid #d32f2f; }
+        .notif-item-danger:hover { background: #ffe6e6 !important; }
+        
+        .notif-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .icon-appeal { background: #ffdada; color: #d32f2f; }
+        .icon-consult { background: #d4f0f0; color: #008080; }
+        .icon-order { background: #fff3cd; color: #f39c12; }
+        .icon-complaint { background: #e2e3e5; color: #6c757d; }
+
+        .notif-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .notif-title { font-weight: 700; font-size: 13px; color: #333; margin: 0; }
+        .notif-desc { font-size: 12px; color: #666; margin: 0; line-height: 1.4; }
+        .notif-time { font-size: 11px; color: #aaa; font-weight: 500; margin-top: 2px;}
+
+        .notif-footer { padding: 12px; text-align: center; border-top: 1px solid #eee; background: white; }
+        .notif-footer a { color: var(--dark-mint); font-weight: 600; font-size: 13px; text-decoration: none; transition: 0.2s; }
+        .notif-footer a:hover { color: var(--primary-mint); }
+
+        @@keyframes pulseAlert { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <div class="sidebar">
+        <div class="logo-admin">
+            <a asp-controller="Home" asp-action="Index"><img src="/images/02.png" alt="Velvy Skin"></a>
+            <div>
+                <div class="sidebar-title">Velvy Skin</div>
+                <small style="color:#888; font-size:11px;">Admin Panel</small>
+            </div>
+        </div>
+
+        <a asp-controller="Admin" asp-action="Index" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+            <i class="fa-solid fa-house"></i><span>Bảng điều khiển</span>
+        </a>
+        <a asp-controller="Admin" asp-action="Products" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Products" ? "active" : "")">
+            <i class="fa-solid fa-box"></i><span>Quản lý sản phẩm</span>
+        </a>
+        <a asp-controller="Admin" asp-action="Orders" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Orders" ? "active" : "")">
+            <i class="fa-solid fa-clipboard-list"></i><span>Quản lý đơn hàng</span>
+        </a>
+        <a asp-controller="Admin" asp-action="Categories" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Categories" ? "active" : "")">
+            <i class="fa-solid fa-layer-group"></i><span>Quản lý danh mục</span>
+        </a>
+        <a asp-controller="Coupons" asp-action="Index" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Coupons" ? "active" : "")">
+            <i class="fa-solid fa-ticket"></i><span>Quản lý mã khuyến mãi</span>
+        </a>
+        
+        <a asp-controller="Admin" asp-action="Support" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Support" ? "active" : "")">
+            <i class="fa-solid fa-headset"></i><span>Hỗ trợ khách hàng</span>
+        </a>
+        
+        <a asp-controller="Admin" asp-action="Customers" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Customers" ? "active" : "")">
+            <i class="fa-solid fa-users"></i><span>Khách hàng</span>
+        </a>
+        <a asp-controller="Admin" asp-action="SendNotification" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "SendNotification" ? "active" : "")">
+            <i class="fa-solid fa-bell"></i><span>Thông báo</span>
+        </a>
+        <a asp-controller="Admin" asp-action="Reports" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Reports" ? "active" : "")">
+            <i class="fa-solid fa-chart-line"></i><span>Báo cáo doanh thu</span>
+        </a>
+        <a asp-controller="Admin" asp-action="SystemLogs" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "SystemLogs" ? "active" : "")">
+            <i class="fa-solid fa-file-alt"></i><span>Nhật ký hệ thống</span>
+        </a>
+        <a asp-controller="Admin" asp-action="Settings" class="menu-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Settings" ? "active" : "")">
+            <i class="fa-solid fa-gear"></i><span>Cài đặt</span>
+        </a>
+
+        <a asp-controller="Admin" asp-action="HelpDesk" style="text-decoration: none; color: inherit; display: block; margin-top: auto;">
+            <div style="background: var(--light-mint); padding: 20px; border-radius: 20px; text-align: center; margin: 20px;">
+                <div style="width: 40px; height: 40px; background: white; color: var(--primary-mint); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; margin: 0 auto 10px;">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <div style="font-weight: 700; color: var(--dark-mint); font-size: 14px; margin-bottom: 5px;">Cần hỗ trợ</div>
+                <div style="font-size: 12px; color: #666; font-weight: 600;">Hotline: 0123 456 789</div>
+            </div>
+        </a>
+    </div> 
+    
+    <div class="topbar">
+        <div class="topbar-left">
+            <input type="text" class="topbar-search" placeholder="Tìm kiếm đơn hàng, mã khuyến mãi, ticket hỗ trợ...">
+        </div>
+        <div style="display:flex;align-items:center;gap:25px;">
+            
+            <div class="notif-wrapper" id="adminNotifContainer">
+                <button type="button" class="notif-bell-btn" id="notifBellIcon">
+                    <i class="fa-solid fa-bell" style="font-size:22px;color:#666;"></i>
+                    <span id="adminNotifBadge" class="notif-badge">0</span>
+                </button>
+                
+                <div class="notif-dropdown" id="notifDropdownMenu">
+                    <div class="notif-header">THÔNG BÁO HỆ THỐNG</div>
+                    <ul class="notif-list" id="adminNotifList">
+                        <li style="padding: 30px; text-align: center; color: #888; font-size: 13px;">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: var(--primary-mint); margin-bottom: 10px;"></i><br>
+                            Đang tải dữ liệu...
+                        </li>
+                    </ul>
+                    <div class="notif-footer">
+                        <a asp-controller="Admin" asp-action="Support">XEM TẤT CẢ YÊU CẦU <i class="fa-solid fa-arrow-right" style="margin-left: 5px;"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <a asp-controller="Admin" asp-action="AdminProfile" style="display: flex; align-items: center; gap: 10px; text-decoration: none; cursor: pointer;">
+                <img src="~/images/avatars/@(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value).jpg" 
+                     onerror="this.src='https://i.pravatar.cc/150?img=32'" 
+                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                <div>
+                    <div style="font-weight: 700; color: #333; font-size: 14px;">Admin Velvy</div>
+                    <div style="font-size: 11px; color: #888;">Quản trị viên</div>
+                </div>
+            </a>
+                
+            <a asp-controller="Home" asp-action="Index" style="margin-left: 15px; background: var(--light-mint); color: var(--dark-mint); border: 1px solid var(--primary-mint); padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; transition: 0.3s; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-shop"></i> Xem cửa hàng
+            </a>
+
+            <form asp-controller="Account" asp-action="Logout" method="post" style="margin-left: 5px;">
+                <button type="submit" style="background: #fff0f0; color: #d32f2f; border: 1px solid #f5c2c7; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s;" onmouseover="this.style.background='#f8d7da'" onmouseout="this.style.background='#fff0f0'">
+                    <i class="fa-solid fa-right-from-bracket"></i> Thoát
+                </button>
+            </form>
+        </div>
+    </div> 
+    
+    <div class="main-content">
+        @RenderBody()
+    </div>
+</div> 
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // --- XỬ LÝ ĐÓNG/MỞ MENU DROPDOWN BẰNG JS THUẦN ---
+        const bellBtn = document.getElementById('notifBellIcon');
+        const dropdownMenu = document.getElementById('notifDropdownMenu');
+        const notifContainer = document.getElementById('adminNotifContainer');
+
+        bellBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+            dropdownMenu.classList.toggle('show');
+        });
+
+        // Bấm ra ngoài thì đóng menu
+        document.addEventListener('click', function(e) {
+            if (!notifContainer.contains(e.target)) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+
+        // Ngăn việc bấm vào bên trong menu làm đóng menu
+        dropdownMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+
+        // --- XỬ LÝ LOAD DỮ LIỆU TỪ API ---
+        function fetchAdminNotifications() {
+            fetch('/Admin/GetAdminNotifications')
+                .then(response => response.json())
+                .then(res => {
+                    if (res.success) {
+                        let badge = document.getElementById('adminNotifBadge');
+                        let list = document.getElementById('adminNotifList');
+                        
+                        // 1. Nhảy chấm đỏ
+                        if (res.count > 0) {
+                            badge.innerText = res.count > 99 ? "99+" : res.count;
+                            badge.style.display = "inline-block";
+                            badge.style.animation = "pulseAlert 0.5s ease 3"; // Giật nảy 3 lần báo hiệu
+                        } else {
+                            badge.style.display = "none";
+                        }
+
+                        // 2. Render danh sách tin nhắn thả xuống
+                        list.innerHTML = ""; 
+                        if (res.data.length > 0) {
+                            res.data.forEach(item => {
+                                // Xác định UI dựa trên loại Ticket
+                                let isAppeal = item.type === "Kháng cáo";
+                                let liClass = isAppeal ? "notif-item notif-item-danger" : "notif-item";
+                                
+                                // Gán icon tương ứng
+                                let iconClass = "fa-circle-exclamation icon-complaint";
+                                if (isAppeal) iconClass = "fa-user-lock icon-appeal";
+                                else if (item.type === "Tư vấn làm đẹp") iconClass = "fa-spa icon-consult";
+                                else if (item.type === "Hỗ trợ đơn hàng") iconClass = "fa-truck-fast icon-order";
+
+                                let html = `
+                                    <a href="/Admin/TicketDetail/${item.id}" class="${liClass}">
+                                        <div class="notif-icon ${iconClass.split(' ')[1]}">
+                                            <i class="fa-solid ${iconClass.split(' ')[0]}"></i>
+                                        </div>
+                                        <div class="notif-content">
+                                            <p class="notif-title">${item.type}</p>
+                                            <p class="notif-desc">Khách hàng: <strong>${item.customer}</strong></p>
+                                            <p class="notif-time"><i class="fa-regular fa-clock me-1"></i> ${item.time}</p>
+                                        </div>
+                                    </a>
+                                `;
+                                list.innerHTML += html;
+                            });
+                        } else {
+                            list.innerHTML = `
+                                <li style="padding: 40px 20px; text-align: center;">
+                                    <div style="width: 60px; height: 60px; background: #e0f9f6; color: #2ec4b6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 15px;">
+                                        <i class="fa-solid fa-mug-hot"></i>
+                                    </div>
+                                    <p style="color: #666; font-weight: 600; margin: 0;">Tuyệt vời!</p>
+                                    <p style="color: #999; font-size: 13px; margin: 5px 0 0;">Bạn đã xử lý hết mọi công việc.</p>
+                                </li>`;
+                        }
+                    }
+                })
+                .catch(err => console.error("Lỗi load API Chuông Báo Động:", err));
+        }
+
+        // Chạy lần đầu khi F5 trang
+        fetchAdminNotifications();
+
+        // Tự động Check tin nhắn mới sau mỗi 30s
+        setInterval(fetchAdminNotifications, 30000);
+    });
+</script>
+
+@RenderSection("Scripts", required: false)
+</body>
+</html>

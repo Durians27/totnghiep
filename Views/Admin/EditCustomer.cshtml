@@ -1,0 +1,129 @@
+@model VelvySkinWeb.Models.UserProfile
+@{
+    ViewData["Title"] = "Chỉnh Sửa Hồ Sơ Khách Hàng";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .edit-customer-wrapper {
+        --mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa; --gold: #c5a059; --soft-gold: #fcfaf5; --bg: #f8fafb; --danger: #ff5e5e; --text: #333; --border: #eeeeee;
+        font-family: 'Montserrat', sans-serif; color: var(--text); padding: 20px; box-sizing: border-box; max-width: 900px; margin: 0 auto;
+    }
+
+    .edit-customer-wrapper .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+    .edit-customer-wrapper .page-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin: 0; font-weight: 700;}
+    .edit-customer-wrapper .btn-delete { color: var(--danger); background: none; border: 1px solid var(--danger); padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.3s; }
+    .edit-customer-wrapper .btn-delete:hover { background: var(--danger); color: white; }
+
+    /* Form Card */
+    .edit-customer-wrapper .form-card { background: white; border-radius: 30px; padding: 40px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); position: relative; }
+    .edit-customer-wrapper .status-badge { position: absolute; top: 25px; right: 40px; background: var(--light-mint); color: var(--mint); padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid #c3fae8;}
+    .edit-customer-wrapper .section-tag { display: inline-block; padding: 6px 15px; background: #f5f5f5; color: #666; border-radius: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 25px; letter-spacing: 1px; }
+
+    .edit-customer-wrapper .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    .edit-customer-wrapper .form-group { margin-bottom: 25px; }
+    .edit-customer-wrapper label { display: block; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 10px; }
+    
+    .edit-customer-wrapper input, .edit-customer-wrapper select, .edit-customer-wrapper textarea { 
+        width: 100%; padding: 15px 18px; border-radius: 15px; border: 1px solid var(--border); 
+        background: #fafafa; font-family: inherit; font-size: 14px; outline: none; transition: 0.3s; box-sizing: border-box;
+    }
+    .edit-customer-wrapper input:focus, .edit-customer-wrapper select:focus, .edit-customer-wrapper textarea:focus { border-color: var(--mint); background: white; box-shadow: 0 0 0 3px var(--light-mint);}
+    .edit-customer-wrapper input[readonly] { background: #f0f0f0; color: #999; cursor: not-allowed; }
+
+    /* Skin Analysis Box */
+    .edit-customer-wrapper .skin-analysis-box { background: var(--soft-gold); border: 1px solid #f3ece0; padding: 30px; border-radius: 20px; margin-bottom: 30px; }
+    .edit-customer-wrapper .skin-analysis-box h4 { margin: 0 0 20px 0; font-family: 'Playfair Display', serif; color: #a67c00; font-size: 18px; font-weight: 700;}
+
+    /* Footer Buttons */
+    .edit-customer-wrapper .action-bar { border-top: 1px solid #f5f5f5; padding-top: 30px; display: flex; gap: 15px; }
+    .edit-customer-wrapper .btn { padding: 16px 35px; border-radius: 15px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: 0.3s; display: flex; align-items: center; gap: 10px; font-family: inherit;}
+    .edit-customer-wrapper .btn-save { background: var(--mint); color: white; flex: 2; justify-content: center; }
+    .edit-customer-wrapper .btn-cancel { background: #f5f5f5; color: #888; flex: 1; justify-content: center; text-decoration: none; }
+    .edit-customer-wrapper .btn-save:hover { background: var(--dark-mint); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(46,196,182,0.2);}
+    .edit-customer-wrapper .btn-cancel:hover { background: #e0e0e0; color: #333; }
+
+    @@media (max-width: 768px) { .edit-customer-wrapper .grid-2 { grid-template-columns: 1fr; } }
+</style>
+
+<div class="edit-customer-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Chỉnh Sửa Hồ Sơ</h1>
+        <div class="header-actions">
+            <form asp-controller="Admin" asp-action="DeleteCustomer" asp-route-id="@Model.UserId" method="post" onsubmit="return confirm('CẢNH BÁO: Bạn có chắc chắn muốn xóa vĩnh viễn khách hàng này khỏi hệ thống? Hành động này không thể hoàn tác!');">
+                <button type="submit" class="btn-delete"><i class="fa-solid fa-trash-can"></i> Xóa khách hàng</button>
+            </form>
+        </div>
+    </div>
+
+    <form asp-controller="Admin" asp-action="EditCustomer" method="post" class="form-card">
+        <input type="hidden" asp-for="UserId" />
+        
+        <div class="status-badge">ID: #@Model.UserId.Substring(0, 8).ToUpper()</div>
+
+        <span class="section-tag">Thông tin liên lạc</span>
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Họ và Tên</label>
+                <input asp-for="FullName" type="text" placeholder="Nhập tên khách hàng">
+            </div>
+            <div class="form-group">
+                <label>Số điện thoại</label>
+                <input asp-for="PhoneNumber" type="tel" placeholder="Nhập số điện thoại">
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Email (Không thể sửa)</label>
+                <input type="email" value="@ViewBag.UserEmail" readonly title="Email dùng để đăng nhập, không thể thay đổi">
+            </div>
+            <div class="form-group">
+                <label>Hạng thành viên (Tự động)</label>
+                <input type="text" value="Hệ thống tự động tính toán" readonly title="Hạng thành viên được hệ thống tự động tính dựa trên tổng chi tiêu">
+            </div>
+        </div>
+
+        <span class="section-tag">Cập nhật tình trạng da</span>
+        <div class="skin-analysis-box">
+            <h4>Phân tích hiện tại</h4>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Loại da ghi nhận</label>
+                    <select asp-for="SkinType">
+                        <option value="">--- Chưa cập nhật ---</option>
+                        <option value="Da dầu">Da dầu</option>
+                        <option value="Da khô">Da khô</option>
+                        <option value="Da hỗn hợp">Da hỗn hợp</option>
+                        <option value="Da hỗn hợp thiên dầu">Da hỗn hợp thiên dầu</option>
+                        <option value="Da nhạy cảm">Da nhạy cảm</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tình trạng cải thiện</label>
+                    <select name="ProgressStatus">
+                        <option>Chưa cải thiện nhiều</option>
+                        <option selected>Đang cải thiện tốt</option>
+                        <option>Đã phục hồi hoàn toàn</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Ghi chú tư vấn từ Admin (Lưu nội bộ)</label>
+                <textarea name="AdminNotes" rows="3" placeholder="Nhập ghi chú hoặc nhắc nhở về khách hàng này..."></textarea>
+            </div>
+        </div>
+
+        <span class="section-tag">Địa chỉ nhận hàng</span>
+        <div class="form-group">
+            <label>Địa chỉ chi tiết</label>
+            <input asp-for="DefaultAddress" type="text" placeholder="Nhập địa chỉ giao hàng">
+        </div>
+
+        <div class="action-bar">
+            <a asp-controller="Admin" asp-action="CustomerDetail" asp-route-id="@Model.UserId" class="btn btn-cancel">Hủy bỏ</a>
+            <button type="submit" class="btn btn-save">
+                <i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi
+            </button>
+        </div>
+    </form>
+</div>

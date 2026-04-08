@@ -1,0 +1,199 @@
+@model IEnumerable<VelvySkinWeb.Models.SupportTicket>
+@{
+    ViewData["Title"] = "Trung Tâm Hỗ Trợ";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<style>
+    .support-wrapper {
+        --primary-mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa;
+        --bg-gray: #f8f9fa; --danger-red: #ff4d4d; --info-blue: #3498db;
+        font-family: 'Montserrat', sans-serif; color: #333;
+    }
+    
+    .support-wrapper .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .support-wrapper .page-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--dark-mint); margin: 0; }
+
+    .support-wrapper .priority-alert { background: #fff5f5; padding: 15px 25px; border-radius: 15px; border-left: 5px solid var(--danger-red); margin-bottom: 25px; font-size: 14px; color: #c53030; font-weight: 600; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(255, 77, 77, 0.1); }
+
+    .support-wrapper .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+    .support-wrapper .stat-card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 15px; }
+    .support-wrapper .stat-icon { width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+    .support-wrapper .card { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.04); border: 1px solid #f1f1f1; overflow-x: auto; }
+    .support-wrapper table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    .support-wrapper th { text-align: left; padding: 15px; color: var(--dark-mint); font-size: 12px; text-transform: uppercase; border-bottom: 2px solid var(--light-mint); letter-spacing: 1px; }
+    .support-wrapper td { padding: 20px 15px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+
+    .support-wrapper .status-wrapper { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .support-wrapper .pulse-dot { width: 6px; height: 6px; border-radius: 50%; position: relative; }
+    .support-wrapper .pulse-dot::after { content: ''; position: absolute; width: 100%; height: 100%; border-radius: 50%; background: inherit; animation: pulse-animation 1.5s infinite; }
+    @@keyframes pulse-animation { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
+
+    .support-wrapper .st-pending { background: #fff9e6; color: #d4a017; box-shadow: 0 4px 12px rgba(241, 196, 15, 0.1); }
+    .support-wrapper .st-pending .pulse-dot { background: #f1c40f; }
+    .support-wrapper .st-processing { background: #eef2ff; color: #4f46e5; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1); }
+    .support-wrapper .st-processing .pulse-dot { background: #4f46e5; }
+    .support-wrapper .st-resolved { background: #f0fdfa; color: #0d9488; box-shadow: 0 4px 12px rgba(46, 196, 182, 0.1); }
+    .support-wrapper .st-resolved .pulse-dot { background: #2ec4b6; }
+
+    .support-wrapper .category-tag { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; gap: 5px; width: fit-content; }
+    .support-wrapper .tag-complaint { background: #fff5f5; color: var(--danger-red); border: 1px solid #ffebeb; }
+    .support-wrapper .tag-advice { background: var(--light-mint); color: var(--primary-mint); border: 1px solid #e0f9f6; }
+    .support-wrapper .tag-shipping { background: #f0f7ff; color: var(--info-blue); border: 1px solid #e1f0ff; }
+
+    .support-wrapper .customer-info { display: flex; align-items: center; gap: 12px; }
+    .support-wrapper .customer-avatar { width: 40px; height: 40px; border-radius: 50%; background-size: cover; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+
+    .support-wrapper .btn-reply { background: white; border: 1px solid #eee; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--dark-mint); cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-block;}
+    .support-wrapper .btn-reply:hover { background: var(--primary-mint); color: white; border-color: var(--primary-mint); transform: translateY(-2px); }
+
+    .support-wrapper .search-bar { display: flex; gap: 15px; margin-bottom: 25px; }
+    .support-wrapper .search-input { flex: 1; padding: 12px 20px; border-radius: 15px; border: 1px solid #eee; outline: none; font-family: inherit; }
+</style>
+
+<div class="support-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Hỗ Trợ Khách Hàng</h1>
+        <div style="text-align: right;">
+            <div style="font-size: 12px; color: #888;">Tỉ lệ phản hồi</div>
+            <strong style="color: var(--primary-mint); font-size: 18px;">98.5%</strong>
+        </div>
+    </div>
+
+    @if (ViewBag.PendingCount != null && ViewBag.PendingCount > 0)
+    {
+        <div class="priority-alert">
+            <i class="fa-solid fa-triangle-exclamation"></i> 
+            Hệ thống đang có @ViewBag.PendingCount yêu cầu chờ xử lý. Vui lòng phản hồi khách hàng sớm nhất!
+        </div>
+    }
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #fff9e6; color: #f1c40f;"><i class="fa-solid fa-clock"></i></div>
+            <div>
+                <div style="font-size: 12px; color: #888;">Chờ xử lý</div>
+                <div style="font-size: 20px; font-weight: 700;">@(ViewBag.PendingCount ?? 0)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #eef2ff; color: #4f46e5;"><i class="fa-solid fa-comment-dots"></i></div>
+            <div>
+                <div style="font-size: 12px; color: #888;">Đang trả lời</div>
+                <div style="font-size: 20px; font-weight: 700;">@(ViewBag.ProcessingCount ?? 0)</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--light-mint); color: var(--primary-mint);"><i class="fa-solid fa-check-circle"></i></div>
+            <div>
+                <div style="font-size: 12px; color: #888;">Đã giải quyết</div>
+                <div style="font-size: 20px; font-weight: 700;">@(ViewBag.ResolvedCount ?? 0)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-bar" style="align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div style="display: flex; gap: 10px; background: white; padding: 5px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+            <a href="?type=all" class="btn-reply" style="border: none; background: @(string.IsNullOrEmpty(ViewBag.CurrentType) || ViewBag.CurrentType == "all" ? "var(--primary-mint)" : "transparent"); color: @(string.IsNullOrEmpty(ViewBag.CurrentType) || ViewBag.CurrentType == "all" ? "white" : "#888");"><i class="fa-solid fa-list"></i> Tất cả</a>
+            <a href="?type=tuvan" class="btn-reply" style="border: none; background: @(ViewBag.CurrentType == "tuvan" ? "var(--primary-mint)" : "transparent"); color: @(ViewBag.CurrentType == "tuvan" ? "white" : "#888");"><i class="fa-solid fa-wand-magic-sparkles"></i> Tư vấn</a>
+            <a href="?type=giaohang" class="btn-reply" style="border: none; background: @(ViewBag.CurrentType == "giaohang" ? "var(--primary-mint)" : "transparent"); color: @(ViewBag.CurrentType == "giaohang" ? "white" : "#888");"><i class="fa-solid fa-truck-fast"></i> Giao hàng</a>
+            <a href="?type=khieunai" class="btn-reply" style="border: none; background: @(ViewBag.CurrentType == "khieunai" ? "var(--primary-mint)" : "transparent"); color: @(ViewBag.CurrentType == "khieunai" ? "white" : "#888");"><i class="fa-solid fa-triangle-exclamation"></i> Khiếu nại</a>
+            <a href="?type=khangcao" class="btn-reply" style="border: none; background: @(ViewBag.CurrentType == "khangcao" ? "#d32f2f" : "transparent"); color: @(ViewBag.CurrentType == "khangcao" ? "white" : "#d32f2f");"><i class="fa-solid fa-user-lock"></i> Kháng Cáo</a>
+        </div>
+        
+        <div style="display: flex; gap: 10px; flex: 1; max-width: 400px;">
+            <input type="text" class="search-input" placeholder="Tìm theo tên KH hoặc mã đơn...">
+        </div>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Khách hàng</th>
+                    <th>Phân loại</th>
+                    <th>Nội dung yêu cầu</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var ticket in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="customer-info">
+                                    <div class="customer-avatar" style="background-image: url('https://i.pravatar.cc/150?u=@ticket.UserEmail')"></div>
+                                    <div>
+                                        <div style="font-weight: 700;">@(ticket.UserFullName ?? "Khách hàng")</div>
+                                        <div style="font-size: 11px; color: #aaa;">@ticket.UserEmail</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @{ string type = (ticket.IssueType ?? "").ToLower(); }
+                                
+                                @if (type.Contains("kháng cáo"))
+                                {
+                                    <span class="category-tag" style="background: #fff0f0; color: #d32f2f; border: 1px solid #f5c2c7;"><i class="fa-solid fa-user-lock"></i> KHÁNG CÁO</span>
+                                }
+                                else if (type.Contains("khiếu nại") || type.Contains("lỗi") || type.Contains("thiếu") || type.Contains("hỏng"))
+                                {
+                                    <span class="category-tag tag-complaint"><i class="fa-solid fa-triangle-exclamation"></i> KHIẾU NẠI</span>
+                                }
+                                else if (type.Contains("giao") || type.Contains("vận chuyển") || type.Contains("đơn hàng"))
+                                {
+                                    <span class="category-tag tag-shipping"><i class="fa-solid fa-truck-fast"></i> GIAO HÀNG</span>
+                                }
+                                else
+                                {
+                                    <span class="category-tag tag-advice"><i class="fa-solid fa-wand-magic-sparkles"></i> TƯ VẤN</span>
+                                }
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@(ticket.Subject ?? ticket.Content)">
+                                    @(ticket.Subject ?? ticket.Content)
+                                </div>
+                                <div style="font-size: 12px; color: #888;">
+                                    Đơn hàng: @(string.IsNullOrEmpty(ticket.OrderCode) ? "N/A" : ticket.OrderCode) 
+                                    - @ticket.CreatedAt.ToString("dd/MM HH:mm")
+                                </div>
+                            </td>
+                            <td>
+                                @if (ticket.Status == "Pending" || ticket.Status == "Chờ xử lý")
+                                {
+                                    <div class="status-wrapper st-pending"><span class="pulse-dot"></span> Chờ xử lý</div>
+                                }
+                                else if (ticket.Status == "Replied" || ticket.Status == "Đang giải quyết")
+                                {
+                                    <div class="status-wrapper st-processing"><span class="pulse-dot"></span> Đang xử lý</div>
+                                }
+                                else
+                                {
+                                    <div class="status-wrapper st-resolved"><span class="pulse-dot"></span> Đã xong</div>
+                                }
+                            </td>
+                            <td>
+                                <a asp-controller="Admin" asp-action="TicketDetail" asp-route-id="@ticket.Id" class="btn-reply" style="@(ticket.Status == "Pending" || ticket.Status == "Chờ xử lý" ? "color: var(--danger-red);" : "")">
+                                    @(ticket.Status == "Pending" ? "Xử lý ngay" : "Xem chi tiết")
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 50px; color: #aaa;">
+                            <i class="fa-solid fa-mug-hot" style="font-size: 40px; margin-bottom: 15px; color: #ddd;"></i><br>
+                            Hiện tại không có yêu cầu nào trong mục này. Thật tuyệt vời!
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,158 @@
+@model VelvySkinWeb.Models.Coupon
+@{
+    ViewData["Title"] = "Chi Tiết Mã Khuyến Mãi";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    bool isExpired = (DateTime.Now > Model.EndDate);
+    string statusText = Model.IsActive ? (isExpired ? "HẾT HẠN" : "ĐANG HOẠT ĐỘNG") : "ĐÃ TẠM DỪNG";
+    string badgeColor = Model.IsActive && !isExpired ? "var(--primary-mint)" : (Model.IsActive ? "var(--danger)" : "#888");
+    string badgeBg = Model.IsActive && !isExpired ? "var(--light-mint)" : (Model.IsActive ? "#fee2e2" : "#eee");
+
+    double usagePercent = Model.MaxUses > 0 ? ((double)Model.UsedCount / Model.MaxUses) * 100 : 0;
+    if (usagePercent > 100) usagePercent = 100;
+
+    int daysLeft = (Model.EndDate - DateTime.Now).Days;
+    string daysLeftText = daysLeft > 0 ? $"{daysLeft} ngày" : "Đã qua hạn";
+    
+    string discountStr = Model.DiscountType == "Percent" ? $"- {Model.DiscountValue}%" : $"- {Model.DiscountValue:N0}đ";
+}
+
+<style>
+    .coupon-detail-wrapper { max-width: 900px; margin: 0 auto; display: block; clear: both;}
+    .back-btn { text-decoration: none; color: #888; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 25px; transition: 0.3s; }
+    .back-btn:hover { color: var(--primary-mint); }
+    .header-flex { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin: 0; }
+    .status-badge { padding: 8px 20px; border-radius: 30px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border: 1px solid; }
+    .grid-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; }
+    .card { background: white; border-radius: 25px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); margin-bottom: 25px; border: 1px solid #f1f1f1; }
+    .card-title { font-weight: 700; font-size: 14px; text-transform: uppercase; color: var(--dark-mint); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f9f9f9; padding-bottom: 15px; }
+    .coupon-display { background: var(--light-mint); border: 2px dashed var(--primary-mint); border-radius: 15px; padding: 20px; text-align: center; margin-bottom: 25px; }
+    .coupon-code-large { font-family: 'monospace'; font-size: 32px; font-weight: 700; color: var(--dark-mint); letter-spacing: 2px; }
+    .coupon-label { font-size: 12px; color: var(--primary-mint); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; display: block; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
+    .info-label { color: #888; font-weight: 500; }
+    .info-value { font-weight: 700; color: #333; }
+    .usage-stats { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    .progress-bar-bg { width: 100%; height: 12px; background: #eee; border-radius: 20px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary-mint), var(--dark-mint)); border-radius: 20px; transition: 1s ease-in-out; }
+    .desc-box { line-height: 1.6; font-size: 14px; color: #555; background: #fafafa; padding: 15px; border-radius: 15px; white-space: pre-line;}
+    .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px; }
+    .btn { padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; text-decoration: none;}
+    .btn-edit { background: var(--primary-mint); color: white; }
+    .btn-edit:hover { background: var(--dark-mint); }
+    .btn-stop { background: #fff1f1; color: #ff4d4d; border: 1px solid #ffdada; }
+    .btn-stop:hover { background: #ff4d4d; color: white; }
+    @@media (max-width: 800px) { .grid-layout { grid-template-columns: 1fr; } }
+</style>
+
+<div class="coupon-detail-wrapper">
+    <a asp-action="Index" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a>
+
+    <div class="header-flex">
+        <div>
+            <h1 class="page-title">@Model.Name</h1>
+            <p style="color: #888; font-size: 14px; margin-top: 5px;">ID chiến dịch: #CPN-@Model.Id</p>
+        </div>
+        <div class="status-badge" style="color: @badgeColor; background: @badgeBg; border-color: @badgeColor;">
+            <i class="fa-solid @(Model.IsActive && !isExpired ? "fa-circle-check" : "fa-circle-stop")"></i> @statusText
+        </div>
+    </div>
+
+    <div class="grid-layout">
+        <div class="left-col">
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-ticket"></i> Thông tin mã giảm giá</div>
+                <div class="coupon-display">
+                    <span class="coupon-label">Mã khuyến mãi</span>
+                    <div class="coupon-code-large">@Model.Code</div>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Loại giảm giá:</span>
+                    <span class="info-value">@(Model.DiscountType == "Percent" ? "Phần trăm (%)" : "Tiền mặt (VNĐ)")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Giá trị giảm:</span>
+                    <span class="info-value" style="color: var(--primary-mint); font-size: 18px;">@discountStr</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Đơn hàng tối thiểu:</span>
+                    <span class="info-value">@(Model.MinOrderValue > 0 ? Model.MinOrderValue.ToString("N0") + "đ" : "Mọi đơn hàng")</span>
+                </div>
+                
+                @if(Model.DiscountType == "Percent" && Model.MaxDiscountAmount > 0)
+                {
+                    <div class="info-row">
+                        <span class="info-label">Giảm tối đa:</span>
+                        <span class="info-value">@Model.MaxDiscountAmount.ToString("N0")đ</span>
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-circle-info"></i> Mô tả điều kiện</div>
+                <div class="desc-box">
+                    @(string.IsNullOrEmpty(Model.Description) ? "Chưa có mô tả điều kiện." : Model.Description)
+                </div>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-chart-line"></i> Hiệu suất sử dụng</div>
+                <div class="usage-container">
+                    <div class="usage-stats">
+                        <span>Lượt đã dùng:</span>
+                        <span>@Model.UsedCount / @(Model.MaxUses > 0 ? Model.MaxUses.ToString() : "∞")</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: @usagePercent%;"></div>
+                    </div>
+                    <p style="font-size: 12px; color: #888; margin-top: 15px; text-align: center;">
+                        Còn lại <b>@(Model.MaxUses > 0 ? (Model.MaxUses - Model.UsedCount).ToString() : "Không giới hạn")</b> lượt mã khả dụng
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-calendar-days"></i> Thời hạn</div>
+                <div class="info-row">
+                    <span class="info-label">Bắt đầu:</span>
+                    <span class="info-value">@Model.StartDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Kết thúc:</span>
+                    <span class="info-value">@Model.EndDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                <div class="info-row" style="margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px;">
+                    <span class="info-label">Còn lại:</span>
+                    <span class="info-value" style="color: @(daysLeft > 0 ? "#f1c40f" : "#ff4d4d");">@daysLeftText</span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-edit"><i class="fa-solid fa-pen"></i> Chỉnh sửa</a>
+                
+                @if(Model.IsActive)
+                {
+                    <form asp-action="Pause" asp-route-id="@Model.Id" method="post" style="margin:0;" onsubmit="return confirm('Bạn có chắc muốn tạm dừng mã này? Khách hàng sẽ không thể sử dụng mã này nữa.');">
+                        <button type="submit" class="btn btn-stop" style="width: 100%;"><i class="fa-solid fa-circle-pause"></i> Tạm dừng</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({ title: 'Thành công!', text: '@Html.Raw(TempData["SuccessMsg"])', icon: 'success', confirmButtonColor: '#2ec4b6', timer: 3000 });
+            </text>
+        }
+    </script>
+}

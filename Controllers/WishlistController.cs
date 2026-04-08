@@ -16,7 +16,7 @@ namespace VelvySkinWeb.Controllers
             _context = context;
         }
 
-        // 1. TRANG HIỂN THỊ DANH SÁCH YÊU THÍCH
+
         public IActionResult Index()
         {
             var sessionWish = HttpContext.Session.GetString("Wishlist");
@@ -27,14 +27,14 @@ namespace VelvySkinWeb.Controllers
             return View(products);
         }
 
-        // 2. NÚT THẢ TIM
+
         [HttpPost]
         public IActionResult Toggle(int id)
         {
             var sessionWish = HttpContext.Session.GetString("Wishlist");
             var wishlistIds = sessionWish != null ? JsonSerializer.Deserialize<List<int>>(sessionWish) : new List<int>();
 
-            // Chống lỗi vàng (null) cho Deserialize
+
             if (wishlistIds == null) wishlistIds = new List<int>();
 
             if (wishlistIds.Contains(id))
@@ -53,7 +53,7 @@ namespace VelvySkinWeb.Controllers
             return Redirect(string.IsNullOrEmpty(referer) ? "/" : referer);
         }
 
-        // 3. XÓA TẤT CẢ
+
         public IActionResult Clear()
         {
             HttpContext.Session.Remove("Wishlist");

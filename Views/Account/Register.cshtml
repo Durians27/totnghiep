@@ -4,146 +4,227 @@
 }
 
 <style>
-    .signup-main-wrapper {
+    /* BỎ CSS HEADER/FOOTER VÌ ĐÃ CÓ TRONG _LAYOUT CHUNG */
+    
+    .signup-page-wrapper {
         flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 50px 5%; 
+        background-color: #f9f9f9; 
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .signup-split-container {
+        display: flex;
+        width: 100%;
+        max-width: 1100px; 
+        background-color: var(--white);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        overflow: hidden; 
+        position: relative;
+    }
+
+    /* --- SIDE IMAGE --- */
+    .signup-image-side {
+        flex: 1.3; 
+        position: relative;
+        background-color: var(--light-mint); 
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 60px 0; 
+        min-height: 700px;
     }
 
-    .signup-container {
-        background: var(--white);
+    .signup-model-img {
         width: 100%;
-        max-width: 500px;
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
-        text-align: center;
-        position: relative;
-        overflow: hidden;
+        height: 100%;
+        object-fit: cover; 
+        display: block;
     }
 
-    .signup-container::before {
+    .signup-image-side::after {
         content: '';
         position: absolute;
-        top: 0; left: 0;
-        width: 100%;
-        height: 5px;
-        background: var(--primary-mint);
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, rgba(46, 196, 182, 0.1), rgba(0,0,0,0.3));
     }
 
-    .signup-container h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 10px; color: #333; }
-    .subtitle { font-size: 14px; color: #888; margin-bottom: 25px; }
+    .image-overlay-text {
+        position: absolute;
+        bottom: 40px;
+        left: 40px;
+        color: white;
+        z-index: 2;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .image-overlay-text h3 { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 5px; }
+    .image-overlay-text p { font-size: 14px; opacity: 0.9; letter-spacing: 1px; text-transform: uppercase;}
 
-    .form-group { text-align: left; margin-bottom: 15px; position: relative; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #555; }
-    .form-group i { position: absolute; left: 15px; top: 35px; color: var(--primary-mint); }
+    /* --- FORM SIDE --- */
+    .signup-form-side {
+        flex: 1; 
+        padding: 60px; 
+        display: flex;
+        flex-direction: column;
+        justify-content: center; 
+    }
+
+    .signup-form-side h2 { 
+        font-family: 'Playfair Display', serif; 
+        font-size: 32px; 
+        margin-bottom: 10px; 
+        color: var(--dark-mint);
+        text-align: center; 
+    }
+    .signup-form-side .subtitle { 
+        font-size: 15px; 
+        color: var(--text-light-gray); 
+        margin-bottom: 35px; 
+        text-align: center; 
+    }
+
+    .form-group { text-align: left; margin-bottom: 18px; position: relative; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: #555; }
+    .form-group i { position: absolute; left: 16px; top: 38px; color: var(--primary-mint); font-size: 15px; }
     .form-group input {
-        width: 100%; padding: 12px 15px 12px 40px; border: 1px solid #eee;
-        border-radius: 10px; outline: none; background: #f9f9f9; font-family: inherit;
-        transition: 0.3s;
+        width: 100%; padding: 14px 15px 14px 45px; border: 1px solid #eaeaea;
+        border-radius: 12px; outline: none; background: #fbfbfb; font-family: inherit;
+        transition: 0.3s; font-size: 14px;
     }
-    .form-group input:focus { border-color: var(--primary-mint); background: #fff; }
+    .form-group input:focus { border-color: var(--primary-mint); background: #fff; box-shadow: 0 0 10px rgba(46, 196, 182, 0.1); }
+
+    /* CSS Báo lỗi (Giữ từ bản cũ) */
+    .text-danger { font-size: 12px; color: #dc3545; margin-top: 4px; display: block; }
+    .validation-summary-errors { color: #dc3545; font-size: 13px; text-align: left; margin-bottom: 15px; background: #ffe6e6; padding: 10px; border-radius: 8px;}
+    .validation-summary-errors ul { list-style: none; padding: 0; margin: 0; }
 
     .terms-group {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
+        gap: 12px;
         text-align: left;
-        margin: 20px 0;
+        margin: 25px 0;
         font-size: 13px;
         color: #666;
         cursor: pointer;
+        line-height: 1.5;
     }
-    .terms-group input { margin-top: 3px; accent-color: var(--primary-mint); }
+    .terms-group input { margin-top: 3px; accent-color: var(--primary-mint); width: 16px; height: 16px; }
     .terms-group a { color: var(--primary-mint); text-decoration: none; font-weight: 600; }
+    .terms-group a:hover { text-decoration: underline; }
 
     .btn-signup {
-        width: 100%; padding: 15px; background: var(--primary-mint); color: white;
-        border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
-        text-transform: uppercase; letter-spacing: 1px; transition: var(--transition);
+        width: 100%; padding: 16px; background: var(--primary-mint); color: white;
+        border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
+        text-transform: uppercase; letter-spacing: 1.5px; transition: var(--transition);
+        font-size: 14px; margin-top: 10px;
     }
-    .btn-signup:hover { background: var(--dark-mint); transform: translateY(-2px); }
+    .btn-signup:hover { background: var(--dark-mint); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(32, 139, 129, 0.3); }
 
-    .divider { margin: 25px 0; position: relative; height: 1px; background: #eee; }
+    .divider { margin: 35px 0; position: relative; height: 1px; background: #eee; }
     .divider span {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background: #fff; padding: 0 15px; font-size: 12px; color: #999;
+        background: #fff; padding: 0 20px; font-size: 12px; color: #bbb; text-transform: uppercase; letter-spacing: 1px;
     }
 
     .social-login { display: flex; gap: 15px; justify-content: center; }
     .social-btn {
-        flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 10px;
+        flex: 1; padding: 12px; border: 1px solid #eee; border-radius: 12px;
         background: #fff; cursor: pointer; transition: 0.3s;
         display: flex; align-items: center; justify-content: center; gap: 10px;
-        font-size: 14px; font-weight: 500;
+        font-size: 14px; font-weight: 600; color: #555;
     }
-    .social-btn:hover { background: #f5f5f5; }
+    .social-btn:hover { background: #f9f9f9; border-color: #ddd; transform: translateY(-1px); }
     .social-btn img { width: 20px; }
 
-    .footer-link { margin-top: 25px; font-size: 14px; }
-    .footer-link a { color: var(--accent-pink); font-weight: 800; text-decoration: none; }
-    
-    /* Cập nhật style cho báo lỗi của C# Backend */
-    .text-danger { font-size: 12px; color: #dc3545; margin-top: 4px; display: block; }
-    .validation-summary-errors { color: #dc3545; font-size: 13px; text-align: left; margin-bottom: 15px; background: #ffe6e6; padding: 10px; border-radius: 8px;}
-    .validation-summary-errors ul { list-style: none; padding: 0; margin: 0; }
+    .footer-link { margin-top: 35px; font-size: 14px; text-align: center; color: #777; }
+    .footer-link a { color: var(--accent-pink); font-weight: 700; text-decoration: none; transition: 0.3s; }
+    .footer-link a:hover { opacity: 0.8; text-decoration: underline; }
+
+    /* Responsive cho Mobile */
+    @@media (max-width: 900px) {
+        .signup-split-container {
+            flex-direction: column; 
+            max-width: 500px;
+        }
+        .signup-image-side {
+            height: 300px; min-height: unset;
+        }
+        .signup-form-side {
+            padding: 40px;
+        }
+    }
 </style>
 
-<div class="signup-main-wrapper">
-    <div class="signup-container">
-        <h2>ĐĂNG KÝ</h2>
-        <p class="subtitle">Tạo tài khoản để nhận ưu đãi từ Velvy Skin.</p>
-
-        <form asp-action="Register" method="post">
-            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
-
-            <div class="form-group">
-                <label asp-for="Email">Email của bạn</label>
-                <i class="fa-regular fa-envelope"></i>
-                <input asp-for="Email" placeholder="example@gmail.com" required>
-                <span asp-validation-for="Email" class="text-danger"></span>
+<div class="signup-page-wrapper">
+    <div class="signup-split-container">
+        
+        <div class="signup-image-side">
+            <img src="~/images/a2.png" alt="Velvy Skin Model" class="signup-model-img" onerror="this.src='https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=1000&auto=format&fit=crop';">
+            
+            <div class="image-overlay-text">
+                <h3>Velvy Skin</h3>
+                <p>Vẻ đẹp tự nhiên, rạng rỡ mỗi ngày</p>
             </div>
-
-            <div class="form-group">
-                <label asp-for="Password">Mật khẩu</label>
-                <i class="fa-solid fa-lock"></i>
-                <input asp-for="Password" type="password" placeholder="••••••••" required>
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="ConfirmPassword">Xác nhận mật khẩu</label>
-                <i class="fa-solid fa-lock"></i>
-                <input asp-for="ConfirmPassword" type="password" placeholder="••••••••" required>
-                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-            </div>
-
-            <label class="terms-group">
-                <input type="checkbox" required>
-                <span>Tôi đã đọc và đồng ý với các <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của Velvy Skin.</span>
-            </label>
-
-            <button type="submit" class="btn-signup">ĐĂNG KÝ NGAY</button>
-        </form>
-
-        <div class="divider">
-            <span>Hoặc đăng ký với</span>
         </div>
 
-        <div class="social-login">
-            <button class="social-btn" type="button">
-                <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" alt="Google"> Google
-            </button>
-            <button class="social-btn" type="button">
-                <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Facebook
-            </button>
-        </div>
+        <div class="signup-form-side">
+            <h2>ĐĂNG KÝ</h2>
+            <p class="subtitle">Tạo tài khoản để nhận ưu đãi từ Velvy Skin.</p>
 
-        <div class="footer-link">
-            Đã có tài khoản? <a asp-controller="Account" asp-action="Login">Đăng nhập ngay</a>
+            <form asp-action="Register" method="post">
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                <div class="form-group">
+                    <label asp-for="Email">Email của bạn</label>
+                    <i class="fa-regular fa-envelope"></i>
+                    <input asp-for="Email" placeholder="example@gmail.com" required>
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password">Mật khẩu</label>
+                    <i class="fa-solid fa-lock"></i>
+                    <input asp-for="Password" type="password" placeholder="••••••••" required>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ConfirmPassword">Xác nhận mật khẩu</label>
+                    <i class="fa-solid fa-lock"></i>
+                    <input asp-for="ConfirmPassword" type="password" placeholder="••••••••" required>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+
+                <label class="terms-group">
+                    <input type="checkbox" required>
+                    <span>Tôi đã đọc và đồng ý với các <a href="#">Điều khoản dịch vụ</a> và <a href="#">Chính sách bảo mật</a> của Velvy Skin.</span>
+                </label>
+
+                <button type="submit" class="btn-signup">ĐĂNG KÝ NGAY</button>
+            </form>
+
+            <div class="divider">
+                <span>Hoặc đăng ký với</span>
+            </div>
+
+            <div class="social-login">
+                <button class="social-btn" type="button" onclick="alert('Tính năng đang phát triển!')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" alt="Google"> Google
+                </button>
+                <button class="social-btn" type="button" onclick="alert('Tính năng đang phát triển!')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Facebook
+                </button>
+            </div>
+
+            <div class="footer-link">
+                Đã có tài khoản? <a asp-controller="Account" asp-action="Login">Đăng nhập ngay</a>
+            </div>
         </div>
+        
     </div>
 </div>
 

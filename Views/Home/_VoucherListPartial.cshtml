@@ -1,0 +1,58 @@
+@model IEnumerable<VelvySkinWeb.Models.Coupon>
+
+@if (!Model.Any())
+{
+    <div style="text-align: center; padding: 30px 10px;">
+        <i class="fa-solid fa-box-open" style="font-size: 40px; color: #ddd; margin-bottom: 15px;"></i>
+        <p style="color: #888; font-size: 14px;">Hiện chưa có mã khuyến mãi nào khả dụng.</p>
+    </div>
+}
+else
+{
+    @foreach (var item in Model)
+    {
+        string bgColor = "var(--primary-mint)";
+        string iconClass = "fa-gift";
+        string amountText = "";
+
+        if (item.DiscountType == "Percent")
+        {
+            bgColor = "var(--primary-mint)"; 
+            iconClass = "fa-percent";
+            amountText = item.DiscountValue.ToString() + "%";
+        }
+        else if (item.DiscountType == "Amount")
+        {
+            bgColor = "#d4a373"; 
+            iconClass = "fa-tags";
+            amountText = (item.DiscountValue / 1000).ToString("0") + "K";
+        }
+        else if (item.DiscountType == "Freeship")
+        {
+            bgColor = "var(--accent-pink)"; 
+            iconClass = "fa-truck-fast";
+            amountText = "FREE";
+        }
+
+        string condition = item.MinOrderValue > 0 ? $"Đơn tối thiểu {item.MinOrderValue:N0}đ" : "Áp dụng mọi đơn hàng";
+
+        <div style="display: flex; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #eee;">
+            <div style="background: @bgColor; width: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 10px;">
+                <i class="fa-solid @iconClass" style="font-size: 20px; margin-bottom: 5px;"></i>
+                <span style="font-weight: 700; font-size: 16px;">@amountText</span>
+            </div>
+            
+            <div style="flex: 1; padding: 15px;">
+                <h6 style="font-size: 14px; font-weight: 700; margin: 0 0 5px; color: #333;">@item.Name</h6>
+                <p style="font-size: 11px; color: #666; margin: 0 0 5px;">@condition</p>
+                <span style="font-size: 11px; color: #ff4d4d; font-weight: 600;">HSD: @item.EndDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            
+            <div style="padding: 15px; display: flex; align-items: center; border-left: 1px dashed #eee;">
+                <button type="button" onclick="applyCoupon('@item.Code')" data-bs-dismiss="modal" style="background: var(--primary-mint); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.3s;">
+                    Dùng ngay
+                </button>
+            </div>
+        </div>
+    }
+}

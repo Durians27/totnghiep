@@ -2,10 +2,8 @@
 
 @{
     ViewData["Title"] = Model.Name;
-    var oldPrice = Model.Price * 1.2m; 
-    var bigSizePrice = Model.Price * 1.6m;
-    var bigSizeOldPrice = oldPrice * 1.6m;
-
+    var oldPrice = Model.Price * 1.2m;
+    
     // ===============================================================
     // LÕI XỬ LÝ LOGIC "THÀNH PHẦN NỔI BẬT" BẰNG DẤU "|"
     // ===============================================================
@@ -16,13 +14,11 @@
     if (rawIng.Contains("|"))
     {
         var parts = rawIng.Split('|');
-        // Lấy nửa trước dấu | và cắt theo dấu phẩy để tạo Tag
         var tags = parts[0].Split(',', StringSplitOptions.RemoveEmptyEntries);
         foreach(var t in tags)
         {
             tagsHtml += $"<span class=\"ingredient-tag\">{t.Trim()}</span>";
         }
-        // Nửa sau dấu | là chi tiết
         detailIng = parts[1].Trim();
     }
 
@@ -41,7 +37,7 @@
     .product-essential { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; margin-bottom: 60px; margin-top: 30px; }
     .product-gallery { position: sticky; top: 100px; }
     
-    /* FIX ẢNH: Đổi background, bo tròn, đổi sang contain để ảnh không bị phóng to cắt xén */
+    /* FIX ẢNH CHÍNH */
     .main-image-container { 
         border-radius: 16px; border: 1px solid #f0f0f0; 
         background: #fff; padding: 40px; 
@@ -50,15 +46,16 @@
     }
     .main-image { 
         max-width: 100%; 
-        max-height: 450px; /* Khóa chiều cao tối đa để ảnh không bị khổng lồ */
+        max-height: 450px; 
         object-fit: contain; 
         transition: 0.5s;
     }
     
-    /* FIX THUMBNAIL CỦA NHƯ: Đưa lại dải ảnh nhỏ xuống dưới */
-    .thumb-list { display: flex; gap: 15px; margin-top: 20px; justify-content: center;}
-    .thumb-item { width: 80px; height: 80px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; object-fit: cover; transition: 0.3s; background: #fff;}
-    .thumb-item.active { border-color: var(--primary-mint); }
+    /* CSS CHO HÀNG ẢNH NHỎ BÊN DƯỚI */
+    .thumb-list { display: flex; gap: 12px; margin-top: 15px; overflow-x: auto; padding-bottom: 5px; }
+    .thumb-item { width: 80px; height: 80px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; transition: 0.3s; background: #fff; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);}
+    .thumb-item img { width: 100%; height: 100%; object-fit: contain;}
+    .thumb-item.active { border-color: var(--primary-mint); box-shadow: 0 4px 12px rgba(46,196,182,0.2); }
     .thumb-item:hover { opacity: 0.8; }
 
     /* --- INFO RIGHT SIDE --- */
@@ -77,18 +74,26 @@
     .size-btn.active { border-color: var(--primary-mint); color: var(--dark-mint); background: var(--light-mint); box-shadow: 0 4px 10px rgba(46, 196, 182, 0.1); }
     .size-btn:hover:not(.active) { border-color: #bbb; }
 
-    .product-actions { display: flex; gap: 15px; margin-bottom: 30px; align-items: center; }
+    .product-actions { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
+    .cart-action-group { display: flex; gap: 15px; align-items: center; width: 100%; }
+    
     .quantity-selector { display: flex; align-items: center; border: 1.5px solid #ddd; border-radius: 30px; padding: 5px 15px; background: white; height: 50px;}
     .quantity-selector button { background: none; border: none; font-size: 20px; cursor: pointer; width: 30px; color: #555; }
     .quantity-selector input { width: 40px; text-align: center; border: none; font-weight: 700; outline: none; font-size: 16px; color: var(--dark-mint);}
 
     .btn-add-cart { 
-        max-width: 250px; 
         flex: 1; background: var(--primary-mint); color: white; border: none; height: 50px;
         border-radius: 30px; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 14px; 
         display: flex; justify-content: center; align-items: center; gap: 10px;
     }
     .btn-add-cart:hover { background: var(--dark-mint); transform: translateY(-2px); box-shadow: 0 8px 15px rgba(46,196,182,0.2); }
+    
+    .btn-consult { 
+        background: white; color: var(--primary-mint); border: 2px solid var(--primary-mint); 
+        width: 100%; height: 50px; border-radius: 30px; font-weight: 700; cursor: pointer; 
+        display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; 
+    }
+    .btn-consult:hover { background: var(--light-mint); transform: translateY(-2px); }
 
     /* --- TABS SECTION --- */
     .product-tabs { border-top: 1px solid #eee; padding-top: 40px; margin-top: 20px; }
@@ -104,7 +109,8 @@
         .product-essential { grid-template-columns: 1fr; }
         .product-gallery { position: static; }
         .main-image { height: 350px; }
-        .btn-add-cart { max-width: 100%; }
+        .cart-action-group { flex-direction: column; }
+        .btn-add-cart, .btn-consult { width: 100%; }
     }
 </style>
 
@@ -120,21 +126,49 @@
     </div>
 
     <div class="product-essential">
+        
         <div class="product-gallery">
             <div class="main-image-container">
                 <img src="@Model.ImageUrl" alt="@Model.Name" class="main-image" id="mainImg" onerror="this.src='https://via.placeholder.com/800'">
             </div>
+            
+            <div class="thumb-list">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <div class="thumb-item active" onclick="changeImage(this, '@Model.ImageUrl')">
+                        <img src="@Model.ImageUrl" onerror="this.src='https://via.placeholder.com/100'">
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.ImageUrl2))
+                {
+                    <div class="thumb-item" onclick="changeImage(this, '@Model.ImageUrl2')">
+                        <img src="@Model.ImageUrl2" onerror="this.src='https://via.placeholder.com/100'">
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.ImageUrl3))
+                {
+                    <div class="thumb-item" onclick="changeImage(this, '@Model.ImageUrl3')">
+                        <img src="@Model.ImageUrl3" onerror="this.src='https://via.placeholder.com/100'">
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.ImageUrl4))
+                {
+                    <div class="thumb-item" onclick="changeImage(this, '@Model.ImageUrl4')">
+                        <img src="@Model.ImageUrl4" onerror="this.src='https://via.placeholder.com/100'">
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.ImageUrl5))
+                {
+                    <div class="thumb-item" onclick="changeImage(this, '@Model.ImageUrl5')">
+                        <img src="@Model.ImageUrl5" onerror="this.src='https://via.placeholder.com/100'">
+                    </div>
+                }
+            </div>
         </div>
-
         <div class="product-info-detail">
             <span class="brand-name">Velvy Skin Official</span>
             <h1>@Model.Name</h1>
-            
-            <div class="rating">
-                <i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-half-alt"></i>
-                <span style="color:#999; margin-left:10px;">(128 đánh giá)</span>
-            </div>
-
+        
             <div class="price-box">
                 <span class="current-price" id="currentPrice">@Model.Price.ToString("N0")đ</span>
                 <span class="old-price" id="oldPrice">@oldPrice.ToString("N0")đ</span>
@@ -147,30 +181,37 @@
             <div class="option-group">
                 <p class="option-title">Dung tích:</p>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" class="cap-btn active" onclick="changeCapacity(1, this)" style="padding: 10px 20px; border-radius: 8px; border: 1px solid var(--primary-mint); background: var(--light-mint); color: var(--dark-mint); font-weight: 600; cursor: pointer; transition: 0.3s;">Bản Tiêu chuẩn</button>
-                    <button type="button" class="cap-btn" onclick="changeCapacity(1.5, this)" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #ddd; background: white; color: #666; font-weight: 600; cursor: pointer; transition: 0.3s;">Bản Lớn (Tiết kiệm)</button>
+                    <button type="button" class="cap-btn active" onclick="changeCapacity(@((long)Model.Price), @((long)oldPrice), this)" style="padding: 10px 20px; border-radius: 8px; border: 1px solid var(--primary-mint); background: var(--light-mint); color: var(--dark-mint); font-weight: 600; cursor: pointer; transition: 0.3s;">Bản Tiêu chuẩn</button>
+                    
+                    @if (Model.PriceLarge != null && Model.PriceLarge > 0)
+                    {
+                       var largeOldPrice = Model.PriceLarge * 1.2m;
+                        <button type="button" class="cap-btn" onclick="changeCapacity(@((long)Model.PriceLarge), @((long)largeOldPrice), this)" style="padding: 10px 20px; border-radius: 8px; border: 1px solid #ddd; background: white; color: #666; font-weight: 600; cursor: pointer; transition: 0.3s;">Bản Lớn (Tiết kiệm)</button>
+                    }
                 </div>
             </div>
 
             <div class="product-actions">
-                <form asp-controller="Cart" asp-action="AddToCart" method="post" style="display: flex; gap: 15px; align-items: center; width: 100%;">
-                    
+                <form asp-controller="Cart" asp-action="AddToCart" method="post" class="cart-action-group">
                     <input type="hidden" name="id" value="@Model.Id" />
-                    
                     <input type="hidden" id="submitPrice" name="selectedPrice" value="@((long)Model.Price)" />
                     
                     <div style="display: flex; align-items: center; border: 1px solid #ddd; border-radius: 30px; overflow: hidden; height: 50px;">
                         <button type="button" onclick="updateQty(-1)" style="width: 40px; height: 100%; background: #f9f9f9; border: none; cursor: pointer; font-size: 20px; font-weight: bold; color: #555; transition: 0.3s;">-</button>
-                        
                         <input type="number" id="buyQty" name="quantity" value="1" min="1" max="@Model.StockQuantity" style="width: 50px; height: 100%; text-align: center; border: none; outline: none; font-weight: bold; font-size: 16px;" readonly />
-                        
                         <button type="button" onclick="updateQty(1)" style="width: 40px; height: 100%; background: #f9f9f9; border: none; cursor: pointer; font-size: 20px; font-weight: bold; color: #555; transition: 0.3s;">+</button>
                     </div>
 
                     <button type="submit" class="btn-add-cart">
                         <i class="fa fa-shopping-cart"></i> Thêm vào giỏ
                     </button>
+                </form>
 
+                <form asp-controller="Account" asp-action="CreateProductConsultationTicket" method="post" style="margin: 0; width: 100%;">
+                    <input type="hidden" name="productId" value="@Model.Id" /> 
+                    <button type="submit" class="btn-consult">
+                        <i class="fa-solid fa-user-doctor"></i> Trò chuyện với Chuyên gia Da liễu
+                    </button>
                 </form>
             </div>
 
@@ -197,7 +238,6 @@
 </div>
 
 <script>
-    // Đổ dữ liệu từ C# Razor vào biến JS
     const tabData = {
         0: `@Html.Raw(fullDesc)`,
         1: `<div class="ingredient-list">
@@ -212,16 +252,12 @@
         2: `<div style="line-height: 1.8;">@Html.Raw(usageIns)</div>`
     };
 
-    // Đổi ảnh chính khi click ảnh nhỏ (Thumbnail)
-    function changeImage(element) {
-        document.getElementById('mainImg').src = element.src;
+    function changeImage(element, newSrc) {
+        document.getElementById('mainImg').src = newSrc;
         document.querySelectorAll('.thumb-item').forEach(item => item.classList.remove('active'));
         element.classList.add('active');
     }
 
-    const basePrice = @((long)Model.Price); 
-    const oldBasePrice = @((long)oldPrice);
-    
     const currentPriceEl = document.getElementById('currentPrice');
     const oldPriceEl = document.getElementById('oldPrice');
 
@@ -229,30 +265,26 @@
         return new Intl.NumberFormat('vi-VN').format(num) + 'đ';
     }
 
-    function changeCapacity(multiplier, btn) {
-        // Reset màu các nút
+    // 🔥 ĐÃ FIX: Hàm nhận trực tiếp Giá thực và Giá cũ để cập nhật 🔥
+    function changeCapacity(newPrice, newOldPrice, btn) {
         document.querySelectorAll('.cap-btn').forEach(el => {
             el.style.background = 'white';
             el.style.borderColor = '#ddd';
             el.style.color = '#666';
         });
-        // Tô màu nút đang chọn
         btn.style.background = 'var(--light-mint)';
         btn.style.borderColor = 'var(--primary-mint)';
         btn.style.color = 'var(--dark-mint)';
 
-        // Hiệu ứng mờ dần
         currentPriceEl.style.opacity = '0';
         oldPriceEl.style.opacity = '0';
 
         setTimeout(() => {
-            let newPrice = basePrice * multiplier;
-            
-            // Cập nhật giá hiển thị ngoài màn hình
+            // Cập nhật giá hiển thị trên web
             currentPriceEl.innerText = formatMoney(newPrice);
-            oldPriceEl.innerText = formatMoney(oldBasePrice * multiplier);
+            oldPriceEl.innerText = formatMoney(newOldPrice);
             
-            // VỊ TRÍ 2: Cập nhật giá trị vào Input ẩn để nộp về Backend
+            // Cập nhật giá ngầm gửi về cho Server (để vô giỏ hàng đúng giá)
             document.getElementById('submitPrice').value = newPrice;
             
             currentPriceEl.style.opacity = '1';
@@ -260,16 +292,12 @@
         }, 200);
     }
 
-    // ===============================================
-    // JAVASCRIPT ĐÃ FIX LỖI TĂNG GIẢM SỐ LƯỢNG
-    // ===============================================
     function updateQty(change) {
         let input = document.getElementById('buyQty');
-        let maxQty = parseInt(input.getAttribute('max')) || 1; // Lấy tồn kho tối đa từ C#
+        let maxQty = parseInt(input.getAttribute('max')) || 1;
         let currentQty = parseInt(input.value);
         let newQty = currentQty + change;
 
-        // Chặn không cho giảm xuống âm và không cho tăng lố tồn kho
         if (newQty >= 1 && newQty <= maxQty) {
             input.value = newQty;
         } else if (newQty > maxQty) {
@@ -277,7 +305,6 @@
         }
     }
 
-    // Xử lý chuyển Tab
     const tabs = document.querySelectorAll('.tab-item');
     const contentBox = document.getElementById('tabContent');
 

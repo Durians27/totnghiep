@@ -4,137 +4,201 @@
 }
 
 <style>
-    .login-main-wrapper {
-        flex: 1; display: flex; align-items: center; justify-content: center; padding: 60px 0;
+    /* BỎ CSS HEADER/FOOTER VÌ ĐÃ CÓ TRONG _LAYOUT CHUNG */
+    
+    .login-page-wrapper {
+        flex: 1; display: flex; justify-content: center; align-items: center;
+        padding: 50px 5%; background-color: #f9f9f9;
+        /* Thêm font chữ từ thiết kế mới */
+        font-family: 'Montserrat', sans-serif;
     }
 
-    .login-container {
-        background: var(--white); width: 100%; max-width: 450px; padding: 40px; 
-        border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); 
-        text-align: center; position: relative; overflow: hidden;
+    .login-split-container {
+        display: flex; width: 100%; max-width: 1000px;
+        background-color: var(--white); border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.1); overflow: hidden;
     }
 
-    .login-container::before {
-        content: ''; position: absolute; top: 0; left: 0; 
-        width: 100%; height: 5px; background: var(--primary-mint);
-    }
-
-    .login-container h2 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 10px; color: #333; }
-    p.subtitle { font-size: 14px; color: #888; margin-bottom: 30px; }
+    /* --- FORM SIDE --- */
+    .login-form-side { flex: 1; padding: 60px; display: flex; flex-direction: column; justify-content: center; }
+    .login-form-side h2 { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 10px; text-align: center; color: var(--dark-mint); }
+    .login-form-side .subtitle { font-size: 15px; color: var(--text-light-gray); margin-bottom: 35px; text-align: center; }
 
     .form-group { text-align: left; margin-bottom: 20px; position: relative; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #555; }
-    .form-group i { position: absolute; left: 15px; top: 38px; color: var(--primary-mint); }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; color: #555; }
+    .form-group i.icon-left { position: absolute; left: 16px; top: 38px; color: var(--primary-mint); font-size: 15px; }
     
-    .form-group input[type="text"], 
-    .form-group input[type="password"],
-    .form-group input[type="email"] {
-        width: 100%; padding: 12px 15px 12px 40px; border: 1px solid #eee;
-        border-radius: 10px; outline: none; font-family: inherit; 
-        transition: var(--transition); background: #f9f9f9;
+    .form-group i.toggle-password { 
+        position: absolute; right: 15px; top: 38px; color: #aaa; cursor: pointer; transition: 0.3s; padding: 5px;
     }
+    .form-group i.toggle-password:hover { color: var(--primary-mint); }
 
-    .form-group input:focus {
-        border-color: var(--primary-mint); background: #fff; 
-        box-shadow: 0 0 0 4px rgba(46, 196, 182, 0.1);
+    .form-group input {
+        width: 100%; padding: 14px 45px 14px 45px; border: 1px solid #eaeaea;
+        border-radius: 12px; outline: none; background: #fbfbfb; transition: 0.3s; font-size: 14px;
+        font-family: inherit;
     }
+    .form-group input:focus { border-color: var(--primary-mint); background: #fff; box-shadow: 0 0 10px rgba(46, 196, 182, 0.1); }
 
-    .options { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 25px; }
-    .options a { color: var(--primary-mint); text-decoration: none; font-weight: 600; }
+    .form-options {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 25px; font-size: 13px;
+    }
+    .remember-me { display: flex; align-items: center; gap: 8px; color: #666; cursor: pointer; }
+    .remember-me input { accent-color: var(--primary-mint); width: 16px; height: 16px; }
+    .forgot-pass { color: var(--primary-mint); text-decoration: none; font-weight: 600; transition: 0.3s;}
+    .forgot-pass:hover { color: var(--dark-mint); text-decoration: underline;}
 
     .btn-login {
-        width: 100%; padding: 15px; background: var(--primary-mint); color: white;
-        border: none; border-radius: 10px; font-weight: 700; font-size: 15px;
-        text-transform: uppercase; letter-spacing: 1px; cursor: pointer; 
-        transition: var(--transition); box-shadow: 0 5px 15px rgba(46, 196, 182, 0.3);
+        width: 100%; padding: 16px; background: var(--primary-mint); color: white;
+        border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
+        text-transform: uppercase; letter-spacing: 1.5px; transition: var(--transition);
+        font-size: 14px;
     }
-    .btn-login:hover { background: var(--dark-mint); transform: translateY(-2px); }
+    .btn-login:hover { background: var(--dark-mint); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(32, 139, 129, 0.3); }
 
     .divider { margin: 30px 0; position: relative; height: 1px; background: #eee; }
     .divider span {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background: #fff; padding: 0 15px; font-size: 12px; color: #999;
+        background: #fff; padding: 0 15px; font-size: 12px; color: #bbb; text-transform: uppercase;
     }
 
-    .social-login { display: flex; gap: 15px; justify-content: center; }
+    .social-login { display: flex; gap: 15px; width: 100%;}
     .social-btn {
-        flex: 1; padding: 10px; border: 1px solid #eee; border-radius: 10px;
+        flex: 1; padding: 12px; border: 1px solid #eee; border-radius: 12px;
         background: #fff; cursor: pointer; transition: 0.3s;
         display: flex; align-items: center; justify-content: center; gap: 10px;
-        font-size: 14px; font-weight: 500;
+        font-size: 13px; font-weight: 600; color: #555;
     }
-    .social-btn:hover { background: #f5f5f5; border-color: #ddd; }
-    .social-btn img { width: 20px; }
+    .social-btn:hover { background: #f9f9f9; transform: translateY(-1px); border-color: #ddd;}
+    .social-btn img { width: 18px; }
 
-    .footer-link { margin-top: 20px; font-size: 14px; }
-    .footer-link a { color: var(--accent-pink); font-weight: 800; text-decoration: none; transition: 0.3s; }
+    .footer-link { margin-top: 30px; font-size: 14px; text-align: center; color: #777; }
+    .footer-link a { color: var(--accent-pink); font-weight: 700; text-decoration: none; transition: 0.3s;}
     .footer-link a:hover { text-decoration: underline; }
 
-    /* CSS Báo lỗi của C# Backend */
+    /* CSS Báo lỗi (Giữ từ bản cũ) */
     .text-danger { font-size: 12px; color: #dc3545; margin-top: 4px; display: block; }
     .validation-summary-errors { color: #dc3545; font-size: 13px; text-align: left; margin-bottom: 15px; background: #ffe6e6; padding: 10px; border-radius: 8px;}
     .validation-summary-errors ul { list-style: none; padding: 0; margin: 0; }
+
+    /* --- IMAGE SIDE --- */
+    .login-image-side { flex: 1.2; position: relative; min-height: 600px; }
+    .login-model-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .login-image-side::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, rgba(46, 196, 182, 0.1), rgba(0,0,0,0.4));
+    }
+    .image-overlay-text {
+        position: absolute; bottom: 40px; left: 40px; color: white; z-index: 2;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .image-overlay-text h3 { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 5px; }
+
+    @@media (max-width: 900px) {
+        .login-split-container { flex-direction: column-reverse; max-width: 450px; }
+        .login-image-side { height: 250px; min-height: unset; }
+        .login-form-side { padding: 40px 30px; }
+    }
 </style>
 
-<div class="login-main-wrapper">
-    <div class="login-container">
-        <h2>ĐĂNG NHẬP</h2>
-        <p class="subtitle">Đăng nhập để nhận tư vấn da cá nhân hóa.</p>
-
-        @if (TempData["ErrorMsg"] != null)
-        {
-            <div class="alert alert-danger" style="border-radius: 8px; background: #fff0f0; color: #d32f2f; padding: 15px; margin-bottom: 20px; border: 1px solid #f5c2c7; text-align: center; font-weight: 500;">
-                <i class="fa-solid fa-circle-exclamation me-2"></i> @TempData["ErrorMsg"]
-            </div>
-        }
+<div class="login-page-wrapper">
+    <div class="login-split-container">
         
-        <form asp-action="Login" method="post" asp-route-returnurl="@ViewData["ReturnUrl"]">
-            <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+        <div class="login-form-side">
+            <h2>ĐĂNG NHẬP</h2>
+            <p class="subtitle">Vui lòng đăng nhập để tiếp tục mua sắm.</p>
 
-            <div class="form-group">
-                <label asp-for="Email">Email của bạn</label>
-                <i class="fa-regular fa-envelope"></i>
-                <input asp-for="Email" placeholder="example@gmail.com" required>
-                <span asp-validation-for="Email" class="text-danger"></span>
+            @if (TempData["ErrorMsg"] != null)
+            {
+                <div class="alert alert-danger" style="border-radius: 8px; background: #fff0f0; color: #d32f2f; padding: 15px; margin-bottom: 20px; border: 1px solid #f5c2c7; text-align: center; font-weight: 500; font-size: 13px;">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i> @TempData["ErrorMsg"]
+                </div>
+            }
+
+            <form asp-action="Login" method="post" asp-route-returnurl="@ViewData["ReturnUrl"]">
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                <div class="form-group">
+                    <label asp-for="Email">Email của bạn</label>
+                    <i class="fa-regular fa-envelope icon-left"></i>
+                    <input asp-for="Email" placeholder="example@gmail.com" required>
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password">Mật khẩu</label>
+                    <i class="fa-solid fa-lock icon-left"></i>
+                    
+                    <input asp-for="Password" id="passwordInput" type="password" placeholder="••••••••" required>
+                    <i class="fa-solid fa-eye-slash toggle-password" id="togglePasswordIcon" onclick="togglePasswordVisibility()"></i>
+                    
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input asp-for="RememberMe"> 
+                        @Html.DisplayNameFor(m => m.RememberMe)
+                    </label>
+                    <a asp-controller="Account" asp-action="ForgotPassword" class="forgot-pass">Quên mật khẩu?</a>
+                </div>
+
+                <button type="submit" class="btn-login">ĐĂNG NHẬP NGAY</button>
+            </form>
+
+            <div class="divider">
+                <span>Hoặc đăng nhập với</span>
             </div>
 
-            <div class="form-group">
-                <label asp-for="Password">Mật khẩu</label>
-                <i class="fa-solid fa-lock"></i>
-                <input asp-for="Password" type="password" placeholder="••••••••" required>
-                <span asp-validation-for="Password" class="text-danger"></span>
+            <form asp-controller="Account" asp-action="ExternalLogin" method="post" class="social-login">
+                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                
+                <button type="submit" name="provider" value="Google" class="social-btn">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google"> Google
+                </button>
+
+                <button type="submit" name="provider" value="Facebook" class="social-btn">
+                    <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Facebook
+                </button>
+            </form>
+
+            <div class="footer-link">
+                Chưa có tài khoản? <a asp-controller="Account" asp-action="Register">Đăng ký ngay</a>
             </div>
-
-            <div class="options">
-                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                    <input asp-for="RememberMe" style="accent-color: var(--primary-mint);"> 
-                    @Html.DisplayNameFor(m => m.RememberMe)
-                </label>
-                <a asp-controller="Account" asp-action="ForgotPassword">Quên mật khẩu?</a>
+        </div>
+        
+        <div class="login-image-side">
+            <img src="~/images/a1.png" alt="Velvy Skin Login" class="login-model-img" onerror="this.src='https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?q=80&w=1000&auto=format&fit=crop';">
+            
+            <div class="image-overlay-text">
+                <h3>Chào mừng trở lại</h3>
+                <p style="font-size: 13px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Tiếp tục hành trình chăm sóc da cùng Velvy</p>
             </div>
-
-            <button type="submit" class="btn-login">Đăng nhập</button>
-        </form>
-
-        <div class="divider">
-            <span>Hoặc đăng nhập với</span>
         </div>
 
-        <div class="social-login">
-            <button class="social-btn" type="button">
-                <img src="https://cdn-icons-png.flaticon.com/512/300/300221.png" alt="Google"> Google
-            </button>
-            <button class="social-btn" type="button">
-                <img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"> Facebook
-            </button>
-        </div>
-
-        <div class="footer-link">
-            Chưa có tài khoản? <a asp-controller="Account" asp-action="Register">Đăng ký ngay</a>
-        </div>
     </div>
 </div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        function togglePasswordVisibility() {
+            var passInput = document.getElementById("passwordInput");
+            var icon = document.getElementById("togglePasswordIcon");
+
+            if (passInput.type === "password") {
+                passInput.type = "text";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+                icon.style.color = "var(--primary-mint)"; 
+            } else {
+                passInput.type = "password";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+                icon.style.color = "#aaa"; 
+            }
+        }
+    </script>
 }

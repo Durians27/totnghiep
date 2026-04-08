@@ -5,12 +5,19 @@
     // Tính toán tiền bạc tự động
     decimal subTotal = Model.Sum(item => item.Total);
     decimal shippingFee = (subTotal > 0 && subTotal < 500000) ? 30000 : 0; 
-    decimal discount = 0; // Sẽ xử lý mã giảm giá sau
+    
+    // Bốc tiền giảm giá từ Controller và kiểm tra rỗng kỹ càng
+    string appliedCoupon = (ViewBag.AppliedCoupon as string)?.Trim();
+    decimal discount = ViewBag.DiscountAmount != null ? Convert.ToDecimal(ViewBag.DiscountAmount) : 0;
+
+    // Tránh trường hợp session bị kẹt mã nhưng giỏ hàng rỗng
+    if (string.IsNullOrWhiteSpace(appliedCoupon)) discount = 0;
+    if (discount > subTotal + shippingFee) discount = subTotal + shippingFee;
+
     decimal finalTotal = subTotal + shippingFee - discount;
 }
 
 <style>
-    /* CSS CỦA BẠN ĐÃ ĐƯỢC GIỮ NGUYÊN VÀ LÀM GỌN */
     .checkout-container { display: flex; flex-wrap: wrap; gap: 40px; padding: 30px 5%; max-width: 1400px; margin: 0 auto; font-family: 'Montserrat', sans-serif;}
     .page-title { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 10px; color: #222; width: 100%;}
     
@@ -27,7 +34,11 @@
     .payment-option { display: flex; align-items: center; gap: 12px; padding: 15px 20px; border: 1px solid #ddd; border-radius: 10px; cursor: pointer; transition: 0.3s; background: #fafafa;}
     .payment-option:hover, .payment-option.active { border-color: var(--primary-mint); background: rgba(46,196,182,0.05); }
     .payment-option input { accent-color: var(--primary-mint); width: 18px; height: 18px; cursor: pointer;}
-    .payment-option label { cursor: pointer; font-weight: 600; color: #444; width: 100%; margin: 0;}
+    .payment-option label { cursor: pointer; font-weight: 600; color: #444; flex: 1; margin: 0;}
+    
+    /* 🔥 TÁCH RIÊNG CSS CHO ICON VÀ ẢNH ĐỂ KHÔNG BỊ LỖI NHAU */
+    .payment-icon-fa { font-size: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+    .payment-icon-img { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; }
 
     .order-summary { flex: 1; min-width: 300px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); border: 1px solid #eee; align-self: flex-start; position: sticky; top: 120px;}
     .order-summary h3 { font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid var(--light-mint); padding-bottom: 15px; color: var(--dark-mint); font-weight: 700;}
@@ -87,21 +98,25 @@
             <div class="form-section">
                 <h3><i class="fa-solid fa-wallet me-2"></i> Phương Thức Thanh Toán</h3>
                 <div class="payment-methods">
+                    
                     <div class="payment-option active">
                         <input type="radio" id="cod" name="PaymentMethod" value="COD" checked>
                         <label for="cod">Thanh toán khi nhận hàng (COD)</label>
-                        <i class="fa-solid fa-money-bill-wave text-success"></i>
+                        <i class="fa-solid fa-money-bill-wave text-success payment-icon-fa"></i>
                     </div>
+                    
                     <div class="payment-option">
                         <input type="radio" id="bank" name="PaymentMethod" value="Chuyển khoản">
                         <label for="bank">Chuyển khoản ngân hàng</label>
-                        <i class="fa-solid fa-building-columns text-primary"></i>
+                        <i class="fa-solid fa-building-columns text-primary payment-icon-fa"></i>
                     </div>
+                    
                     <div class="payment-option">
-                        <input type="radio" id="momo" name="PaymentMethod" value="Ví MoMo">
-                        <label for="momo">Ví điện tử MoMo</label>
-                        <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" style="width: 20px; height: 20px;" alt="Momo">
+                        <input type="radio" id="zalopay" name="PaymentMethod" value="Ví ZaloPay">
+                        <label for="zalopay">Ví điện tử ZaloPay</label>
+                        <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png" alt="ZaloPay" class="payment-icon-img" />
                     </div>
+                    
                 </div>
             </div>
             
@@ -126,12 +141,16 @@
             }
         </div>
 
-        <div class="form-section" style="margin-bottom: 20px;">
-            <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 0;">
-                <input type="text" placeholder="Nhập mã giảm giá" style="padding: 10px; font-size: 14px;">
-                <button style="padding: 10px 20px; background: var(--primary-mint); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Áp dụng</button>
+        @if(!string.IsNullOrWhiteSpace(appliedCoupon) && discount > 0)
+        {
+            <div class="form-section" style="margin-bottom: 20px;">
+                <div style="background: #e6f9f7; border: 1px solid var(--primary-mint); padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(46,196,182,0.1);">
+                    <div>
+                        <span style="font-weight: 700; color: var(--dark-mint); font-size: 15px;"><i class="fa-solid fa-ticket me-2"></i> MÃ GIẢM GIÁ: @appliedCoupon</span>
+                    </div>
+                </div>
             </div>
-        </div>
+        }
 
         <div class="summary-item">
             <span>Tạm tính (@Model.Sum(x => x.Quantity) sản phẩm)</span>
@@ -141,13 +160,15 @@
             <span>Phí vận chuyển</span>
             <span>@(shippingFee == 0 ? "Miễn phí" : shippingFee.ToString("N0") + "đ")</span>
         </div>
-        @if(discount > 0)
+        
+        @if(!string.IsNullOrWhiteSpace(appliedCoupon) && discount > 0)
         {
-            <div class="summary-item" style="color: var(--primary-mint);">
-                <span>Giảm giá</span>
+            <div class="summary-item" style="color: var(--primary-mint); font-weight: 600;">
+                <span>Giảm giá (@appliedCoupon)</span>
                 <span>-@discount.ToString("N0")đ</span>
             </div>
         }
+        
         <div class="summary-item summary-total">
             <span>Tổng cộng</span>
             <span>@finalTotal.ToString("N0")đ</span>

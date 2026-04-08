@@ -1,0 +1,130 @@
+@model VelvySkinWeb.Models.Coupon
+@{
+    ViewData["Title"] = "Chỉnh Sửa Mã Khuyến Mãi";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    // BẬT CHẾ ĐỘ READONLY NẾU MÃ ĐÃ CÓ NGƯỜI DÙNG
+    bool isLocked = Model.UsedCount > 0;
+}
+
+<style>
+    .coupon-edit-wrapper { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.05); display: block; clear: both;}
+    .page-header { margin-bottom: 30px; border-bottom: 1px solid #f0f0f0; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin: 0; }
+    .status-tag { background: #e8f5e9; color: #2e7d32; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    .full-width { grid-column: span 2; }
+    .input-group { display: flex; flex-direction: column; gap: 8px; }
+    .input-group label { font-weight: 700; font-size: 13px; color: var(--dark-mint); text-transform: uppercase; letter-spacing: 0.5px; }
+    input, select, textarea { padding: 12px 15px; border: 1px solid #eee; border-radius: 12px; font-family: inherit; outline: none; transition: 0.3s; width:100%; box-sizing:border-box;}
+    input:focus, select:focus, textarea:focus { border-color: var(--primary-mint); box-shadow: 0 0 0 3px rgba(46, 196, 182, 0.1); }
+    
+    /* Giao diện ô bị khóa */
+    input[readonly], select[disabled] { background: #f9f9f9; color: #999; cursor: not-allowed; border-style: dashed; }
+
+    .actions { margin-top: 40px; display: flex; justify-content: flex-end; gap: 15px; padding-top: 25px; border-top: 1px solid #f0f0f0; }
+    .btn { padding: 12px 30px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; font-family: inherit; text-decoration: none;}
+    .btn-cancel { background: #eee; color: #666; }
+    .btn-save { background: var(--primary-mint); color: white; box-shadow: 0 10px 20px rgba(46, 196, 182, 0.2); }
+    .btn-save:hover { background: var(--dark-mint); transform: translateY(-2px); }
+    .alert-info { background: #fffdf0; border: 1px solid #f9e79f; padding: 15px; border-radius: 15px; color: #856404; font-size: 13px; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+    .text-danger { color: #ff4d4d; font-size: 12px; font-weight: 600; margin-top: 5px;}
+    @@media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
+</style>
+
+<div class="coupon-edit-wrapper">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Chỉnh Sửa Mã</h1>
+            <p style="color: #888; font-size: 14px; margin-top: 5px;">Cập nhật thông số cho chiến dịch khuyến mãi</p>
+        </div>
+        <span class="status-tag">@Model.UsedCount LƯỢT ĐÃ DÙNG</span>
+    </div>
+
+    @if(isLocked)
+    {
+        <div class="alert-info">
+            <i class="fa-solid fa-lock"></i>
+            <span>Mã code này đã được khách hàng sử dụng. Bạn chỉ có thể sửa Ngày kết thúc, Giới hạn lượt dùng và Mô tả để tránh lỗi hệ thống.</span>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        
+        @if(isLocked)
+        {
+            <input type="hidden" asp-for="Code" />
+            <input type="hidden" asp-for="DiscountType" />
+            <input type="hidden" asp-for="DiscountValue" />
+            <input type="hidden" asp-for="MaxDiscountAmount" />
+        }
+
+        <div class="form-grid">
+            <div class="input-group full-width">
+                <label>Tên chiến dịch</label>
+                <input asp-for="Name" required>
+            </div>
+
+            <div class="input-group">
+                <label>Mã khuyến mãi</label>
+                <input asp-for="Code" style="font-family: monospace; font-weight:bold; color:var(--primary-mint); text-transform:uppercase;" readonly="@(isLocked ? "readonly" : null)">
+                <span asp-validation-for="Code" class="text-danger"></span>
+            </div>
+
+            <div class="input-group">
+                <label>Loại giảm giá</label>
+                <select asp-for="DiscountType" disabled="@(isLocked ? "disabled" : null)">
+                    <option value="Percent">Giảm theo phần trăm (%)</option>
+                    <option value="Amount">Giảm số tiền cố định (đ)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Giá trị giảm</label>
+                <input asp-for="DiscountValue" type="number" readonly="@(isLocked ? "readonly" : null)">
+            </div>
+
+            <div class="input-group">
+                <label>Giảm tối đa (đ) (Dành cho mã %)</label>
+                <input asp-for="MaxDiscountAmount" type="number" readonly="@(isLocked ? "readonly" : null)">
+            </div>
+
+            <div class="input-group">
+                <label>Áp dụng cho đơn từ (đ)</label>
+                <input asp-for="MinOrderValue" type="number">
+            </div>
+
+            <div class="input-group">
+                <label>Ngày bắt đầu</label>
+                <input asp-for="StartDate" type="date" required>
+            </div>
+
+            <div class="input-group">
+                <label>Ngày kết thúc</label>
+                <input asp-for="EndDate" type="date" required>
+                <span asp-validation-for="EndDate" class="text-danger"></span>
+            </div>
+
+            <div class="input-group">
+                <label>Tổng lượt sử dụng tối đa</label>
+                <input asp-for="MaxUses" type="number">
+            </div>
+
+            <div class="input-group">
+                <label>Lượt dùng mỗi khách hàng</label>
+                <input asp-for="MaxUsesPerUser" type="number">
+            </div>
+
+            <div class="input-group full-width">
+                <label>Mô tả chi tiết / Điều kiện áp dụng</label>
+                <textarea asp-for="Description" rows="4"></textarea>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-cancel">Hủy bỏ</a>
+            <button type="submit" class="btn btn-save">Cập nhật thay đổi</button>
+        </div>
+    </form>
+</div>

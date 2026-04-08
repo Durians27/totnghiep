@@ -1,0 +1,159 @@
+@model IEnumerable<VelvySkinWeb.Models.Category>
+@{
+    ViewData["Title"] = "Quản Lý Danh Mục";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // Giữ bộ khung của Admin
+}
+
+<style>
+    /* CSS Giao diện phân cấp của Như */
+    .cat-wrapper {
+        --primary-mint: #2ec4b6; --dark-mint: #208b81; --light-mint: #f0fdfa;
+        --bg-gray: #f8f9fa; --gold: #c5a059; --danger: #ff5e5e;
+        font-family: 'Montserrat', sans-serif; color: #333;
+    }
+    
+    .cat-wrapper .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .cat-wrapper .page-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark-mint); margin: 0; }
+
+    .cat-wrapper .actions-bar { display: flex; gap: 15px; margin-bottom: 25px; }
+    .cat-wrapper .search-box { flex: 1; position: relative; }
+    .cat-wrapper .search-box input { width: 100%; padding: 12px 20px 12px 45px; border-radius: 15px; border: 1px solid #eee; outline: none; transition: 0.3s; background: white;}
+    .cat-wrapper .search-box input:focus { border-color: var(--primary-mint); box-shadow: 0 0 0 3px var(--light-mint); }
+    .cat-wrapper .search-box i { position: absolute; left: 18px; top: 15px; color: #aaa; }
+
+    .cat-wrapper .category-card { background: white; border-radius: 25px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.02); border: 1px solid #f1f1f1; overflow-x: auto;}
+    .cat-wrapper .category-table { width: 100%; border-collapse: collapse; min-width: 700px;}
+    .cat-wrapper .category-table th { text-align: left; font-size: 12px; font-weight: 700; color: #aaa; text-transform: uppercase; padding: 15px; border-bottom: 1px solid #eee; letter-spacing: 1px; }
+    .cat-wrapper .category-table td { padding: 18px 15px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+    
+    .cat-wrapper .parent-row { background-color: #fdfdfd; font-weight: 700; color: var(--dark-mint); transition: 0.3s;}
+    .cat-wrapper .parent-row:hover { background-color: #f5fcfb; }
+    
+    .cat-wrapper .cat-icon { width: 35px; height: 35px; background: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary-mint); font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .cat-wrapper .count-badge { background: var(--light-mint); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: var(--primary-mint); }
+    
+    .cat-wrapper .btn { padding: 12px 24px; border-radius: 15px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+    .cat-wrapper .btn-add { background: var(--primary-mint); color: white; box-shadow: 0 5px 15px rgba(46, 196, 182, 0.2); }
+    .cat-wrapper .btn-add:hover { background: var(--dark-mint); transform: translateY(-2px);}
+    
+    .cat-wrapper .action-btn { background: none; border: none; cursor: pointer; color: #ddd; transition: 0.3s; font-size: 14px; padding: 5px; }
+    .cat-wrapper .action-btn:hover { color: var(--primary-mint); transform: scale(1.1);}
+</style>
+
+<div class="cat-wrapper">
+    <div class="page-header">
+        <h1 class="page-title">Quản Lý Danh Mục</h1>
+        <a asp-controller="Admin" asp-action="CreateCategory" class="btn btn-add" style="text-decoration: none;">
+            <i class="fa-solid fa-plus"></i> Thêm danh mục
+        </a>
+    </div>
+
+    <div class="actions-bar">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Tìm kiếm tên danh mục...">
+        </div>
+    </div>
+
+    <div class="category-card">
+        <table class="category-table">
+            <thead>
+                <tr>
+                    <th>Tên danh mục</th>
+                    <th>Thuộc nhóm</th>
+                    <th>Mô tả chi tiết</th> 
+                    <th>Trạng thái</th>
+                    <th style="text-align: right;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var cat in Model)
+                    {
+                        <tr class="parent-row">
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="cat-icon"><i class="fa-solid fa-folder-open"></i></div> 
+                                    @cat.Name
+                                </div>
+                            </td>
+
+                           <td>
+                                <span style="background: #f0fdfa; color: #208b81; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; display: inline-block;">
+                                    @(string.IsNullOrEmpty(cat.CategoryGroup) ? "Danh mục Gốc" : cat.CategoryGroup)
+                                </span>
+                            </td>
+                            <td>
+                                <span style="color: #666; font-weight: normal; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    @(string.IsNullOrEmpty(cat.Description) ? "Chưa có mô tả" : cat.Description)
+                                </span>
+                            </td>
+                            
+                            <td><span class="count-badge">Hiển thị</span></td>
+                            
+                            <td style="text-align: right;">
+                                <a asp-controller="Admin" asp-action="EditCategory" asp-route-id="@cat.Id" class="action-btn" title="Sửa danh mục" style="text-decoration: none;">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <button type="button" class="action-btn" title="Xóa" style="color: #ff5e5e; margin-left: 5px;" onclick="confirmDelete(@cat.Id, '@cat.Name')">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+
+                                <form id="deleteForm-@cat.Id" asp-controller="Admin" asp-action="DeleteCategory" asp-route-id="@cat.Id" method="post" style="display: none;"></form>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #888;">
+                            <i class="fa-solid fa-box-open" style="font-size: 40px; color: #ddd; margin-bottom: 15px; display: block;"></i>
+                            Chưa có danh mục nào trong hệ thống.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // Hàm hỏi xác nhận trước khi xóa
+        function confirmDelete(id, name) {
+            Swal.fire({
+                title: 'Bạn có chắc chắn muốn xóa?',
+                text: "Danh mục '" + name + "' sẽ bị xóa vĩnh viễn và không thể khôi phục!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff5e5e', /* Đổi lại màu đỏ cho nút Xóa theo chuẩn UX */
+                cancelButtonColor: '#aaa',
+                confirmButtonText: 'Đúng, Xóa ngay!',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Nếu admin bấm "Đúng", JS sẽ tự động bấm nút Submit của cái form ẩn
+                    document.getElementById('deleteForm-' + id).submit();
+                }
+            })
+        }
+
+        // Bắt thông báo từ C# gửi ra màn hình
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({ title: 'Thành công!', text: '@Html.Raw(TempData["SuccessMsg"])', icon: 'success', confirmButtonColor: '#2ec4b6' });
+            </text>
+        }
+        @if (TempData["ErrorMsg"] != null)
+        {
+            <text>
+                Swal.fire({ title: 'Cảnh báo Bảo mật!', text: '@Html.Raw(TempData["ErrorMsg"])', icon: 'error', confirmButtonColor: '#ff5e5e' });
+            </text>
+        }
+    </script>
+}
