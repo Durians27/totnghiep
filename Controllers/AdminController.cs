@@ -5,21 +5,26 @@ using Microsoft.EntityFrameworkCore;
 using VelvySkinWeb.Data;
 using VelvySkinWeb.Models;
 using System.Dynamic;
-
+using System.IO;
+using VelvySkinWeb.Models.ViewModels;
+using ClosedXML.Excel;
 namespace VelvySkinWeb.Controllers
 {
-    [Authorize(Roles = "Admin")]
+
+    [Authorize(Roles = "Admin, Staff")]
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public AdminController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+        public AdminController(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
         {
-            _context = context;
             _userManager = userManager;
+            _context = context;
         }
 
+
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             var today = DateTime.Now;
@@ -63,6 +68,7 @@ namespace VelvySkinWeb.Controllers
             return View();
         }
 
+
         public async Task<IActionResult> Orders(string search, string status, DateTime? date)
         {
             var query = _context.Orders.AsQueryable();
@@ -93,7 +99,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")] // Mở khóa cho Staff
         public async Task<IActionResult> Products(string search, int? categoryId)
         {
             ViewBag.Categories = await _context.Categories.ToListAsync();
@@ -114,6 +120,11 @@ namespace VelvySkinWeb.Controllers
 
             var products = await query.OrderByDescending(p => p.Id).ToListAsync();
             return View(products);
+        }
+
+        private bool ProductExists(int id)
+        {
+            return _context.Products.Any(e => e.Id == id);
         }
 
         [HttpGet]
@@ -230,7 +241,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet("Admin/Support")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")] // Mở khóa cho Staff
         public async Task<IActionResult> Support(string type = "all")
         {
             var tickets = _context.SupportTickets.AsQueryable();
@@ -252,14 +263,14 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet("Admin/HelpDesk")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")] // Mở khóa cho Staff
         public IActionResult HelpDesk()
         {
             return View();
         }
 
         [HttpGet("Admin/TicketDetail/{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")] // Mở khóa cho Staff
         public async Task<IActionResult> TicketDetail(int id)
         {
             var ticket = await _context.SupportTickets
@@ -300,8 +311,8 @@ namespace VelvySkinWeb.Controllers
             return View("TicketDetail", ticket);
         }
 
-        [HttpPost("Admin/ReplyTicket")]
-        [Authorize(Roles = "Admin")]
+       [HttpPost("Admin/ReplyTicket")]
+        [Authorize(Roles = "Admin, Staff")] 
         public async Task<IActionResult> ReplyTicket(int id, string replyContent)
         {
             var ticket = await _context.SupportTickets.FindAsync(id);
@@ -310,6 +321,8 @@ namespace VelvySkinWeb.Controllers
             var newMsg = new TicketMessage
             {
                 TicketId = id,
+
+
                 Sender = "Admin",
                 Content = replyContent,
                 CreatedAt = DateTime.Now
@@ -319,7 +332,7 @@ namespace VelvySkinWeb.Controllers
             ticket.Status = "Đang giải quyết";
             
             string loaiVanDe = (ticket.IssueType ?? "").ToLower();
-            string notiTitle = "Admin đã phản hồi tin nhắn";
+            string notiTitle = "Velvy Skin đã phản hồi tin nhắn";
             string notiIcon = "fa-headset";
 
             if (loaiVanDe.Contains("khiếu nại") || loaiVanDe.Contains("lỗi") || loaiVanDe.Contains("hỏng"))
@@ -353,7 +366,7 @@ namespace VelvySkinWeb.Controllers
 
             await _context.SaveChangesAsync();
 
-            string subject = $"[Velvy Skin] Có tin nhắn mới từ Admin - Yêu cầu: {ticket.IssueType}";
+            string subject = $"[Velvy Skin] Có tin nhắn mới từ đội ngũ CSKH - Yêu cầu: {ticket.IssueType}";
             string body = $@"
                 <div style='font-family: Arial; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>
                     <h2 style='color: #2ec4b6;'>Chào {ticket.UserFullName},</h2>
@@ -368,7 +381,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpPost("Admin/QuickAction")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")] // Mở khóa cho Staff
         public async Task<IActionResult> QuickAction(int id, string actionType)
         {
             var ticket = await _context.SupportTickets.FindAsync(id);
@@ -394,7 +407,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpPost("Admin/ResolveTicket")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")] // Mở khóa cho Staff
         public async Task<IActionResult> ResolveTicket(int id)
         {
             var ticket = await _context.SupportTickets.FindAsync(id);
@@ -589,75 +602,77 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpPost("Admin/CreateCustomer")]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateCustomer(UserProfile model, string Email)
-        {
-            if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.PhoneNumber))
-            {
-                TempData["ErrorMsg"] = "Vui lòng nhập đầy đủ Họ Tên và Số điện thoại!";
-                return View(model);
-            }
+[Authorize(Roles = "Admin")]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CreateCustomer(UserProfile model, string Email)
+{
+    if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.PhoneNumber))
+    {
+        TempData["ErrorMsg"] = "Vui lòng nhập đầy đủ Họ Tên và Số điện thoại!";
+        return View(model);
+    }
 
-            string userEmail = string.IsNullOrWhiteSpace(Email) ? $"{model.PhoneNumber}@velvy.local" : Email;
-            string defaultPassword = "Velvy@123";
+    string userEmail = string.IsNullOrWhiteSpace(Email) ? $"{model.PhoneNumber}@velvy.local" : Email;
+    string defaultPassword = "Velvy@123";
 
-            var existingUser = await _userManager.FindByEmailAsync(userEmail);
-            if (existingUser != null)
-            {
-                TempData["ErrorMsg"] = "Khách hàng với Số điện thoại hoặc Email này đã tồn tại trong hệ thống!";
-                return View(model);
-            }
+    var existingUser = await _userManager.FindByEmailAsync(userEmail);
+    if (existingUser != null)
+    {
+        TempData["ErrorMsg"] = "Khách hàng với Số điện thoại hoặc Email này đã tồn tại trong hệ thống!";
+        return View(model);
+    }
 
-            var newUser = new IdentityUser { UserName = userEmail, Email = userEmail, PhoneNumber = model.PhoneNumber };
-            var result = await _userManager.CreateAsync(newUser, defaultPassword);
 
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRoleAsync(newUser, "Customer");
+    var newUser = new ApplicationUser { UserName = userEmail, Email = userEmail, PhoneNumber = model.PhoneNumber };
+    
+    var result = await _userManager.CreateAsync(newUser, defaultPassword);
 
-                model.UserId = newUser.Id;
-                _context.UserProfiles.Add(model);
-                await _context.SaveChangesAsync();
+    if (result.Succeeded)
+    {
+        await _userManager.AddToRoleAsync(newUser, "Customer");
 
-                TempData["SuccessMsg"] = $"Thêm khách hàng {model.FullName} thành công! Mật khẩu mặc định là: {defaultPassword}";
-                return RedirectToAction("Customers");
-            }
+        model.UserId = newUser.Id;
+        _context.UserProfiles.Add(model);
+        await _context.SaveChangesAsync();
 
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-            TempData["ErrorMsg"] = "Có lỗi xảy ra khi tạo tài khoản, vui lòng thử lại!";
-            return View(model);
-        }
+        TempData["SuccessMsg"] = $"Thêm khách hàng {model.FullName} thành công! Mật khẩu mặc định là: {defaultPassword}";
+        return RedirectToAction("Customers");
+    }
 
+    foreach (var error in result.Errors)
+    {
+        ModelState.AddModelError(string.Empty, error.Description);
+    }
+    TempData["ErrorMsg"] = "Có lỗi xảy ra khi tạo tài khoản, vui lòng thử lại!";
+    return View(model);
+}
         [HttpGet("Admin/Profile")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AdminProfile()
-        {
-            var userId = _userManager.GetUserId(User);
-            var userAcc = await _userManager.FindByIdAsync(userId);
-            
-            var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
-            
-            if (profile == null) 
-            {
-                profile = new UserProfile { UserId = userId, FullName = "Admin Velvy" };
-                _context.UserProfiles.Add(profile);
-                await _context.SaveChangesAsync();
-            }
+[Authorize(Roles = "Admin, Staff")] 
+public async Task<IActionResult> AdminProfile()
+{
+    var userId = _userManager.GetUserId(User);
+    var userAcc = await _userManager.FindByIdAsync(userId);
+    
+    var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+    
+    if (profile == null) 
+    {
 
-            ViewBag.UserEmail = userAcc.Email;
-            
-            var roles = await _userManager.GetRolesAsync(userAcc);
-            ViewBag.Role = roles.FirstOrDefault() ?? "Quản trị viên";
+        profile = new UserProfile { UserId = userId, FullName = User.IsInRole("Admin") ? "Admin Velvy" : "Nhân viên" };
+        _context.UserProfiles.Add(profile);
+        await _context.SaveChangesAsync();
+    }
 
-            return View(profile);
-        }
+    ViewBag.UserEmail = userAcc.Email;
+    
+
+    ViewBag.Role = User.IsInRole("Admin") ? "Quản trị viên" : (!string.IsNullOrEmpty(profile.Duty) ? profile.Duty : "Chưa phân nhiệm vụ");
+
+    return View(profile);
+}
 
         [HttpPost("Admin/Profile")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")] // Mở khóa cho Staff
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdminProfile(UserProfile model, IFormFile avatarFile, [FromServices] IWebHostEnvironment env)
         {
@@ -678,13 +693,13 @@ namespace VelvySkinWeb.Controllers
             var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
             if (profile != null)
             {
-                profile.FullName = model.FullName ?? "Admin Velvy";
+                profile.FullName = model.FullName ?? (User.IsInRole("Admin") ? "Admin Velvy" : "Nhân viên CSKH");
                 profile.PhoneNumber = model.PhoneNumber ?? "";
                 
                 _context.Update(profile);
                 await _context.SaveChangesAsync();
                 
-                TempData["SuccessMsg"] = "Cập nhật Hồ sơ Quản trị viên thành công!";
+                TempData["SuccessMsg"] = "Cập nhật Hồ sơ thành công!";
             }
             
             return RedirectToAction("AdminProfile");
@@ -788,10 +803,7 @@ namespace VelvySkinWeb.Controllers
             return RedirectToAction("SendNotification");
         }
 
-        // ==========================================
-        // 🔥 ĐÃ XÓA SỔ HOÀN TOÀN LỖI LAG WEB (MEMORY LEAK) 🔥
-        // ==========================================
-        [HttpGet("Admin/Reports")]
+       [HttpGet("Admin/Reports")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Reports()
         {
@@ -800,13 +812,20 @@ namespace VelvySkinWeb.Controllers
             var startOfLastMonth = startOfThisMonth.AddMonths(-1);
             var sixMonthsAgo = startOfThisMonth.AddMonths(-5);
 
-            // 🔥 Danh sách cứng (Dùng để ép SQL chạy lệnh IN và NOT IN, tuyệt đối cấm dùng LIKE %)
-            var validStatuses = new List<string> { "Hoàn thành", "Đã thanh toán", "Đã giao" };
-            var cancelStatuses = new List<string> { "Đã hủy", "Hủy", "Cancelled", "Canceled" };
 
-            // ==========================================
-            // 1. TÍNH DOANH THU & SỐ ĐƠN (Chỉ kéo đúng số liệu của 2 tháng)
-            // ==========================================
+        var validStatuses = new List<string> { 
+    "Hoàn thành", 
+    "Đã giao", 
+    "Đã giao thành công",
+    "Giao thành công",
+    "Đã thanh toán", 
+    "Đã thanh toán (ZaloPay)", 
+    "Đã thanh toán (Chuyển khoản)" 
+};
+            
+            var cancelStatuses = new List<string> { "Đã hủy", "Hủy", "Cancelled", "Canceled", "Đã hủy (Lỗi thanh toán)" };
+
+
             var recentOrders = await _context.Orders
                 .AsNoTracking()
                 .Where(o => o.OrderDate >= startOfLastMonth && validStatuses.Contains(o.OrderStatus))
@@ -829,15 +848,11 @@ namespace VelvySkinWeb.Controllers
             ViewBag.ThisMonthOrders = thisMonthOrdersCount;
             ViewBag.OrderTrend = Math.Round(orderTrend, 1);
 
-            // ==========================================
-            // 2. ĐẾM TỔNG KHÁCH HÀNG
-            // ==========================================
+
             var customerRoleId = await _context.Roles.AsNoTracking().Where(r => r.Name == "Customer").Select(r => r.Id).FirstOrDefaultAsync();
             ViewBag.TotalCustomers = customerRoleId == null ? 0 : await _context.UserRoles.CountAsync(ur => ur.RoleId == customerRoleId);
 
-            // ==========================================
-            // 3. BIỂU ĐỒ 6 THÁNG (Ép SQL tự Group By)
-            // ==========================================
+
             var monthlyStats = await _context.Orders
                 .AsNoTracking()
                 .Where(o => o.OrderDate >= sixMonthsAgo && validStatuses.Contains(o.OrderStatus))
@@ -858,9 +873,7 @@ namespace VelvySkinWeb.Controllers
             ViewBag.ChartLabels = labels;
             ViewBag.ChartData = revenueData;
 
-            // ==========================================
-            // 4. TOP SẢN PHẨM BÁN CHẠY (Join trực tiếp dưới SQL Server)
-            // ==========================================
+
             var topProductStats = await _context.OrderDetails
                 .AsNoTracking()
                 .Join(_context.Orders, od => od.OrderId, o => o.Id, (od, o) => new { od, o })
@@ -896,13 +909,10 @@ namespace VelvySkinWeb.Controllers
             }
             ViewBag.TopProducts = finalTopProducts;
 
-            // ==========================================
-            // 5. TỶ LỆ THÀNH CÔNG VÀ ĐƠN PENDING (Dùng CountAsync siêu nhẹ)
-            // ==========================================
+
             int totalEver = await _context.Orders.CountAsync();
             int completedOrders = await _context.Orders.CountAsync(o => o.OrderStatus != null && validStatuses.Contains(o.OrderStatus));
             
-            // Ép SQL dùng NOT IN, không được kéo String về RAM
             int pendingOrders = await _context.Orders.CountAsync(o =>
                 o.OrderStatus != null &&
                 !validStatuses.Contains(o.OrderStatus) &&
@@ -914,8 +924,9 @@ namespace VelvySkinWeb.Controllers
 
             return View();
         }
+
         [HttpPost("Admin/ChangeAdminPassword")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")] // Giữ quyền thay đổi ở Settings là của Admin
         public async Task<IActionResult> ChangeAdminPassword(string currentPassword, string newPassword)
         {
             if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
@@ -965,10 +976,14 @@ namespace VelvySkinWeb.Controllers
 
             string durationText = lockDays == 9999 ? "Vĩnh viễn" : $"{lockDays} ngày";
             var log = new AuditLog {
-                Username = User.Identity.Name,
+                Username = User.Identity?.Name ?? "Admin",
                 ActionType = "UPDATE",
                 TableName = "AspNetUsers",
-                Description = $"Admin đã khóa tài khoản {user.Email} ({durationText}). Lý do: {lockReason}"
+                Description = $"Admin đã khóa tài khoản {user.Email} ({durationText}). Lý do: {lockReason}",
+                OldValues = "{}", 
+                NewValues = "{}",
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost",
+                Timestamp = DateTime.Now
             };
             _context.AuditLogs.Add(log);
             
@@ -978,7 +993,9 @@ namespace VelvySkinWeb.Controllers
             return RedirectToAction("CustomerDetail", new { id = userId });
         }
         
+
         [HttpGet]
+        [Authorize(Roles = "Admin")] 
         public async Task<IActionResult> SystemLogs()
         {
             var logs = await _context.AuditLogs
@@ -989,7 +1006,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")] // Mở khóa cho Staff thấy chuông thông báo
         public async Task<IActionResult> GetAdminNotifications()
         {
             var pendingTickets = await _context.SupportTickets
@@ -1047,7 +1064,11 @@ namespace VelvySkinWeb.Controllers
                 Username = User.Identity?.Name ?? "Admin",
                 ActionType = "UPDATE",
                 TableName = "AspNetUsers",
-                Description = $"Admin đã ÂN XÁ (MỞ KHÓA) tài khoản {user.Email} thông qua đơn kháng cáo #{ticketId}"
+                Description = $"Admin đã ÂN XÁ (MỞ KHÓA) tài khoản {user.Email} thông qua đơn kháng cáo #{ticketId}",
+                OldValues = "{}", 
+                NewValues = "{}",
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost",
+                Timestamp = DateTime.Now
             };
             _context.AuditLogs.Add(log);
 
@@ -1086,5 +1107,339 @@ namespace VelvySkinWeb.Controllers
             TempData["SuccessMsg"] = $"Bao Công xuất chiêu! Đã ân xá thành công và gửi Email cho {user.Email}!";
             return RedirectToAction("TicketDetail", new { id = ticketId }); 
         }
+
+        [HttpGet("Admin/Staffs")]
+        [Authorize(Roles = "Admin")] 
+        public async Task<IActionResult> Staffs()
+        {
+            var staffUsers = await _userManager.GetUsersInRoleAsync("Staff");
+            var staffIds = staffUsers.Select(u => u.Id).ToList();
+            
+            var profiles = await _context.UserProfiles.Where(p => staffIds.Contains(p.UserId)).ToListAsync();
+
+
+            var staffList = new List<dynamic>();
+            foreach (var user in staffUsers)
+            {
+                bool isLocked = await _userManager.IsLockedOutAsync(user);
+                staffList.Add(new {
+                    User = user,
+                    Profile = profiles.FirstOrDefault(p => p.UserId == user.Id) ?? new UserProfile { FullName = "Nhân viên mới" },
+                    IsLockedOut = isLocked
+                });
+            }
+
+            return View(staffList);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")] // Bổ sung dòng này
+        public IActionResult CreateStaff() => View();
+
+       [HttpPost("Admin/CreateStaff")]
+[Authorize(Roles = "Admin")]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CreateStaff(CreateStaffViewModel model, [FromServices] IWebHostEnvironment env)
+{
+    if (!ModelState.IsValid) return View(model);
+
+
+    var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+    
+
+    var result = await _userManager.CreateAsync(user, model.Password);
+
+    if (result.Succeeded)
+    {
+
+        await _userManager.AddToRoleAsync(user, "Staff");
+
+
+        if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+        {
+            string uploadsFolder = Path.Combine(env.WebRootPath, "images", "avatars");
+            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+            string filePath = Path.Combine(uploadsFolder, user.Id + ".jpg");
+            using (var fileStream = new FileStream(filePath, FileMode.Create)) {
+                await model.AvatarFile.CopyToAsync(fileStream);
+            }
+        }
+
+
+        var profile = new UserProfile {
+            UserId = user.Id,
+            FullName = model.FullName,
+            PhoneNumber = model.PhoneNumber ?? "",
+            DateOfBirth = model.DateOfBirth,
+            Gender = model.Gender ?? "",
+            Address = model.Address ?? "",
+            Duty = model.PrimaryDuty ?? "Chuyên viên CSKH", // Đảm bảo khớp với tên thuộc tính trong class UserProfile
+            LockReason = "",
+            InternalNotes = "" 
+        };
+        _context.UserProfiles.Add(profile);
+
+
+        _context.AuditLogs.Add(new AuditLog {
+            Username = User.Identity?.Name ?? "Admin",
+            ActionType = "CREATE_STAFF",
+            TableName = "AspNetUsers",
+            Description = $"Tuyển nhân viên mới: [{model.Email}] - Vị trí: {model.PrimaryDuty}",
+            OldValues = "{}", 
+            NewValues = "{}",
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost",
+            Timestamp = DateTime.Now
+        });
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMsg"] = $"Đã tuyển thành công nhân viên {model.FullName}!";
+        return RedirectToAction("Staffs");
+    }
+
+    foreach (var error in result.Errors) ModelState.AddModelError("", error.Description);
+    return View(model);
+}
+
+        [HttpPost("Admin/FireStaff")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> FireStaff(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            await _userManager.SetLockoutEnabledAsync(user, true);
+            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
+
+            var log = new AuditLog {
+                Username = User.Identity?.Name ?? "Admin",
+                ActionType = "UPDATE",
+                TableName = "AspNetUsers",
+                Description = $"Admin đã SA THẢI và KHÓA TÀI KHOẢN nhân viên: {user.Email}",
+                OldValues = "{}", 
+                NewValues = "{}",
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost",
+                Timestamp = DateTime.Now
+            };
+            _context.AuditLogs.Add(log);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMsg"] = $"Đã sa thải và khóa mõm tài khoản {user.Email} thành công!";
+            return RedirectToAction("Staffs");
+        }
+        [HttpPost("Admin/RestoreStaff")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> RestoreStaff(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+
+            await _userManager.SetLockoutEndDateAsync(user, null);
+
+
+            var log = new AuditLog {
+                Username = User.Identity?.Name ?? "Admin",
+                ActionType = "UPDATE",
+                TableName = "AspNetUsers",
+                Description = $"Admin đã PHỤC CHỨC (Mở khóa) cho nhân viên: {user.Email}",
+                OldValues = "{}", 
+                NewValues = "{}", 
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost",
+                Timestamp = DateTime.Now
+            };
+            _context.AuditLogs.Add(log);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMsg"] = $"Thánh chỉ đến! Đã phục chức cho nhân viên {user.Email} thành công!";
+            return RedirectToAction("Staffs");
+        }
+
+
+
+       [HttpGet]
+public async Task<IActionResult> EditStaff(string id)
+{
+    if (string.IsNullOrEmpty(id)) return NotFound();
+
+    var user = await _userManager.FindByIdAsync(id);
+    if (user == null) return NotFound();
+
+    var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == user.Id);
+
+    var model = new VelvySkinWeb.Models.ViewModels.EditStaffViewModel
+    {
+        Id = user.Id,
+        Email = user.Email,
+        FullName = profile?.FullName ?? "",
+        PhoneNumber = profile?.PhoneNumber ?? "",
+        DateOfBirth = profile?.DateOfBirth,
+        Gender = profile?.Gender ?? "",
+        Address = profile?.Address ?? "",
+        
+
+        PrimaryDuty = profile?.Duty ?? "Chuyên viên CSKH", 
+        
+        InternalNotes = profile?.InternalNotes ?? ""
+    };
+    return View(model);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EditStaff(VelvySkinWeb.Models.ViewModels.EditStaffViewModel model, [FromServices] IWebHostEnvironment env)
+{
+    if (!ModelState.IsValid) 
+    {
+        TempData["ErrorMsg"] = "Vui lòng kiểm tra lại thông tin nhập vào!";
+        return View(model);
+    }
+
+    var user = await _userManager.FindByIdAsync(model.Id);
+    if (user == null) return NotFound();
+
+
+    if (model.AvatarFile != null && model.AvatarFile.Length > 0)
+    {
+        string uploadsFolder = Path.Combine(env.WebRootPath, "images", "avatars");
+        if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+        
+        string filePath = Path.Combine(uploadsFolder, user.Id + ".jpg");
+        using (var fileStream = new FileStream(filePath, FileMode.Create))
+        {
+            await model.AvatarFile.CopyToAsync(fileStream);
+        }
+    }
+
+
+    var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == user.Id);
+    if (profile != null)
+    {
+        profile.FullName = model.FullName;
+        profile.PhoneNumber = model.PhoneNumber ?? "";
+        profile.DateOfBirth = model.DateOfBirth; 
+        profile.Gender = model.Gender ?? "";
+        profile.Address = model.Address ?? "";
+        profile.InternalNotes = model.InternalNotes ?? "";
+        
+
+        profile.Duty = model.PrimaryDuty ?? "Chuyên viên CSKH";
+        
+        _context.Update(profile);
+    }
+    else
+    {
+        _context.UserProfiles.Add(new UserProfile { 
+            UserId = user.Id, 
+            FullName = model.FullName, 
+            PhoneNumber = model.PhoneNumber ?? "", 
+            DateOfBirth = model.DateOfBirth, 
+            Gender = model.Gender ?? "", 
+            Address = model.Address ?? "", 
+            InternalNotes = model.InternalNotes ?? "", 
+            LockReason = "",
+            
+
+            Duty = model.PrimaryDuty ?? "Chuyên viên CSKH"
+        });
+    }
+
+
+    _context.AuditLogs.Add(new AuditLog {
+        Username = User.Identity?.Name ?? "Admin",
+        ActionType = "UPDATE_STAFF",
+        TableName = "AspNetUsers",
+        Description = $"Cập nhật hồ sơ nhân viên [{user.Email}].",
+        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost",
+        OldValues = "{}", 
+        NewValues = "{}", 
+        
+        Timestamp = DateTime.Now
+    });
+
+    await _context.SaveChangesAsync();
+    TempData["SuccessMsg"] = $"Đã lưu hồ sơ của {model.FullName}!";
+    return RedirectToAction("Staffs");
+}
+
+        [HttpGet]
+[Authorize(Roles = "Admin")]
+public async Task<IActionResult> ExportToExcel()
+{
+    var now = DateTime.Now;
+
+
+   var validStatuses = new List<string> { 
+    "Hoàn thành", 
+    "Đã giao", 
+    "Đã giao thành công",
+    "Giao thành công",
+    "Đã thanh toán", 
+    "Đã thanh toán (ZaloPay)", 
+    "Đã thanh toán (Chuyển khoản)" 
+};
+
+
+    var orders = await _context.Orders
+        .Where(o => o.OrderDate.Month == now.Month 
+                 && o.OrderDate.Year == now.Year
+                 && validStatuses.Contains(o.OrderStatus))
+        .ToListAsync();
+
+    using (var workbook = new XLWorkbook())
+    {
+        var worksheet = workbook.Worksheets.Add("Báo Cáo Doanh Thu");
+        var currentRow = 1;
+
+
+        worksheet.Cell(currentRow, 1).Value = "Mã Đơn Hàng";
+        worksheet.Cell(currentRow, 2).Value = "Ngày Đặt";
+        worksheet.Cell(currentRow, 3).Value = "Khách Hàng";
+        worksheet.Cell(currentRow, 4).Value = "Tổng Tiền";
+        worksheet.Cell(currentRow, 5).Value = "Trạng Thái";
+
+
+        var headerRange = worksheet.Range("A1:E1");
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#2ec4b6");
+        headerRange.Style.Font.FontColor = XLColor.White;
+
+
+        foreach (var order in orders)
+        {
+            currentRow++;
+            worksheet.Cell(currentRow, 1).Value = order.Id;
+            worksheet.Cell(currentRow, 2).Value = order.OrderDate.ToString("dd/MM/yyyy HH:mm");
+            worksheet.Cell(currentRow, 3).Value = order.CustomerName;
+            worksheet.Cell(currentRow, 4).Value = order.TotalAmount;
+            worksheet.Cell(currentRow, 5).Value = order.OrderStatus;
+        }
+
+
+        worksheet.Columns().AdjustToContents();
+
+
+        _context.AuditLogs.Add(new AuditLog {
+            Username = User.Identity?.Name ?? "Admin",
+            ActionType = "EXPORT_EXCEL",
+            TableName = "Orders",
+            Description = $"Xuất báo cáo doanh thu tháng {now.Month} ra file Excel.",
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost", 
+            OldValues = "{}", 
+            NewValues = "{}", 
+            Timestamp = now
+        });
+        await _context.SaveChangesAsync();
+
+
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            var content = stream.ToArray();
+            string fileName = $"Bao_Cao_Doanh_Thu_VelvySkin_{now:MM_yyyy}.xlsx";
+
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+    }
+}  
     }
 }

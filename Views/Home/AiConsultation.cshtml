@@ -39,7 +39,7 @@
         <p>Chỉ với vài câu hỏi và một bức ảnh, AI của Velvy Skin sẽ phân tích tình trạng da và thiết kế quy trình chăm sóc dành riêng cho bạn.</p>
     </div>
 
-    <form asp-action="AiResult" method="post" class="quiz-container" id="aiForm">
+   <form asp-action="AiResult" method="post" enctype="multipart/form-data" class="quiz-container" id="aiForm">
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 
         <input type="hidden" name="skinType" id="skinType" value="Da thường" />
@@ -83,7 +83,7 @@
 
         <div class="step" id="step3">
             <h2 class="step-title">Tải ảnh khuôn mặt để AI phân tích</h2>
-            <input type="file" id="ai-upload-input" accept="image/*" capture="user" style="display: none;">
+         <input type="file" name="faceImage" id="ai-upload-input" accept="image/*" capture="user" style="display: none;">
             <div class="upload-area" id="drop-zone" onclick="document.getElementById('ai-upload-input').click()">
                 <i class="fa-solid fa-camera-retro"></i>
                 <h3 id="upload-status">Chụp ảnh hoặc Tải lên</h3>
@@ -103,13 +103,13 @@
         let currentStep = 1;
         const totalSteps = 3;
 
-        // Bắt dữ liệu khi click
+
         function selectOption(el, stepNumber, value) {
             const allOptions = el.parentElement.querySelectorAll('.option-card');
             allOptions.forEach(opt => opt.classList.remove('selected'));
             el.classList.add('selected');
 
-            // Ghi dữ liệu vào ống hút ẩn
+
             if (stepNumber === 1) document.getElementById('skinType').value = value;
             if (stepNumber === 2) document.getElementById('skinConcern').value = value;
         }
@@ -155,7 +155,7 @@
             btnNext.disabled = true;
             btnNext.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
             
-            // Chờ 2.5s lấy le với khách hàng rồi GỬI FORM VỀ C#
+
             setTimeout(() => { document.getElementById('aiForm').submit(); }, 2500);
         }
     </script>

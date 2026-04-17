@@ -123,7 +123,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
-        // Hàm hỏi xác nhận trước khi xóa
+
         function confirmDelete(id, name) {
             Swal.fire({
                 title: 'Bạn có chắc chắn muốn xóa?',
@@ -136,13 +136,13 @@
                 cancelButtonText: 'Hủy bỏ'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Nếu admin bấm "Đúng", JS sẽ tự động bấm nút Submit của cái form ẩn
+
                     document.getElementById('deleteForm-' + id).submit();
                 }
             })
         }
 
-        // Bắt thông báo từ C# gửi ra màn hình
+
         @if (TempData["SuccessMsg"] != null)
         {
             <text>

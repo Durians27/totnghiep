@@ -6,7 +6,7 @@
 
 <div style="padding: 30px; font-family: 'Montserrat', sans-serif;">
     <h2 style="font-family: 'Playfair Display', serif; color: var(--dark-mint); font-weight: 700; margin-bottom: 25px;">
-        <i class="fa-solid fa-shield-halved"></i> NHẬT KÝ HỆ THỐNG (AUDIT LOG)
+        <i class="fa-solid fa-shield-halved"></i> NHẬT KÝ HỆ THỐNG 
     </h2>
 
     <div style="background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
@@ -23,12 +23,24 @@
                 @foreach (var log in Model)
                 {
                     <tr style="border-bottom: 1px solid #f5f5f5; font-size: 14px;">
-                        <td style="padding: 15px; color: #666;">@log.Timestamp.ToString("HH:mm - dd/MM/yyyy")</td>
-                        <td style="padding: 15px; font-weight: 600;">@log.Username</td>
-                        <td style="padding: 15px;">
-                            <span style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">@log.ActionType</span>
+                        <td style="padding: 15px; color: #666; width: 180px;">@log.Timestamp.ToString("HH:mm - dd/MM/yyyy")</td>
+                        <td style="padding: 15px; font-weight: 600; color: var(--dark-mint);">@log.Username</td>
+                        <td style="padding: 15px; width: 120px;">
+                            @{
+                                string badgeColor = "#f5f5f5";
+                                string textColor = "#333";
+                                if (log.ActionType == "UPDATE") { badgeColor = "#e1f5fe"; textColor = "#0288d1"; }
+                                else if (log.ActionType == "CREATE") { badgeColor = "#e8f5e9"; textColor = "#2e7d32"; }
+                                else if (log.ActionType == "DELETE") { badgeColor = "#ffebee"; textColor = "#c62828"; }
+                                if (log.ActionType.Contains("SUCCESS")) { badgeColor = "#e8f5e9"; textColor = "#2e7d32"; } 
+                                else if (log.ActionType.Contains("FAILED") || log.ActionType.Contains("ALERT")) { badgeColor = "#ffebee"; textColor = "#c62828"; } 
+                                else if (log.ActionType.Contains("ORDER")) { badgeColor = "#fff3e0"; textColor = "#ef6c00"; } 
+                            }
+                            <span style="background: @badgeColor; color: @textColor; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">
+                                @log.ActionType
+                            </span>
                         </td>
-                        <td style="padding: 15px;">@log.Description</td>
+                        <td style="padding: 15px; line-height: 1.5;">@log.Description</td>
                     </tr>
                 }
             </tbody>

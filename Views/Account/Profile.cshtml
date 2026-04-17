@@ -2,8 +2,8 @@
 @{
     ViewData["Title"] = "Hồ Sơ Cá Nhân";
 
-    // 🔥 FIX LỖI SẬP WEB: Ép kiểu mềm mại và an toàn bằng từ khóa 'as'.
-    // Nếu Controller không gửi ra (bị null), tự động biến thành 1 danh sách rỗng để chống sập (?? new List...)
+
+
     var supportTickets = ViewBag.SupportTickets as IEnumerable<VelvySkinWeb.Models.SupportTicket> ?? new List<VelvySkinWeb.Models.SupportTicket>();
     var recentOrders = ViewBag.RecentOrders as IEnumerable<VelvySkinWeb.Models.Order> ?? new List<VelvySkinWeb.Models.Order>();
 }
@@ -194,7 +194,16 @@
                             @foreach (var ticket in supportTickets)
                             {
                                 <tr style="border-top: 1px solid #eee;">
-                                    <td style="padding: 15px; font-weight: 600; color: var(--mint);">@(string.IsNullOrEmpty(ticket.OrderCode) ? "N/A" : ticket.OrderCode)</td>
+                                    <td style="padding: 15px; font-weight: 600;">
+    @if (!string.IsNullOrEmpty(ticket.OrderCode) && ticket.OrderCode != "N/A")
+    {
+        <span style="color: var(--mint);">@ticket.OrderCode</span>
+    }
+    else
+    {
+        <span style="color: #bbb; font-weight: 500;">-</span>
+    }
+</td>
                                     <td style="padding: 15px;">@ticket.IssueType</td>
                                     <td style="padding: 15px; color: #888;">@ticket.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                                     <td style="padding: 15px;">
@@ -265,10 +274,6 @@
                     <textarea name="Content" rows="4" placeholder="Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải để chúng tôi hỗ trợ tốt nhất..." required></textarea>
                 </div>
 
-                <div class="form-group mb-3">
-                    <label style="font-weight: 600; color: #333; margin-bottom: 8px;">Đính kèm hình ảnh minh chứng (Tối đa 2MB)</label>
-                    <input type="file" name="attachment" accept="image/*" style="border: 2px dashed #2ec4b6; background: #f0fdfa; color: #208b81; padding: 12px; cursor: pointer; width: 100%; border-radius: 10px; outline: none; transition: 0.3s;" onmouseover="this.style.background='white'" onmouseout="this.style.background='#f0fdfa'">
-                </div>
 
                 <button type="submit" class="btn-mint"><i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu ngay</button>
             </form>
@@ -280,7 +285,7 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Hàm chuyển đổi Tab xịn xò
+
         function switchTab(e, tabId) {
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
             if(e) e.currentTarget.classList.add('active');
@@ -294,7 +299,7 @@
             }
         }
 
-        // Preview ảnh đại diện
+
         function changeAvatar(event) {
             const file = event.target.files[0];
             if (file) {

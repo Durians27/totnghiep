@@ -25,21 +25,23 @@
 <div class="result-wrapper">
     <div class="main-card">
         <div style="text-align: center; margin-bottom: 40px;">
-            <h1 style="font-family: 'Playfair Display', serif; font-size: 38px; color: var(--dark-mint);">Kết Quả Phân Tích Da ✨</h1>
+            <h1 style="font-family: 'Playfair Display', serif; font-size: 38px; color: var(--dark-mint);">Kết Quả Phân Tích Da </h1>
             <p>AI đã hoàn tất việc quét. Dưới đây là các chỉ số sức khỏe da của bạn.</p>
         </div>
 
         <div class="stats-grid">
-            <div class="stat-item"><div class="circle" id="moisture">0%</div><h4>Độ ẩm 💧</h4></div>
-            <div class="stat-item"><div class="circle" id="oil">0%</div><h4>Độ dầu 🛢️</h4></div>
-            <div class="stat-item"><div class="circle" id="acne">0%</div><h4>Mụn/Thâm 🌋</h4></div>
-            <div class="stat-item"><div class="circle" id="smooth">0%</div><h4>Độ mịn ✨</h4></div>
+            <div class="stat-item"><div class="circle" id="moisture">0%</div><h4>Độ ẩm </h4></div>
+            <div class="stat-item"><div class="circle" id="oil">0%</div><h4>Độ dầu </h4></div>
+            <div class="stat-item"><div class="circle" id="acne">0%</div><h4>Mụn/Thâm </h4></div>
+            <div class="stat-item"><div class="circle" id="smooth">0%</div><h4>Độ mịn </h4></div>
         </div>
 
-        <div class="diagnosis" style="margin-bottom: 40px;">
-            <h2 class="section-title"><i class="fa-solid fa-brain"></i> Nhận định từ AI</h2>
-            <p>@Html.Raw(ViewBag.Diagnosis)</p> </div>
-
+      <div class="ai-comment-section">
+    <h4><i class="fa-solid fa-robot"></i> Nhận định từ AI</h4>
+    <p>
+        @ViewBag.AiAdvice
+    </p>
+</div>
         <div class="routine-box">
             <h2 class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Lộ trình chăm sóc đề xuất</h2>
             
@@ -60,9 +62,18 @@
             </div>
 
             <div style="text-align: center; margin-top: 40px;">
-                <a asp-controller="Cart" asp-action="Index" class="btn-buy-all">
-                    <i class="fa-solid fa-cart-plus"></i> Vào giỏ hàng kiểm tra
-                </a>
+                <form asp-controller="Cart" asp-action="AddRoutineToCart" method="post">
+                    @if (Model != null)
+                    {
+                        foreach (var item in Model)
+                        {
+                            <input type="hidden" name="productIds" value="@item.Id" />
+                        }
+                    }
+                    <button type="submit" class="btn-buy-all">
+                        <i class="fa-solid fa-cart-plus"></i> Vào giỏ hàng kiểm tra
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -70,7 +81,7 @@
 
 @section Scripts {
     <script>
-        // Hiệu ứng số chạy nhận từ C# Backend
+
         function animateNumber(id, target, duration) {
             let start = 0;
             let step = target / (duration / 10);
@@ -87,7 +98,7 @@
         }
 
         window.onload = () => {
-            // Truyền biến C# vào biến JS
+
             animateNumber('moisture', @ViewBag.Moisture, 1500);
             animateNumber('oil', @ViewBag.Oil, 1500);
             animateNumber('acne', @ViewBag.Acne, 1500);

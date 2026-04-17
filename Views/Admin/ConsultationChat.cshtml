@@ -3,7 +3,7 @@
     ViewData["Title"] = "Tư Vấn Khách Hàng";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     
-    // Ép kiểu dữ liệu lấy từ Database qua ViewBag
+
     var profile = ViewBag.UserProfile as VelvySkinWeb.Models.UserProfile;
     var suggests = ViewBag.SuggestedProducts as List<VelvySkinWeb.Models.Product>;
 }
@@ -197,15 +197,15 @@
 
 @section Scripts {
     <script>
-        // Tự động cuộn xuống cuối hộp chat
+
         const chatBox = document.getElementById('chatBox');
         if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 
-        // Hàm điền tự động câu trả lời
+
         function fillQuickMsg(text) {
             const input = document.getElementById('chatInput');
             if(input) {
-                // Nếu đã có chữ thì nối tiếp vào, nếu trống thì ghi đè
+
                 if(input.value && !input.value.endsWith(' ')) {
                     input.value += ' ' + text;
                 } else {

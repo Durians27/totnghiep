@@ -7,48 +7,32 @@
 <style>
     .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
     .page-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--dark-mint); margin: 0; }
-
-    /* Bộ lọc đơn hàng */
     .filter-bar { background: white; padding: 20px; border-radius: 20px; display: flex; gap: 15px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
     .filter-item { flex: 1; display: flex; flex-direction: column; gap: 5px; }
     .filter-item label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; }
     .filter-item select, .filter-item input { padding: 10px; border: 1px solid #eee; border-radius: 10px; font-family: inherit; font-size: 13px; outline: none; }
-
-    /* Bảng đơn hàng */
     .order-container { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 15px 40px rgba(0,0,0,0.03); }
     .order-table { width: 100%; border-collapse: collapse; }
     .order-table th { text-align: left; padding: 15px; font-size: 12px; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #eee; }
     .order-table td { padding: 18px 15px; font-size: 13px; border-bottom: 1px solid #f9f9f9; }
-    
     .customer-info { display: flex; flex-direction: column; }
     .customer-name { font-weight: 700; color: var(--dark-mint); }
     .customer-phone { font-size: 11px; color: #888; margin-top: 3px;}
-
-    /* Trạng thái đơn hàng (Badge) */
     .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; display: inline-block; }
-    .status-pending { background: #fff5e6; color: #ffa500; } /* Chờ xác nhận */
-    .status-shipping { background: #e1f5fe; color: #3498db; }    /* Đang giao */
-    .status-completed { background: #f0fdfa; color: #2ec4b6; } /* Hoàn thành */
-    .status-cancelled { background: #ffebee; color: #ff4d4d; }  /* Đã hủy */
-
+    .status-pending { background: #fff5e6; color: #ffa500; } 
+    .status-shipping { background: #e1f5fe; color: #3498db; }  
+    .status-completed { background: #f0fdfa; color: #2ec4b6; } 
+    .status-cancelled { background: #ffebee; color: #ff4d4d; }  
     .order-id { font-family: monospace; font-weight: 700; color: #555; }
     .total-amount { font-weight: 700; color: #333; }
-
-    /* 🔥 CSS MỚI: Dành cho Cụm nút Thao tác 🔥 */
     .action-cell { display: flex; gap: 8px; align-items: center; }
-    .btn-process { border: 1px solid #3498db; color: #3498db; background: transparent; padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 700; text-decoration: none; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-process { border: 1px solid #3498db; color: #3498db; background: transparent; padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 700; text-decoration: none; transition: 0.3s; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
     .btn-process:hover { background: #3498db; color: white; }
-    
     .btn-trash { border: 1px solid #ff4d4d; color: #ff4d4d; background: transparent; width: 32px; height: 32px; border-radius: 50%; font-size: 13px; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; outline: none; }
     .btn-trash:hover { background: #ff4d4d; color: white; }
-
-    /* Nút lọc */
     .btn-action { background: #f8f9fa; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; color: #666; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;}
     .btn-action:hover { background: var(--primary-mint); color: white; }
-
-    @@media (max-width: 1024px) {
-        .filter-bar { flex-wrap: wrap; }
-    }
+    @@media (max-width: 1024px) { .filter-bar { flex-wrap: wrap; } }
 </style>
 
 <div class="header-flex">
@@ -67,10 +51,10 @@
         <label>Trạng thái</label>
         <select name="status">
             <option value="">Tất cả đơn hàng</option>
-            <option value="Pending" selected="@(ViewBag.CurrentStatus == "Pending" ? "selected" : null)">Chờ xác nhận</option>
-            <option value="Shipping" selected="@(ViewBag.CurrentStatus == "Shipping" ? "selected" : null)">Đang giao hàng</option>
-            <option value="Completed" selected="@(ViewBag.CurrentStatus == "Completed" ? "selected" : null)">Đã hoàn thành</option>
-            <option value="Cancelled" selected="@(ViewBag.CurrentStatus == "Cancelled" ? "selected" : null)">Đã hủy</option>
+            <option value="Pending" selected="@(ViewBag.CurrentStatus == "pending" ? "selected" : null)">Chờ xử lý / Đã thanh toán</option>
+            <option value="Shipping" selected="@(ViewBag.CurrentStatus == "shipping" ? "selected" : null)">Đang giao hàng</option>
+            <option value="Completed" selected="@(ViewBag.CurrentStatus == "completed" ? "selected" : null)">Đã hoàn thành</option>
+            <option value="Cancelled" selected="@(ViewBag.CurrentStatus == "cancelled" ? "selected" : null)">Đã hủy</option>
         </select>
     </div>
     <div class="filter-item">
@@ -111,14 +95,14 @@
             <tbody>
                 @foreach(var item in Model)
                 {
+
                     string badgeClass = "status-pending";
-                    string statusText = item.OrderStatus ?? "Pending";
+                    string statusText = item.OrderStatus ?? "Chờ xử lý";
                     string statusLower = statusText.ToLower();
 
-                    if (statusLower == "shipping" || statusLower == "đang giao") { badgeClass = "status-shipping"; statusText = "Đang giao"; }
-                    else if (statusLower == "completed" || statusLower == "đã giao" || statusLower == "thành công") { badgeClass = "status-completed"; statusText = "Hoàn thành"; }
-                    else if (statusLower == "cancelled" || statusLower == "đã hủy") { badgeClass = "status-cancelled"; statusText = "Đã hủy"; }
-                    else { statusText = "Chờ xác nhận"; } 
+                    if (statusLower.Contains("đang giao")) { badgeClass = "status-shipping"; }
+                    else if (statusLower.Contains("hoàn thành") || statusLower.Contains("đã giao thành công") || statusLower.Contains("đã thanh toán")) { badgeClass = "status-completed"; }
+                    else if (statusLower.Contains("đã hủy") || statusLower == "hủy") { badgeClass = "status-cancelled"; }
 
                     <tr>
                         <td class="order-id">#@item.Id</td>
@@ -134,19 +118,19 @@
                         
                         <td>
                             <div class="action-cell">
-                                @if (statusLower == "shipping" || statusLower == "đang giao")
+                                @if (statusLower.Contains("đang giao"))
                                 {
                                     <a asp-controller="Orders" asp-action="ShippingDetails" asp-route-id="@item.Id" class="btn-process" style="border-color: #3498db; color: #3498db;">
                                         Giao hàng <i class="fa-solid fa-arrow-right"></i>
                                     </a>
                                 }
-                                else if (statusLower == "completed" || statusLower == "thành công" || statusLower == "đã giao")
+                                else if (statusLower.Contains("hoàn thành") || statusLower.Contains("đã giao thành công"))
                                 {
                                     <a asp-controller="Orders" asp-action="CompletedDetails" asp-route-id="@item.Id" class="btn-process" style="border-color: var(--primary-mint); color: var(--primary-mint);">
                                         <i class="fa-solid fa-check"></i> Hoàn tất
                                     </a>
                                 }
-                                else if (statusLower == "cancelled" || statusLower == "đã hủy")
+                                else if (statusLower.Contains("đã hủy"))
                                 {
                                     <a asp-controller="Orders" asp-action="Details" asp-route-id="@item.Id" class="btn-process" style="border-color: #999; color: #999;">
                                         <i class="fa-solid fa-eye"></i> Xem
@@ -159,17 +143,19 @@
                                     </a>
                                 }
 
-                                @if (statusLower != "completed" && statusLower != "đã giao" && statusLower != "thành công" && statusLower != "cancelled" && statusLower != "đã hủy")
+                                @if (!statusLower.Contains("hoàn thành") && !statusLower.Contains("đã giao") && !statusLower.Contains("hủy"))
                                 {
-                                    <form id="cancel-form-@item.Id" asp-controller="Orders" asp-action="UpdateStatus" method="post" style="margin: 0;">
-                                        <input type="hidden" name="id" value="@item.Id" />
-                                        
-                                        <input type="hidden" name="newStatus" value="Cancelled" />
-                                        
-                                        <button type="button" class="btn-trash" title="Hủy bỏ đơn hàng này" onclick="confirmCancel('@item.Id', '@item.CustomerName.Replace("'", "\\'")')">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                        </button>
-                                    </form>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <form id="cancel-form-@item.Id" asp-controller="Orders" asp-action="UpdateStatus" method="post" style="margin: 0;">
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="hidden" name="newStatus" value="Đã hủy" />
+                                            
+                                            <button type="button" class="btn-trash" title="Hủy bỏ đơn hàng này" onclick="confirmCancel('@item.Id', '@item.CustomerName.Replace("'", "\\'")')">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    }
                                 }
                             </div>
                         </td>
@@ -182,9 +168,7 @@
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <script>
-        // Bắt thông báo từ TempData nếu C# gửi về
         @if (TempData["SuccessMsg"] != null)
         {
             <text>
@@ -198,7 +182,6 @@
             </text>
         }
 
-        // Logic Popup Hủy đơn chuyên nghiệp
         function confirmCancel(orderId, customerName) {
             Swal.fire({
                 title: 'Xác nhận hủy đơn?',
@@ -212,7 +195,6 @@
                 backdrop: `rgba(0,0,0,0.4)`
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Kích hoạt form C# ẩn
                     document.getElementById('cancel-form-' + orderId).submit();
                 }
             });

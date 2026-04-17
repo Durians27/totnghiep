@@ -4,9 +4,9 @@
     ViewData["Title"] = Model.Name;
     var oldPrice = Model.Price * 1.2m;
     
-    // ===============================================================
-    // LÕI XỬ LÝ LOGIC "THÀNH PHẦN NỔI BẬT" BẰNG DẤU "|"
-    // ===============================================================
+
+
+
     string rawIng = string.IsNullOrEmpty(Model.Ingredients) ? "Đang cập nhật..." : Model.Ingredients;
     string tagsHtml = "";
     string detailIng = rawIng;
@@ -22,7 +22,7 @@
         detailIng = parts[1].Trim();
     }
 
-    // Format chống lỗi xuống dòng cho Javascript
+
     detailIng = detailIng.Replace("\n", "<br/>").Replace("'", "\\'");
     string fullDesc = string.IsNullOrEmpty(Model.FullDescription) ? "Đang cập nhật..." : Model.FullDescription.Replace("\n", "<br/>").Replace("'", "\\'");
     string usageIns = string.IsNullOrEmpty(Model.UsageInstructions) ? "Đang cập nhật..." : Model.UsageInstructions.Replace("\n", "<br/>").Replace("'", "\\'");
@@ -265,7 +265,7 @@
         return new Intl.NumberFormat('vi-VN').format(num) + 'đ';
     }
 
-    // 🔥 ĐÃ FIX: Hàm nhận trực tiếp Giá thực và Giá cũ để cập nhật 🔥
+
     function changeCapacity(newPrice, newOldPrice, btn) {
         document.querySelectorAll('.cap-btn').forEach(el => {
             el.style.background = 'white';
@@ -280,11 +280,11 @@
         oldPriceEl.style.opacity = '0';
 
         setTimeout(() => {
-            // Cập nhật giá hiển thị trên web
+
             currentPriceEl.innerText = formatMoney(newPrice);
             oldPriceEl.innerText = formatMoney(newOldPrice);
             
-            // Cập nhật giá ngầm gửi về cho Server (để vô giỏ hàng đúng giá)
+
             document.getElementById('submitPrice').value = newPrice;
             
             currentPriceEl.style.opacity = '1';

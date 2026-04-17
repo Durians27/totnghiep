@@ -2,15 +2,15 @@
 @{
     ViewData["Title"] = "Thanh toán đơn hàng";
     
-    // Tính toán tiền bạc tự động
+
     decimal subTotal = Model.Sum(item => item.Total);
     decimal shippingFee = (subTotal > 0 && subTotal < 500000) ? 30000 : 0; 
     
-    // Bốc tiền giảm giá từ Controller và kiểm tra rỗng kỹ càng
+
     string appliedCoupon = (ViewBag.AppliedCoupon as string)?.Trim();
     decimal discount = ViewBag.DiscountAmount != null ? Convert.ToDecimal(ViewBag.DiscountAmount) : 0;
 
-    // Tránh trường hợp session bị kẹt mã nhưng giỏ hàng rỗng
+
     if (string.IsNullOrWhiteSpace(appliedCoupon)) discount = 0;
     if (discount > subTotal + shippingFee) discount = subTotal + shippingFee;
 
@@ -177,7 +177,7 @@
 </div>
 
 <script>
-    // JS nhẹ nhàng để làm nổi bật phương thức thanh toán khi chọn
+
     document.querySelectorAll('.payment-option input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', function() {
             document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('active'));

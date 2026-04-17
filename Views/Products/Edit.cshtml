@@ -3,7 +3,7 @@
     ViewData["Title"] = "Chỉnh Sửa Sản Phẩm";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 
-    // 🔥 ĐÃ FIX: Lấy thành phần và chi tiết thành phần từ DB
+
     string rawIng = Model.Ingredients ?? "";
     List<string> oldIngredients = new List<string>();
     string oldDetail = ""; // Biến mới để chứa chi tiết
@@ -75,7 +75,7 @@
         <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa sản phẩm: <span style="color:#555; font-size: 18px; margin-left: 5px;">@Model.Name</span>
     </div>
 
-    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+    <form asp-controller="Products" asp-action="Edit" method="post" enctype="multipart/form-data">
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="ImageUrl" />
         <input type="hidden" asp-for="ImageUrl2" />

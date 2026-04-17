@@ -6,7 +6,7 @@
     decimal shippingFee = (subTotal > 0 && subTotal < 500000) ? 30000 : 0;
     decimal discount = (subTotal + shippingFee) - Model.TotalAmount;
 
-    // BỘ DỊCH TRẠNG THÁI SANG TIẾNG VIỆT
+
     string statusVN = Model.OrderStatus switch {
         "Pending" => "Chờ xác nhận",
         "Shipping" => "Đang giao hàng",
@@ -15,7 +15,7 @@
         _ => Model.OrderStatus
     };
 
-    // CHỌN MÀU CHO TRẠNG THÁI
+
     string statusBg = Model.OrderStatus == "Pending" ? "#fff3cd" : (Model.OrderStatus == "Cancelled" ? "#f8d7da" : "#e6fcf5");
     string statusColor = Model.OrderStatus == "Pending" ? "#856404" : (Model.OrderStatus == "Cancelled" ? "#721c24" : "#208b81");
 }

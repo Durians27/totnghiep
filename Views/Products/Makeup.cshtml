@@ -1,58 +1,76 @@
 @model IEnumerable<VelvySkinWeb.Models.Product>
+@using Microsoft.AspNetCore.Http
 @{
     ViewData["Title"] = ViewBag.PageTitle; 
 }
 
 <style>
-    /* --- MAKEUP LAYOUT --- */
+    
     .page-header-makeup {
         background: linear-gradient(rgba(46, 196, 182, 0.1), rgba(46, 196, 182, 0.1)), url('https://images.unsplash.com/photo-1512495039889-52a82cdc47ab?auto=format&fit=crop&w=1500');
-        background-size: cover; background-position: center;
-        padding: 80px 5%; text-align: center; color: #333;
+        background-size: cover; background-position: center 30%;
+        padding: 40px 5% 30px; 
+        text-align: center; color: #333; 
     }
-    .page-header-makeup h1 { font-family: 'Playfair Display', serif; font-size: 45px; margin-bottom: 15px; text-transform: capitalize;}
+    .page-header-makeup h1 { 
+        font-family: 'Playfair Display', serif; 
+        font-size: 32px; 
+        margin-bottom: 5px; 
+        text-transform: capitalize; 
+    }
+    .page-header-makeup p { font-size: 14px; opacity: 0.9; margin: 0; color: #555; }
 
-    .container { display: grid; grid-template-columns: 280px 1fr; gap: 40px; padding: 50px 5%; max-width: 1400px; margin: 0 auto; }
+    .container { display: grid; grid-template-columns: 280px 1fr; gap: 40px; padding: 30px 5%; max-width: 1400px; margin: 0 auto; }
     
-    .sidebar { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 120px; }
+    .sidebar { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); height: fit-content; position: sticky; top: 100px; }
     .filter-group-header h3 { font-size: 20px; color: var(--dark-mint); display: flex; align-items: center; gap: 10px; border: none; margin-bottom: 25px; }
     .filter-section { border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
     .filter-section:last-child { border: none; }
     .filter-section h4 { font-size: 14px; letter-spacing: 1px; margin-bottom: 15px; color: var(--dark-mint); text-transform: uppercase;}
-    .filter-list { list-style: none; }
+    .filter-list { list-style: none; padding-left: 0; margin-bottom: 0;}
     .filter-list li { margin-bottom: 10px; font-size: 14px;}
-    .filter-list li label { transition: var(--transition); padding: 4px 0; display: flex; align-items: center; gap: 10px; cursor: pointer;}
+    .filter-list li label { transition: var(--transition); padding: 4px 0; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-gray);}
     .filter-list input[type="checkbox"], .filter-list input[type="radio"] { accent-color: var(--primary-mint); width: 16px; height: 16px; margin: 0; cursor: pointer;}
     .filter-list li label:hover { color: var(--primary-mint); padding-left: 5px; }
 
     .btn-reset-filter { width: 100%; padding: 12px; background: #f5f5f5; border: none; border-radius: 8px; color: #666; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.3s; }
     .btn-reset-filter:hover { background: var(--accent-pink); color: white; }
 
-    .product-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-    .custom-sort-select { appearance: none; -webkit-appearance: none; background-color: #fff; border: 1.5px solid var(--light-mint); border-radius: 30px; padding: 10px 45px 10px 20px; font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600; color: var(--dark-mint); cursor: pointer; outline: none; transition: 0.3s; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232ec4b6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 15px center; background-size: 16px; }
-
-    /* Product Grid */
-    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
-    .product-card { background: white; border-radius: 15px; padding: 15px; border: 1px solid #f0f0f0; transition: var(--transition); position: relative; overflow: hidden;}
-    .product-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); border-color: var(--primary-mint); }
-    .wishlist-btn { position: absolute; top: 25px; right: 25px; z-index: 10; background: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: 0.3s; color: #ccc; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 30px; margin-bottom: 5px; color: #222; text-transform: capitalize; }
+    .product-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+    
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
+    .product-card { background: white; border-radius: 15px; padding: 15px; border: 1px solid #f0f0f0; transition: var(--transition); position: relative; overflow: hidden; display: flex; flex-direction: column;}
+    .product-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); border-color: var(--primary-mint); }
+    
+    .wishlist-btn { position: absolute; top: 20px; right: 20px; z-index: 10; background: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: 0.3s; color: #ccc; }
     .wishlist-btn:hover { transform: scale(1.1); color: #ff4d4d; }
-    .img-container { width: 100%; height: 280px; overflow: hidden; border-radius: 10px; margin-bottom: 15px; }
+    .wishlist-btn.active { color: #ff4d4d; } 
+
+    .img-container { width: 100%; height: 250px; overflow: hidden; border-radius: 10px; margin-bottom: 15px; }
     .product-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
     .product-card:hover .product-img { transform: scale(1.08); }
     
     .product-info h3 { font-size: 11px; color: #999; text-transform: uppercase; margin-bottom: 5px; }
-    .product-info h2 { font-size: 16px; color: #333; margin-bottom: 10px; height: 45px; overflow: hidden; line-height: 1.4; font-weight: 600; }
-    .product-info .price { font-weight: 700; color: var(--primary-mint); font-size: 18px; margin-bottom: 20px; } 
+    .product-info h2 { font-size: 15px; color: #333; margin-bottom: 10px; height: 42px; overflow: hidden; line-height: 1.4; font-weight: 600; }
+    .product-info .price { font-weight: 700; color: var(--primary-mint); font-size: 17px; margin-bottom: 15px; } 
 
-    .product-buttons { display: flex; gap: 10px; }
-    .btn-detail { flex: 1; padding: 12px; background: #f5f5f5; color: #555; text-decoration: none; text-align: center; border-radius: 8px; font-weight: 600; font-size: 14px; transition: 0.3s; }
+    .product-buttons { display: flex; gap: 10px; margin-top: auto;}
+    .btn-detail { flex: 1; padding: 10px; background: #f5f5f5; color: #555; text-decoration: none; text-align: center; border-radius: 8px; font-weight: 600; font-size: 13px; transition: 0.3s; }
     .btn-detail:hover { background: #e0e0e0; color: #000; }
-    .btn-add-cart { flex: 2; padding: 12px; background: var(--dark-mint); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.3s; text-align: center; text-decoration: none; display: block; }
+    .btn-add-cart { flex: 2; padding: 10px; background: var(--dark-mint); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.3s; text-align: center; text-decoration: none; display: block; }
     .btn-add-cart:hover { background: var(--primary-mint); box-shadow: 0 5px 15px rgba(46,196,182,0.3); color: white;}
 
-    .ai-banner { grid-column: 1 / -1; background: var(--light-mint); padding: 30px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; margin-top: 20px;}
-    
+    .ai-banner { background: var(--light-mint); padding: 25px 30px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 40px; margin-bottom: 10px;}
+    .ai-banner h2 { font-family:'Playfair Display', serif; color: var(--dark-mint); margin-bottom: 5px; font-size: 22px;}
+    .ai-banner p { margin: 0; color: #555; font-size: 14px;}
+    .btn-try-ai { background:var(--primary-mint); color:white; border:none; padding:10px 20px; border-radius:30px; font-weight:700; text-decoration:none; transition: 0.3s; font-size: 14px;}
+    .btn-try-ai:hover { background: var(--dark-mint); color: white; transform: translateY(-2px);}
+
+    .custom-sort-select { appearance: none; -webkit-appearance: none; background-color: #fff; border: 1px solid var(--light-mint); border-radius: 30px; padding: 8px 40px 8px 20px; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; color: var(--dark-mint); cursor: pointer; outline: none; transition: 0.3s; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232ec4b6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+    .custom-sort-select:hover, .custom-sort-select:focus { border-color: var(--primary-mint); box-shadow: 0 5px 15px rgba(46, 196, 182, 0.15); }
+    .custom-sort-select option { font-weight: 500; color: var(--dark-mint); padding: 10px; }
+
     @@media (max-width: 992px) {
         .container { grid-template-columns: 1fr; }
         .sidebar { display: none; } 
@@ -65,14 +83,14 @@
     <p>@ViewBag.PageDescription</p>
 </section>
 
-<div class="breadcrumb" style="padding: 15px 5%; background: #fcfcfc; font-size: 14px; color: #888; border-bottom: 1px solid #eee; margin-bottom: 0;">
+<div class="breadcrumb" style="padding: 12px 5%; background: #fcfcfc; font-size: 13px; color: #888; border-bottom: 1px solid #eee; margin-bottom: 0;">
     <a asp-controller="Home" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; transition: 0.3s;"><i class="fa-solid fa-house-chimney" style="font-size: 12px; margin-right: 5px;"></i>Trang chủ</a>
-    <span style="margin: 0 10px; color: #ccc;">/</span>
+    <span style="margin: 0 8px; color: #ccc;">/</span>
     
-    @if (ViewBag.PageTitle != "Trang Điểm")
+    @if (ViewBag.PageTitle != "Sản phẩm Trang Điểm")
     {
         <a asp-controller="Products" asp-action="Makeup" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; transition: 0.3s;">Trang điểm</a>
-        <span style="margin: 0 10px; color: #ccc;">/</span>
+        <span style="margin: 0 8px; color: #ccc;">/</span>
     }
     
     <span style="color: #444; font-weight: 600; text-transform: capitalize;">@ViewBag.PageTitle</span>
@@ -142,7 +160,7 @@
             </div>
         </div>
         
-        <p style="color:#777; margin-bottom: 25px;">Tìm thấy @Model.Count() sản phẩm phù hợp với tiêu chí của bạn.</p>
+        <p style="color:#777; margin-bottom: 20px; font-size: 14px;">Tìm thấy <b style="color:var(--dark-mint);">@Model.Count()</b> sản phẩm phù hợp với tiêu chí của bạn.</p>
 
         @if (!Model.Any())
         {
@@ -156,27 +174,39 @@
         <div class="product-grid">
             @foreach (var item in Model)
             {
-                <div class="product-card">
-                    <button class="wishlist-btn" onclick="toggleWish(this)">
-                        <i class="fa fa-heart"></i>
-                    </button>
+                <div class="product-card" data-brand="@(item.Brand != null ? item.Brand.ToLower() : "")" data-tags="@(item.Tags != null ? item.Tags.ToLower() : "")">
+                    
+                    @{
+                        var wSession = Context.Session.GetString("Wishlist");
+                        var wList = wSession != null ? System.Text.Json.JsonSerializer.Deserialize<List<int>>(wSession) : new List<int>();
+                        bool wished = wList != null && wList.Contains(item.Id);
+                    }
+                    <form asp-controller="Wishlist" asp-action="Toggle" method="post" style="position: absolute; top: 15px; right: 15px; z-index: 10;">
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <button type="submit" class="wishlist-btn @(wished ? "active" : "")">
+                            <i class="fa fa-heart"></i>
+                        </button>
+                    </form>
 
-                    <a asp-controller="Products" asp-action="Details" asp-route-id="@item.Id">
+                    <a asp-controller="Products" asp-action="Details" asp-route-id="@item.Id" style="text-decoration:none;">
                         <div class="img-container">
                             <img src="@item.ImageUrl" class="product-img" onerror="this.src='https://via.placeholder.com/500'">
                         </div>
                     </a>
                     
-                    <div class="product-info">
+                    <div class="product-info" style="display:flex; flex-direction:column; flex:1;">
                         <h3>VELVY SKIN</h3>
                         <h2>@item.Name</h2>
                         <p class="price">@item.Price.ToString("N0")đ</p>
                         
                         <div class="product-buttons">
                             <a asp-controller="Products" asp-action="Details" asp-route-id="@item.Id" class="btn-detail">Chi tiết</a>
-                            <a asp-controller="Cart" asp-action="AddToCart" asp-route-id="@item.Id" class="btn-add-cart">
-                                Thêm giỏ hàng
-                            </a>
+                            <form asp-controller="Cart" asp-action="AddToCart" method="post" style="flex: 2; margin: 0;">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <input type="hidden" name="quantity" value="1" />
+                                <input type="hidden" name="selectedPrice" value="@((long)item.Price)" />
+                                <button type="submit" class="btn-add-cart" style="width: 100%;">Thêm giỏ hàng</button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -194,7 +224,110 @@
 </div>
 
 <script>
-    function toggleWish(btn) {
-        btn.classList.toggle('active');
-    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const radios = document.querySelectorAll('.filter-list input[type="radio"]');
+        const checkboxes = document.querySelectorAll('.filter-list input[type="checkbox"]');
+        const products = document.querySelectorAll('.product-grid .product-card');
+        const resultText = document.querySelector('p[style*="color:#777; margin-bottom: 20px;"]'); 
+        const emptyAlert = document.querySelector('.alert-info'); 
+
+        function filterProducts() {
+            let selectedPriceRange = 'all';
+            radios.forEach(radio => {
+                if (radio.checked) {
+                    let labelText = radio.nextSibling ? radio.nextSibling.textContent.trim() : radio.parentElement.textContent.trim();
+                    if (labelText.includes('Dưới 200')) selectedPriceRange = 'under200';
+                    else if (labelText.includes('200.000đ - 500')) selectedPriceRange = '200to500';
+                    else if (labelText.includes('500.000đ - 1')) selectedPriceRange = '500to1000';
+                    else if (labelText.includes('Trên 500')) selectedPriceRange = 'above500';
+                    else if (labelText.includes('Trên 1')) selectedPriceRange = 'above1000';
+                }
+            });
+            
+            let checkedKeywords = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    let labelText = cb.nextSibling ? cb.nextSibling.textContent.trim().toLowerCase() : cb.parentElement.textContent.trim().toLowerCase();
+                    let splitTags = labelText.split('/').map(t => t.trim());
+                    checkedKeywords.push(...splitTags);
+                }
+            });
+
+            let visibleCount = 0;
+
+            products.forEach(product => {
+                let isVisible = true;
+                
+                let priceText = product.querySelector('.price').textContent.replace(/\D/g, '');
+                let price = parseInt(priceText);
+
+                if (selectedPriceRange === 'under200' && price >= 200000) isVisible = false;
+                else if (selectedPriceRange === '200to500' && (price < 200000 || price > 500000)) isVisible = false;
+                else if (selectedPriceRange === '500to1000' && (price < 500000 || price > 1000000)) isVisible = false;
+                else if (selectedPriceRange === 'above500' && price <= 500000) isVisible = false;
+                else if (selectedPriceRange === 'above1000' && price <= 1000000) isVisible = false;
+
+                if (isVisible && checkedKeywords.length > 0) {
+                    let pBrand = (product.getAttribute('data-brand') || "").toLowerCase();
+                    let pTags = (product.getAttribute('data-tags') || "").toLowerCase();
+                    let pName = (product.querySelector('h2') ? product.querySelector('h2').textContent : "").toLowerCase();
+                    let pCat = (document.querySelector('.page-title') ? document.querySelector('.page-title').textContent : "").toLowerCase();
+                    
+                    let combinedData = `${pBrand} ${pTags} ${pName} ${pCat}`;
+
+                    let isMatch = checkedKeywords.some(keyword => {
+                        if (keyword.includes('dạng gel')) return combinedData.includes('gel');
+                        if (keyword.includes('bọt')) return combinedData.includes('bọt') || combinedData.includes('foam');
+                        if (keyword.includes('sữa') || keyword.includes('kem')) return combinedData.includes('sữa') || combinedData.includes('kem') || combinedData.includes('cream');
+                        if (keyword.includes('la roche')) return combinedData.includes('la roche'); 
+                        if (keyword.includes('paula')) return combinedData.includes('paula');
+                        return combinedData.includes(keyword); 
+                    });
+
+                    if (!isMatch) isVisible = false;
+                }
+
+                product.style.display = isVisible ? 'block' : 'none';
+                
+                if (isVisible) {
+                    visibleCount++;
+                    product.style.animation = 'none';
+                    void product.offsetWidth; 
+                    product.style.animation = 'fadeInUp 0.5s ease-out forwards';
+                }
+            });
+
+            if (resultText) resultText.innerHTML = `Tìm thấy <b style="color:var(--dark-mint);">${visibleCount}</b> sản phẩm phù hợp với bộ lọc.`;
+            
+            if (emptyAlert) {
+                emptyAlert.style.display = visibleCount === 0 ? 'block' : 'none';
+            } else if (visibleCount === 0) {
+                const grid = document.querySelector('.product-grid');
+                if (grid && !document.querySelector('.empty-filter-alert')) {
+                    const newAlert = document.createElement('div');
+                    newAlert.className = 'alert alert-info text-center empty-filter-alert';
+                    newAlert.style = 'border-radius: 10px; background: var(--light-mint); color: var(--dark-mint); padding: 20px; width: 100%; grid-column: 1 / -1; margin-top: 20px;';
+                    newAlert.innerHTML = '<i class="fa-solid fa-box-open fs-3 mb-2"></i><p class="mb-0 fw-bold">Không tìm thấy sản phẩm nào khớp với bộ lọc này!</p>';
+                    grid.parentNode.insertBefore(newAlert, grid);
+                }
+            } else {
+                const dynamicAlert = document.querySelector('.empty-filter-alert');
+                if (dynamicAlert) dynamicAlert.style.display = 'none';
+            }
+        }
+
+        radios.forEach(input => input.addEventListener('change', filterProducts));
+        checkboxes.forEach(input => input.addEventListener('change', filterProducts));
+
+        const resetBtn = document.querySelector('.btn-reset-filter');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                radios.forEach(r => r.checked = false);
+                checkboxes.forEach(c => c.checked = false);
+                filterProducts(); 
+            });
+        }
+    });
 </script>

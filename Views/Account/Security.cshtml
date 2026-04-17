@@ -143,7 +143,7 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Bắt sự kiện đổi mật khẩu thành công
+
         @if (TempData["SuccessMsg"] != null)
         {
             <text>
@@ -151,9 +151,9 @@
             </text>
         }
 
-        // ===============================================
-        // BỘ NÃO JAVASCRIPT ĐỂ BẬT/TẮT 2FA
-        // ===============================================
+
+
+
         function update2FA(isEnable) {
             $.ajax({
                 url: '/Account/Toggle2FA',
@@ -180,9 +180,9 @@
             });
         }
 
-        // ===============================================
-        // BỘ NÃO XÓA TÀI KHOẢN
-        // ===============================================
+
+
+
         function confirmDelete() {
             Swal.fire({
                 title: 'Xác nhận xóa tài khoản?',

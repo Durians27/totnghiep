@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace VelvySkinWeb.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Staff")]
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -33,24 +33,20 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet("Admin/Products/Create")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")]
         public IActionResult Create()
         {
             ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name");
             return View();
         }
 
-        // =======================================================
-        // 🔥 HÀM TẠO SẢN PHẨM MỚI (ĐÃ FIX LỖI MODEL & DATABASE)
-        // =======================================================
         [HttpPost("Admin/Products/Create")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([Bind("Id,Name,Price,DiscountPrice,PriceLarge,StockQuantity,ShortDescription,FullDescription,UsageInstructions,CategoryId,IsActive")] Product product, 
+        [Authorize(Roles = "Admin, Staff")]
+        public async Task<IActionResult> Create([Bind("Id,Name,Price,DiscountPrice,PriceLarge,StockQuantity,ShortDescription,FullDescription,UsageInstructions,CategoryId,IsActive,Brand,Tags")] Product product, 
             IFormFile imageFile, IFormFile imageFile2, IFormFile imageFile3, IFormFile imageFile4, IFormFile imageFile5, 
             List<string> ingredient, string ingredientDetail) 
         {
-            // Xóa validation cho những trường không nhập từ form để tránh báo lỗi ẩn
             ModelState.Remove("ImageUrl");
             ModelState.Remove("Category");
 
@@ -77,9 +73,6 @@ namespace VelvySkinWeb.Controllers
 
                     _context.Products.Add(product);
 
-                    // ==========================================================
-                    // 🔥 AUDIT LOG 1: CAMERA GHI NHẬN THÊM SẢN PHẨM MỚI
-                    // ==========================================================
                     var logCreate = new VelvySkinWeb.Models.AuditLog
                     {
                         Username = User.Identity?.Name ?? "Hệ thống",
@@ -89,7 +82,6 @@ namespace VelvySkinWeb.Controllers
                         Timestamp = DateTime.Now
                     };
                     _context.AuditLogs.Add(logCreate);
-                    // ==========================================================
 
                     await _context.SaveChangesAsync();
                     
@@ -106,17 +98,6 @@ namespace VelvySkinWeb.Controllers
                 ModelState.AddModelError("", "Vui lòng kiểm tra lại! Bạn nhập thiếu thông tin bắt buộc.");
             }
             
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", product.CategoryId);
-            return View(product);
-        }
-
-        [HttpGet("Admin/Products/Edit/{id}")] 
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
-            var product = await _context.Products.FindAsync(id);
-            if (product == null) return NotFound();
             ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", product.CategoryId);
             return View(product);
         }
@@ -142,10 +123,27 @@ namespace VelvySkinWeb.Controllers
             return Json(results);
         }
 
-       [HttpPost("Admin/Products/Edit/{id}")]
+
+
+
+        [HttpGet("Admin/Products/Edit/{id}")] 
+        [Authorize(Roles = "Admin, Staff")]
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null) return NotFound();
+            var product = await _context.Products.FindAsync(id);
+            if (product == null) return NotFound();
+            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Name", product.CategoryId);
+            return View(product);
+        }
+
+
+
+
+        [HttpPost("Admin/Products/Edit/{id}")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Price,DiscountPrice,PriceLarge,StockQuantity,ShortDescription,FullDescription,UsageInstructions,CategoryId,IsActive")] Product product, 
+        [Authorize(Roles = "Admin, Staff")]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Price,DiscountPrice,PriceLarge,StockQuantity,ShortDescription,FullDescription,UsageInstructions,CategoryId,IsActive,Brand,Tags")] Product product, 
             IFormFile imageFile, IFormFile imageFile2, IFormFile imageFile3, IFormFile imageFile4, IFormFile imageFile5, 
             List<string> ingredient, string ingredientDetail) 
         {
@@ -154,7 +152,11 @@ namespace VelvySkinWeb.Controllers
             var existingProduct = await _context.Products.FindAsync(id);
             if (existingProduct == null) return NotFound();
 
-            // 🔥 BẮT LẠI GIÁ CŨ TRƯỚC KHI BỊ GHI ĐÈ ĐỂ SO SÁNH GHI LOG
+
+            var oldData = new {
+                Tên = existingProduct.Name,
+                Giá = existingProduct.Price.ToString("N0") + "đ"
+            };
             decimal oldPrice = existingProduct.Price;
 
             existingProduct.Name = product.Name;
@@ -164,6 +166,8 @@ namespace VelvySkinWeb.Controllers
             existingProduct.StockQuantity = product.StockQuantity;
             existingProduct.CategoryId = product.CategoryId;
             existingProduct.IsActive = product.IsActive;
+            existingProduct.Brand = product.Brand;
+            existingProduct.Tags = product.Tags;
             existingProduct.ShortDescription = product.ShortDescription;
             existingProduct.FullDescription = product.FullDescription;
             existingProduct.UsageInstructions = product.UsageInstructions;
@@ -189,9 +193,12 @@ namespace VelvySkinWeb.Controllers
             {
                 _context.Update(existingProduct);
 
-                // ==========================================================
-                // 🔥 AUDIT LOG 2: CAMERA GHI NHẬN CẬP NHẬT SP & SOI LỖI ĐỔI GIÁ
-                // ==========================================================
+
+                var newData = new {
+                    Tên = product.Name,
+                    Giá = product.Price.ToString("N0") + "đ"
+                };
+
                 string priceChangeLog = "";
                 if (oldPrice != product.Price)
                 {
@@ -204,10 +211,12 @@ namespace VelvySkinWeb.Controllers
                     ActionType = "UPDATE",
                     TableName = "Products",
                     Description = $"Admin đã cập nhật sản phẩm '{existingProduct.Name}'{priceChangeLog}",
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost",
+                    OldValues = System.Text.Json.JsonSerializer.Serialize(oldData),
+                    NewValues = System.Text.Json.JsonSerializer.Serialize(newData),
                     Timestamp = DateTime.Now
                 };
                 _context.AuditLogs.Add(logUpdate);
-                // ==========================================================
 
                 await _context.SaveChangesAsync();
                 
@@ -247,9 +256,6 @@ namespace VelvySkinWeb.Controllers
 
                 _context.Products.Remove(product);
 
-                // ==========================================================
-                // 🔥 AUDIT LOG 3: CAMERA GHI NHẬN XÓA SẢN PHẨM
-                // ==========================================================
                 var logDelete = new VelvySkinWeb.Models.AuditLog
                 {
                     Username = User.Identity?.Name ?? "Hệ thống",
@@ -259,7 +265,6 @@ namespace VelvySkinWeb.Controllers
                     Timestamp = DateTime.Now
                 };
                 _context.AuditLogs.Add(logDelete);
-                // ==========================================================
 
                 await _context.SaveChangesAsync();
                 
@@ -285,11 +290,12 @@ namespace VelvySkinWeb.Controllers
         public async Task<IActionResult> Haircare(string sortOrder)
         {
             var allProducts = await _context.Products.Include(p => p.Category).Where(p => p.IsActive).ToListAsync();
-            var hairKeywords = new[] { "tóc", "gội", "xả", "dưỡng tóc", "mặt nạ tóc", "xịt", "hair" };
+            
+            var hairKeywords = new[] { "tóc", "gội", "xả", "hair", "tinh dầu" }; 
             
             var hairProducts = allProducts.Where(p => 
                 p.Category != null && 
-                hairKeywords.Any(keyword => p.Category.Name.ToLower().Contains(keyword))
+                hairKeywords.Any(keyword => p.Category.Name.ToLower().Contains(keyword) || p.Name.ToLower().Contains(keyword))
             ).ToList();
 
             switch (sortOrder)
@@ -300,7 +306,7 @@ namespace VelvySkinWeb.Controllers
                 default: hairProducts = hairProducts.OrderByDescending(p => p.Id).ToList(); break;
             }
 
-            ViewBag.PageTitle = "Chăm Sóc Tóc";
+            ViewBag.PageTitle = "Sản phẩm Chăm Sóc Tóc"; 
             ViewBag.PageDescription = "Lộ trình hoàn hảo cho mái tóc khỏe mạnh và óng ả";
             ViewBag.CurrentSort = sortOrder;
 
@@ -338,16 +344,20 @@ namespace VelvySkinWeb.Controllers
         {
             return _context.Products.Any(e => e.Id == id);
         }
-
+        
         [AllowAnonymous]
         public async Task<IActionResult> Skincare(string sortOrder)
         {
             var allProducts = await _context.Products.Include(p => p.Category).Where(p => p.IsActive).ToListAsync();
-            var skincareKeywords = new[] { "rửa mặt", "tẩy", "serum", "đặc trị", "kem", "dưỡng", "nắng" };
+            
+            var skincareKeywords = new[] { "rửa mặt", "tẩy", "serum", "đặc trị", "kem", "nắng", "da", "toner", "dưỡng", "xịt" };
+            
+            var excludeKeywords = new[] { "tóc", "gội", "xả", "trang điểm", "son", "phấn", "má hồng", "mắt", "môi", "hair", "makeup", "tinh dầu" };
             
             var skincareProducts = allProducts.Where(p => 
                 p.Category != null && 
-                skincareKeywords.Any(keyword => p.Category.Name.ToLower().Contains(keyword))
+                skincareKeywords.Any(keyword => p.Category.Name.ToLower().Contains(keyword)) &&
+                !excludeKeywords.Any(exclude => p.Category.Name.ToLower().Contains(exclude) || p.Name.ToLower().Contains(exclude))
             ).ToList();
 
             switch (sortOrder)
@@ -358,7 +368,7 @@ namespace VelvySkinWeb.Controllers
                 default: skincareProducts = skincareProducts.OrderByDescending(p => p.Id).ToList(); break;
             }
 
-            ViewBag.PageTitle = "Chăm Sóc Da";
+            ViewBag.PageTitle = "Sản phẩm Chăm Sóc Da";
             ViewBag.PageDescription = "Lộ trình hoàn hảo cho làn da rạng rỡ mỗi ngày";
             ViewBag.CurrentSort = sortOrder; 
 
@@ -421,11 +431,11 @@ namespace VelvySkinWeb.Controllers
             return View(product);
         }
 
-        [AllowAnonymous]
+       [AllowAnonymous]
         public async Task<IActionResult> Makeup(string sortOrder)
         {
             var allProducts = await _context.Products.Include(p => p.Category).Where(p => p.IsActive).ToListAsync();
-            var makeupKeywords = new[] { "trang điểm", "son", "phấn", "má hồng", "kem nền", "makeup", "mắt", "môi" };
+            var makeupKeywords = new[] { "trang điểm", "son", "phấn", "má hồng", "kem nền", "makeup", "mắt", "môi", "cọ", "mút" };
             
             var makeupProducts = allProducts.Where(p => 
                 p.Category != null && 
@@ -440,24 +450,19 @@ namespace VelvySkinWeb.Controllers
                 default: makeupProducts = makeupProducts.OrderByDescending(p => p.Id).ToList(); break;
             }
 
-            ViewBag.PageTitle = "Trang Điểm";
+            ViewBag.PageTitle = "Sản phẩm Trang Điểm"; 
             ViewBag.PageDescription = "Lộ trình hoàn hảo cho vẻ đẹp rạng rỡ và tự tin";
             ViewBag.CurrentSort = sortOrder;
 
             return View(makeupProducts); 
         }
 
-        // =======================================================
-        // 🔥 HÀM XỬ LÝ ẢNH (BẤT TỬ, KHÔNG BAO GIỜ LỖI ĐƯỜNG DẪN)
-        // =======================================================
         private async Task<string> SaveImageAsync(IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
 
-            // Dùng _webHostEnvironment chuẩn xác thay vì GetCurrentDirectory
             string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "images", "products");
             
-            // TỰ ĐỘNG TẠO THƯ MỤC NẾU CHƯA CÓ (TRÁNH LỖI CRASH WEB)
             if (!Directory.Exists(uploadsFolder)) 
             {
                 Directory.CreateDirectory(uploadsFolder);

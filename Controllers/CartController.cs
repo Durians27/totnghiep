@@ -31,6 +31,8 @@ namespace VelvySkinWeb.Controllers
 
         public IActionResult Index()
         {
+            HttpContext.Session.Remove("AppliedCoupon");
+            HttpContext.Session.Remove("DiscountAmount");
             var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart") ?? new List<CartItem>();
             ViewBag.GrandTotal = cart.Sum(item => item.Total);
             return View(cart);
@@ -94,6 +96,9 @@ namespace VelvySkinWeb.Controllers
 
         public IActionResult UpdateQuantity(int id, int quantity)
         {
+            HttpContext.Session.Remove("AppliedCoupon");
+            HttpContext.Session.Remove("DiscountAmount");
+
             var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart");
             if (cart != null)
             {
@@ -119,6 +124,9 @@ namespace VelvySkinWeb.Controllers
         [HttpGet]
         public IActionResult RemoveFromCart(int id)
         {
+            HttpContext.Session.Remove("AppliedCoupon");
+            HttpContext.Session.Remove("DiscountAmount");
+
             var cart = HttpContext.Session.GetJson<List<CartItem>>("Cart");
             if (cart != null)
             {
@@ -131,6 +139,9 @@ namespace VelvySkinWeb.Controllers
         public IActionResult ClearCart()
         {
             HttpContext.Session.Remove("Cart");
+            HttpContext.Session.Remove("AppliedCoupon");
+            HttpContext.Session.Remove("DiscountAmount");
+
             return RedirectToAction("Index");
         }
 
@@ -196,9 +207,6 @@ namespace VelvySkinWeb.Controllers
             return View(itemsToCheckout);
         }
 
-        // =======================================================
-        // 🔥 GIẢI PHẪU THUẬT TOÁN: BƯỚC TẠO ĐƠN NHÁP & CHUYỂN HƯỚNG
-        // =======================================================
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
@@ -212,7 +220,6 @@ namespace VelvySkinWeb.Controllers
                 order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 order.OrderDate = DateTime.Now;
                 
-                // 🛑 CHỈ LƯU NHÁP: Đổi thành Chờ thanh toán, CHƯA TRỪ KHO, CHƯA XÓA GIỎ, CHƯA TÍNH VOUCHER
                 order.OrderStatus = "Chờ thanh toán"; 
                 order.PaymentMethod = PaymentMethod;
 
@@ -240,22 +247,32 @@ namespace VelvySkinWeb.Controllers
                     _context.OrderDetails.Add(orderDetail);
                 }
                 await _context.SaveChangesAsync(); 
-                // TUYỆT ĐỐI DỪNG LẠI Ở ĐÂY, CHƯA CHẠM VÀO SỐ LƯỢNG TỒN KHO!
 
-                // PHÂN LUỒNG XỬ LÝ
-                // NẾU LÀ THANH TOÁN TIỀN MẶT (COD) -> Xử lý thành công luôn
+
                 if (PaymentMethod != "Ví ZaloPay" && PaymentMethod != "Chuyển khoản")
                 {
                     order.OrderStatus = "Đang xử lý";
+
+
+                    _context.AuditLogs.Add(new AuditLog {
+                        Username = User.Identity?.Name ?? order.CustomerName,
+                        ActionType = "ORDER_PLACED",
+                        TableName = "Orders",
+                        Description = $"Khách hàng đặt đơn hàng #{order.Id} thành công qua hình thức [Tiền mặt/COD].",
+                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Localhost",
+                        OldValues = "{}", // ĐÃ FIX LỖI NULL
+                        NewValues = "{}", // ĐÃ FIX LỖI NULL
+                        Timestamp = DateTime.Now
+                    });
+
                     await _context.SaveChangesAsync();
-                    await ProcessOrderSuccessLogic(order.Id); // Kích hoạt trừ kho, dọn giỏ
+                    await ProcessOrderSuccessLogic(order.Id); 
                     return RedirectToAction("OrderSuccess", new { id = order.Id, pm = PaymentMethod });
                 }
 
-                // NẾU LÀ PAYOS (CHUYỂN KHOẢN)
+
                 if (PaymentMethod == "Chuyển khoản")
                 {
-            
                     string clientId = "0b6a8fda-43f6-41bf-82a2-681b814d7b99";
                     string apiKey = "5f7c0d51-f094-4733-a4d4-1dd022d60b88";
                     string checksumKey = "ba9efd887d736248ac00e2c3a0c8d396dde9046173ce5d084fa8747d0fc6f57f";
@@ -271,7 +288,7 @@ namespace VelvySkinWeb.Controllers
                         amount: (int)order.TotalAmount,
                         description: $"Thanh toan don {order.Id}",
                         items: items,
-                        cancelUrl: $"https://localhost:7079/Cart/PaymentFail?orderId={order.Id}", // 🔥 BẤM HỦY SẼ CHẠY VÀO HÀM BÁO LỖI
+                        cancelUrl: $"https://localhost:7079/Cart/PaymentFail?orderId={order.Id}",
                         returnUrl: $"https://localhost:7079/Cart/PayOSCallback?orderId={order.Id}" 
                     );
 
@@ -286,17 +303,17 @@ namespace VelvySkinWeb.Controllers
                     }
                 }
                 
-                // ĐÃ THÊM LUỒNG TẠO ĐƠN ZALOPAY TẠI ĐÂY
+
                 if (PaymentMethod == "Ví ZaloPay")
                 {
                     string host = $"{Request.Scheme}://{Request.Host}";
                     var zaloPayService = new VelvySkinWeb.Services.ZaloPayService();
                     
-                    string zaloPayUrl = await zaloPayService.CreatePaymentUrl(order.Id, 2000m, host);
-                    
+                    string zaloPayUrl = await zaloPayService.CreatePaymentUrl(order.Id, order.TotalAmount, host);
+
                     if (!string.IsNullOrEmpty(zaloPayUrl))
                     {
-                        return Redirect(zaloPayUrl); // Đá văng khách sang trang quét mã QR của ZaloPay
+                        return Redirect(zaloPayUrl); 
                     }
                     else
                     {
@@ -310,10 +327,6 @@ namespace VelvySkinWeb.Controllers
             return View("Checkout", itemsToCheckout); 
         }
 
-        // =======================================================
-        // 🔥 HÀM ĐÓN KHÁCH TỪ CỔNG THANH TOÁN (XỬ LÝ THÀNH CÔNG/HỦY)
-        // =======================================================
-
         [HttpGet]
         public async Task<IActionResult> PayOSCallback(int orderId)
         {
@@ -321,19 +334,30 @@ namespace VelvySkinWeb.Controllers
             if (order != null && order.OrderStatus == "Chờ thanh toán")
             {
                 order.OrderStatus = "Đã thanh toán (Chuyển khoản)";
+
+
+                _context.AuditLogs.Add(new AuditLog {
+                    Username = User.Identity?.Name ?? "Hệ thống",
+                    ActionType = "PAYMENT_SUCCESS",
+                    TableName = "Orders",
+                    Description = $"Ghi nhận thanh toán thành công {order.TotalAmount.ToString("N0")}đ cho đơn #{order.Id} qua cổng VietQR PayOS.",
+                    IpAddress = "PayOS_Webhook", 
+                    OldValues = "{}", // ĐÃ FIX LỖI NULL
+                    NewValues = "{}", // ĐÃ FIX LỖI NULL
+                    Timestamp = DateTime.Now
+                });
+
                 await _context.SaveChangesAsync();
-                await ProcessOrderSuccessLogic(orderId); // Tiền ting ting rồi mới trừ kho
+                await ProcessOrderSuccessLogic(orderId);
             }
             
             TempData["SuccessMsg"] = "Tuyệt vời! Thanh toán VietQR tự động thành công.";
             return RedirectToAction("OrderSuccess", new { id = orderId, pm = "Chuyển khoản ngân hàng" });
         }
 
-        // ĐÃ THÊM HÀM CALLBACK CHUYÊN DỤNG CHO ZALOPAY (THAY THẾ MOMO)
         [HttpGet]
         public async Task<IActionResult> ZaloPayCallback(int status, string apptransid)
         {
-            // ZaloPay trả về apptransid dạng "240704_123_4567" -> Mình split ra để lấy cái order.Id (nằm ở giữa)
             if (string.IsNullOrEmpty(apptransid)) return RedirectToAction("Index");
             
             string[] parts = apptransid.Split('_');
@@ -347,15 +371,27 @@ namespace VelvySkinWeb.Controllers
                 if (order != null && order.OrderStatus == "Chờ thanh toán")
                 {
                     order.OrderStatus = "Đã thanh toán (ZaloPay)";
+
+
+                    _context.AuditLogs.Add(new AuditLog {
+                        Username = User.Identity?.Name ?? "Hệ thống",
+                        ActionType = "PAYMENT_SUCCESS",
+                        TableName = "Orders",
+                        Description = $"Ghi nhận thanh toán thành công {order.TotalAmount.ToString("N0")}đ cho đơn #{order.Id} qua ví ZaloPay.",
+                        IpAddress = "ZaloPay_Server",
+                        OldValues = "{}", // ĐÃ FIX LỖI NULL
+                        NewValues = "{}", // ĐÃ FIX LỖI NULL
+                        Timestamp = DateTime.Now
+                    });
+
                     await _context.SaveChangesAsync();
-                    await ProcessOrderSuccessLogic(orderId); // Trừ kho, dọn giỏ
+                    await ProcessOrderSuccessLogic(orderId); 
                 }
                 TempData["SuccessMsg"] = "Tuyệt vời! Giao dịch ZaloPay của bạn đã thành công.";
                 return RedirectToAction("OrderSuccess", new { id = orderId, pm = "Ví ZaloPay" });
             }
             else
             {
-                // Khách bấm Hủy ở cổng ZaloPay
                 return RedirectToAction("PaymentFail", new { orderId = orderId, error = "Giao dịch ZaloPay bị hủy bỏ" });
             }
         }
@@ -369,20 +405,15 @@ namespace VelvySkinWeb.Controllers
                 order.OrderStatus = "Đã hủy (Lỗi thanh toán)";
                 await _context.SaveChangesAsync();
             }
-            // ĐÁ VỀ GIỎ HÀNG, ĐỒ TRONG GIỎ VẪN CÒN Y NGUYÊN ĐỂ KHÁCH MUA LẠI
             TempData["ErrorMsg"] = "Giao dịch thanh toán đã bị hủy hoặc thất bại! " + error;
             return RedirectToAction("Index", "Cart"); 
         }
 
-        // =======================================================
-        // 🧠 HÀM LÕI: TRỪ KHO, CẬP NHẬT VOUCHER & XÓA GIỎ KHI CHẮC CHẮN CÓ TIỀN
-        // =======================================================
         private async Task ProcessOrderSuccessLogic(int orderId)
         {
             var order = await _context.Orders.FindAsync(orderId);
             if (order == null) return;
 
-            // 1. Trừ tồn kho (Bốc từ DB cho chắc chắn, không dùng Session)
             var orderDetails = await _context.OrderDetails.Where(od => od.OrderId == orderId).ToListAsync();
             foreach (var item in orderDetails)
             {
@@ -394,7 +425,6 @@ namespace VelvySkinWeb.Controllers
                 }
             }
 
-            // 2. Tăng lượt sử dụng Voucher
             string appliedCoupon = HttpContext.Session.GetString("AppliedCoupon");
             if (!string.IsNullOrEmpty(appliedCoupon))
             {
@@ -406,7 +436,6 @@ namespace VelvySkinWeb.Controllers
                 }
             }
 
-            // 3. Gửi chuông thông báo
             var notiOrder = new VelvySkinWeb.Models.Notification
             {
                 UserId = order.UserId, 
@@ -421,7 +450,6 @@ namespace VelvySkinWeb.Controllers
 
             await _context.SaveChangesAsync(); 
 
-            // 4. Dọn dẹp Hàng hóa khỏi Giỏ
             var itemsToCheckout = HttpContext.Session.GetJson<List<CartItem>>("ItemsToCheckout");
             var mainCart = HttpContext.Session.GetJson<List<CartItem>>("Cart");
             if (mainCart != null && itemsToCheckout != null)
@@ -430,15 +458,11 @@ namespace VelvySkinWeb.Controllers
                 HttpContext.Session.SetJson("Cart", mainCart); 
             }
 
-            // 5. Xóa Session Voucher để tránh áp mã bậy bạ cho đơn sau
             HttpContext.Session.Remove("ItemsToCheckout");
             HttpContext.Session.Remove("AppliedCoupon");
             HttpContext.Session.Remove("DiscountAmount");
         }
 
-        // =======================================================
-        // 🎫 HÀM VOUCHER (ĐÃ TRẢ LẠI NGUYÊN BẢN 100% CỦA SẾP)
-        // =======================================================
         [HttpPost]
         public async Task<IActionResult> ApplyCoupon(string code)
         {
@@ -527,6 +551,52 @@ namespace VelvySkinWeb.Controllers
                 var hashBytes = hmac.ComputeHash(messageBytes);
                 return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
             }
+        }
+
+       [HttpPost]
+        public IActionResult AddRoutineToCart(List<int> productIds)
+        {
+            if (productIds == null || !productIds.Any())
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var sessionCart = HttpContext.Session.GetString("Cart");
+            
+            var cart = string.IsNullOrEmpty(sessionCart) 
+            ? new List<CartItem>() 
+            : System.Text.Json.JsonSerializer.Deserialize<List<CartItem>>(sessionCart);
+
+            foreach (var id in productIds)
+            {
+                var existingItem = cart.FirstOrDefault(c => c.ProductId == id);
+                
+                if (existingItem != null)
+                {
+                    existingItem.Quantity += 1;
+                }
+                else
+                {
+                    var product = _context.Products.FirstOrDefault(p => p.Id == id);
+                    if (product != null)
+                    {
+                        cart.Add(new CartItem 
+                        {
+                            ProductId = product.Id,
+
+                            ProductName = product.Name, 
+                            Price = product.Price,
+                            ImageUrl = product.ImageUrl,
+                            Quantity = 1
+                        });
+                    }
+                }
+            }
+
+            var serializedCart = System.Text.Json.JsonSerializer.Serialize(cart);
+            HttpContext.Session.SetString("Cart", serializedCart);
+
+            return RedirectToAction("Index", "Cart");
         }
     }
 }

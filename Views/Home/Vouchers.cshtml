@@ -132,7 +132,7 @@
         {
             @foreach (var item in Model)
             {
-                // Thuật toán tùy chỉnh Giao diện theo Loại mã
+
                 string bgColor = "var(--primary-mint)";
                 string iconClass = "fa-gift";
                 string amountText = "";
@@ -149,7 +149,7 @@
                 {
                     bgColor = "#d4a373"; // Vàng đồng
                     iconClass = "fa-tags";
-                    // Chuyển 50000 thành 50K cho đẹp
+
                     amountText = (item.DiscountValue / 1000).ToString("0") + "K";
                     unitText = "Tiền mặt";
                 }
@@ -161,7 +161,7 @@
                     unitText = "Vận chuyển";
                 }
 
-                // Xử lý chuỗi điều kiện
+
                 string condition = "";
                 if (item.MinOrderValue > 0) condition += $"Áp dụng cho đơn từ {item.MinOrderValue:N0}đ. ";
                 if (item.DiscountType == "Percent" && item.MaxDiscountAmount > 0) condition += $"Giảm tối đa {item.MaxDiscountAmount:N0}đ. ";
@@ -196,16 +196,16 @@
 @section Scripts {
     <script>
         function copyCoupon(code, btn) {
-            // Copy vào Clipboard
+
             navigator.clipboard.writeText(code).then(() => {
                 const originalContent = btn.innerHTML;
                 
-                // Hiệu ứng đã lưu
+
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> ĐÃ SAO CHÉP';
                 btn.style.background = '#208b81';
                 btn.style.color = 'white';
                 
-                // Trả về như cũ sau 2 giây
+
                 setTimeout(() => {
                     btn.innerHTML = originalContent;
                     btn.style.background = '';

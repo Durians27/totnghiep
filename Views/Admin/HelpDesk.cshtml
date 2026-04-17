@@ -123,7 +123,7 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Xử lý đóng mở FAQ mượt mà
+
         const faqItems = document.querySelectorAll('.faq-item');
         faqItems.forEach(item => {
             const question = item.querySelector('.faq-question');
@@ -135,7 +135,7 @@
             });
         });
 
-        // Xử lý sự kiện khi Admin bấm vào 3 khối chức năng
+
         function openModule(type) {
             if (type === 'tailieu') {
                 Swal.fire({
@@ -166,7 +166,7 @@
             }
         }
 
-        // Xử lý sự kiện bấm nút Gọi Dev
+
         function callDevTeam() {
             Swal.fire({
                 title: 'Hotline Khẩn Cấp',

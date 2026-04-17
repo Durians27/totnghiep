@@ -1,0 +1,170 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Quản lý Nhân Viên";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div>
+        <h2 style="color: var(--dark-mint); font-family: 'Playfair Display', serif; margin-bottom: 5px;">
+            <i class="fa-solid fa-user-tie"></i> Đội Ngũ Nhân Viên 
+        </h2>
+        <p style="color: #666; font-size: 14px; margin: 0;">Quản lý tài khoản làm việc của nhân viên CSKH và Vận hành.</p>
+    </div>
+    <a asp-action="CreateStaff" style="background: var(--primary-mint); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; box-shadow: 0 4px 10px rgba(46, 196, 182, 0.3); transition: 0.3s;">
+        <i class="fa-solid fa-plus"></i> Tuyển Nhân Viên Mới
+    </a>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>NHÂN VIÊN</th>
+                <th>LIÊN HỆ</th>
+                <th>CHỨC VỤ</th>
+                <th>TRẠNG THÁI</th>
+                <th>THAO TÁC</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: #888;">
+                        <i class="fa-solid fa-users-slash" style="font-size: 40px; color: #ddd; margin-bottom: 15px; display: block;"></i>
+                        Chưa có nhân viên nào trong hệ thống. Quản trị viên vui lòng thêm mới!
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <img src="/images/avatars/@(item.User.Id).jpg" 
+             alt="Avatar" 
+             onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=@(item.Profile.FullName)&background=cbf3f0&color=208b81';" 
+             style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--light-mint);" />
+        
+        <div>
+            <div style="font-weight: 700; color: #333;">@item.Profile.FullName</div>
+            <div style="font-size: 12px; color: #888;">ID: @item.User.Id.Substring(0, 8)...</div>
+        </div>
+    </div>
+</td>
+                        <td>
+                            <div style="font-size: 13px; margin-bottom: 4px; color: #555;"><i class="fa-solid fa-envelope" style="color: #aaa; width: 16px;"></i> @item.User.Email</div>
+                            <div style="font-size: 13px; color: #555;"><i class="fa-solid fa-phone" style="color: #aaa; width: 16px;"></i> @(string.IsNullOrEmpty(item.Profile.PhoneNumber) ? "Chưa cập nhật" : item.Profile.PhoneNumber)</div>
+                        </td>
+                        <td>
+                            <span style="background: #e6fcf5; color: #208b81; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #2ec4b6;">
+                                Nhân viên 
+                            </span>
+                        </td>
+                        
+                        <td>
+                            @if (item.IsLockedOut)
+                            {
+                                <span class="status-badge status-expired" style="background: #fff0f0; color: #d32f2f;">
+                                    <i class="fa-solid fa-lock" style="font-size: 8px; margin-right: 4px;"></i> Đã khóa
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-active">
+                                    <i class="fa-solid fa-circle" style="font-size: 8px; margin-right: 4px;"></i> Đang hoạt động
+                                </span>
+                            }
+                        </td>
+                        
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <a asp-controller="Admin" asp-action="EditStaff" asp-route-id="@item.User.Id" class="btn btn-sm" style="background-color: #e1f5fe; color: #0288d1; border: 1px solid #b3e5fc; border-radius: 8px; padding: 6px 12px; font-weight: 600; text-decoration: none;" title="Chỉnh sửa thông tin">
+                                    <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                </a>
+
+                                @if (item.IsLockedOut)
+                                {
+                                    <form id="restore-form-@item.User.Id" asp-action="RestoreStaff" method="post" style="margin: 0;">
+                                        <input type="hidden" name="id" value="@item.User.Id" />
+                                        <button type="button" onclick="confirmRestore('@item.User.Id', '@item.User.Email')" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s;" title="Khôi phục tài khoản" onmouseover="this.style.background='#bae6fd'" onmouseout="this.style.background='#e0f2fe'">
+                                            <i class="fa-solid fa-unlock-keyhole"></i> Khôi phục
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form id="fire-form-@item.User.Id" asp-action="FireStaff" method="post" style="margin: 0;">
+                                        <input type="hidden" name="id" value="@item.User.Id" />
+                                        <button type="button" onclick="confirmFire('@item.User.Id', '@item.User.Email')" style="background: #fff0f0; color: #d32f2f; border: 1px solid #f5c2c7; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.3s;" title="Ngưng hoạt động nhân viên" onmouseover="this.style.background='#f8d7da'" onmouseout="this.style.background='#fff0f0'">
+                                            <i class="fa-solid fa-user-slash"></i> Khóa tài khoản
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        @if (TempData["SuccessMsg"] != null)
+        {
+            <text>
+                Swal.fire({
+                    title: 'Thành công!',
+                    text: '@Html.Raw(TempData["SuccessMsg"])',
+                    icon: 'success',
+                    confirmButtonColor: '#2ec4b6',
+                    timer: 3000, 
+                    showConfirmButton: false 
+                });
+            </text>
+        }
+
+        function confirmFire(id, email) {
+            Swal.fire({
+                title: 'Khóa tài khoản?',
+                html: `Bạn có chắc chắn muốn ngưng hoạt động nhân viên <br/><b>${email}</b>?<br/><span style='color:red; font-size: 13px;'>Tài khoản này sẽ bị thu hồi quyền đăng nhập vào hệ thống.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444', 
+                cancelButtonColor: '#888',
+                confirmButtonText: '<i class="fa-solid fa-user-slash"></i> Xác nhận khóa',
+                cancelButtonText: 'Hủy bỏ',
+                backdrop: `rgba(0,0,0,0.5)`
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('fire-form-' + id).submit();
+                }
+            });
+        }
+
+        function confirmRestore(id, email) {
+            Swal.fire({
+                title: 'Khôi phục quyền truy cập?',
+                html: `Bạn muốn cấp lại quyền hoạt động cho nhân viên <br/><b>${email}</b>?<br/><span style='color:#0284c7; font-size: 13px;'>Nhân viên này sẽ có thể đăng nhập lại ngay lập tức.</span>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2ec4b6', 
+                cancelButtonColor: '#888',
+                confirmButtonText: '<i class="fa-solid fa-unlock-keyhole"></i> Xác nhận khôi phục',
+                cancelButtonText: 'Hủy bỏ',
+                backdrop: `rgba(0,0,0,0.5)`
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('restore-form-' + id).submit();
+                }
+            });
+        }
+    </script>
+}

@@ -1,17 +1,16 @@
 @model VelvySkinWeb.Models.Order
 @{
     ViewData["Title"] = "Chi tiết đơn hàng #" + Model.Id;
-    Layout = "~/Views/Shared/_AdminLayout.cshtml"; // 🔥 Giữ lại để có Sidebar và Topbar
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; 
 
-    // Thuật toán hiển thị Trạng thái
+
     string badgeClass = "pending";
-    string statusText = Model.OrderStatus ?? "Pending";
+    string statusText = Model.OrderStatus ?? "Chờ xử lý";
     string statusLower = statusText.ToLower();
 
-    if (statusLower == "shipping" || statusLower == "đang giao") { badgeClass = "shipping"; statusText = "Đang giao hàng"; }
-    else if (statusLower == "completed" || statusLower == "đã giao" || statusLower == "thành công") { badgeClass = "completed"; statusText = "Đã hoàn thành"; }
-    else if (statusLower == "cancelled" || statusLower == "đã hủy") { badgeClass = "cancelled"; statusText = "Đã hủy"; }
-    else { statusText = "Đang chờ xác nhận"; } 
+    if (statusLower.Contains("đang giao")) { badgeClass = "shipping"; }
+    else if (statusLower.Contains("hoàn thành") || statusLower.Contains("đã giao thành công")) { badgeClass = "completed"; }
+    else if (statusLower.Contains("đã hủy") || statusLower == "hủy") { badgeClass = "cancelled"; }
 }
 
 <style>
@@ -20,39 +19,25 @@
     .back-btn { text-decoration: none; color: #888; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; transition: 0.3s; }
     .back-btn:hover { color: var(--primary-mint); }
     .page-title { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--dark-mint); margin: 0; }
-
-    /* Bố cục Grid chính - SẼ NẰM NGANG SAU KHI FIX */
     .detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
-
-    /* Card chung */
     .card { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 25px; border: 1px solid #f1f1f1; }
     .card-title { font-weight: 700; font-size: 14px; text-transform: uppercase; color: var(--dark-mint); margin-bottom: 20px; letter-spacing: 0.5px; border-bottom: 1px solid #f9f9f9; padding-bottom: 10px; }
-
-    /* Danh sách sản phẩm */
     .product-item { display: flex; align-items: center; gap: 15px; padding: 12px 0; border-bottom: 1px solid #f9f9f9; }
     .product-img { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; background: #eee; border: 1px solid #f0f0f0;}
     .product-info { flex: 1; }
     .product-name { font-weight: 600; font-size: 14px; margin: 0; color: #333;}
     .product-price { font-size: 12px; color: #888; margin-top: 4px;}
     .product-qty { font-weight: 700; font-size: 13px; color: var(--primary-mint); }
-
-    /* Thông tin khách hàng & Vận chuyển */
     .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; }
     .info-label { color: #999; }
     .info-value { font-weight: 600; text-align: right; color: #444;}
-
-    /* Tổng kết tiền */
     .summary-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 14px; }
     .total-row { margin-top: 15px; padding-top: 15px; border-top: 2px dashed #eee; font-size: 18px; font-weight: 700; color: var(--dark-mint); }
-
-    /* Trạng thái */
     .status-badge { padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: 700; }
     .pending { background: #fff5e6; color: #ffa500; }
     .shipping { background: #e1f5fe; color: #3498db; }
     .completed { background: #f0fdfa; color: #2ec4b6; }
     .cancelled { background: #ffebee; color: #ff4d4d; }
-
-    /* Action Buttons */
     .btn-group { display: flex; gap: 10px; margin-top: 20px; }
     .btn { padding: 12px 20px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 13px; transition: 0.3s; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;}
     .btn-approve { background: var(--primary-mint); color: white; }
@@ -61,7 +46,6 @@
     .btn-cancel:hover { background: #ff4d4d; color: white; }
     .btn-print { background: #f1f1f1; color: #555; }
     .btn-print:hover { background: #ddd; }
-
     @@media (max-width: 850px) { .detail-grid { grid-template-columns: 1fr; } }
 </style>
 
@@ -79,7 +63,6 @@
     <div class="left-col">
         <div class="card">
             <div class="card-title">Sản phẩm đã đặt (@(Model.OrderDetails?.Count ?? 0))</div>
-            
             @if(Model.OrderDetails != null)
             {
                 foreach(var item in Model.OrderDetails)
@@ -90,9 +73,7 @@
                             <p class="product-name">@(item.Product?.Name ?? "Sản phẩm không rõ")</p>
                             <p class="product-price">@item.UnitPrice.ToString("N0")đ</p>
                         </div>
-                        
                         <div class="product-qty">x@(item.Quantity)</div>
-                        
                         <div class="info-value" style="width: 100px;">@((item.UnitPrice * item.Quantity).ToString("N0"))đ</div>
                     </div>
                 }
@@ -152,14 +133,9 @@
                 <input type="hidden" name="id" value="@Model.Id" />
                 
                 @{
-                    // Lấy trạng thái từ DB, biến thành chữ thường
-                    string dbStatus = (Model.OrderStatus ?? "").ToLower();
-                    
-                    // 🔥 BỔ SUNG "ĐÃ THANH TOÁN" ĐỂ ADMIN CÒN SHIP HÀNG CHO KHÁCH MOMO/NGÂN HÀNG
-                    bool isNewOrder = dbStatus.Contains("chờ") || dbStatus.Contains("pending") || dbStatus.Contains("xử lý") || dbStatus.Contains("đã thanh toán") || dbStatus.Contains("paid");
-                    
-                    // Lưới lọc giao hàng
-                    bool isShipping = dbStatus.Contains("giao") || dbStatus.Contains("shipping");
+
+                    bool isNewOrder = statusLower.Contains("chờ") || statusLower.Contains("xử lý") || statusLower.Contains("đã thanh toán");
+                    bool isShipping = statusLower.Contains("đang giao");
                 }
 
                 @if(isNewOrder)
@@ -178,7 +154,7 @@
                 else
                 {
                     <div style="margin-top: 20px; text-align: center; padding: 12px; border-radius: 12px; background: #f9f9f9; font-size: 13px; font-weight: 600; color: #888;">
-                        <i class="fa-solid fa-lock"></i> Đơn hàng này đang ở trạng thái: @(Model.OrderStatus ?? "Chưa rõ")
+                        <i class="fa-solid fa-lock"></i> Đơn hàng này đang ở trạng thái: @statusText
                     </div>
                 }
                 
@@ -194,4 +170,4 @@
             </form>
         </div>
     </div>
-</div>  
+</div>

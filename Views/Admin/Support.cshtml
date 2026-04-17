@@ -43,7 +43,7 @@
     .support-wrapper .tag-shipping { background: #f0f7ff; color: var(--info-blue); border: 1px solid #e1f0ff; }
 
     .support-wrapper .customer-info { display: flex; align-items: center; gap: 12px; }
-    .support-wrapper .customer-avatar { width: 40px; height: 40px; border-radius: 50%; background-size: cover; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+    .support-wrapper .customer-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
 
     .support-wrapper .btn-reply { background: white; border: 1px solid #eee; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; color: var(--dark-mint); cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-block;}
     .support-wrapper .btn-reply:hover { background: var(--primary-mint); color: white; border-color: var(--primary-mint); transform: translateY(-2px); }
@@ -126,7 +126,7 @@
                         <tr>
                             <td>
                                 <div class="customer-info">
-                                    <div class="customer-avatar" style="background-image: url('https://i.pravatar.cc/150?u=@ticket.UserEmail')"></div>
+                                    <img class="customer-avatar" src="/images/avatars/@(ticket.UserId).jpg" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=@(ticket.UserFullName ?? "K")&background=cbf3f0&color=208b81';" alt="Avatar">
                                     <div>
                                         <div style="font-weight: 700;">@(ticket.UserFullName ?? "Khách hàng")</div>
                                         <div style="font-size: 11px; color: #aaa;">@ticket.UserEmail</div>

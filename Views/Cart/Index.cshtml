@@ -222,7 +222,7 @@
         return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
     }
 
-    // ================= CỤM 1: XỬ LÝ CHECKBOX =================
+
     function toggleAll(source) {
         const checkboxes = document.querySelectorAll('.item-checkbox');
         checkboxes.forEach(cb => { cb.checked = source.checked; });
@@ -245,7 +245,7 @@
         currentSubTotal = newSubTotal;
         document.getElementById('countSelected').innerText = countSelected;
 
-        // Bật/Tắt nút Thanh toán
+
         if (countSelected > 0) {
             btnCheckout.classList.remove('disabled');
         } else {
@@ -257,7 +257,7 @@
             checkAllBox.checked = (countSelected === checkboxes.length) && (checkboxes.length > 0);
         }
 
-        // MỖI KHI ĐỔI CHECKBOX, PHẢI KIỂM TRA LẠI MÃ GIẢM GIÁ
+
         if (appliedCouponCode !== "" && countSelected > 0) {
             recheckCouponSilent(appliedCouponCode);
         } else {
@@ -267,29 +267,29 @@
         updateFinalDisplay();
     }
 
-    // Cập nhật giao diện tiền nong tổng thể
+
     function updateFinalDisplay() {
         let shippingFee = 0;
-        // Chỉ tính ship khi có chọn hàng
+
         if (currentSubTotal > 0 && currentSubTotal < 500000) {
             shippingFee = 30000;
         }
 
-        // 🔥 LOGIC FREESHIP NẰM Ở ĐÂY 🔥
+
         if (appliedDiscountType === "Freeship") {
             shippingFee = 0; // Xóa sổ phí vận chuyển
             currentDiscount = 0; // Mã freeship thì ko giảm tiền hàng
         } else {
-            // Tiền giảm ko đc lớn hơn tổng tiền hàng (chống lỗ vốn)
+
             if(currentDiscount > currentSubTotal) currentDiscount = currentSubTotal;
         }
 
         let finalTotal = currentSubTotal - currentDiscount + shippingFee;
 
-        // Hiển thị ra HTML
+
         document.getElementById('subTotalDisplay').innerText = formatMoney(currentSubTotal);
         
-        // Nếu là Freeship thì in chữ cho đẹp
+
         if (appliedDiscountType === "Freeship" && currentSubTotal > 0) {
             document.getElementById('shippingDisplay').innerHTML = '<span style="color: #2ec4b6; font-weight: bold;">Miễn phí (Áp mã)</span>';
         } else {
@@ -298,14 +298,14 @@
 
         document.getElementById('finalTotalDisplay').innerText = formatMoney(finalTotal);
 
-        // Hiện/Ẩn dòng Giảm giá hàng hóa
+
         const discountRow = document.getElementById('discountRow');
         if (currentDiscount > 0 && appliedDiscountType !== "Freeship") {
             discountRow.style.display = 'flex';
             document.getElementById('appliedCodeText').innerText = appliedCouponCode;
             document.getElementById('discountDisplay').innerText = '-' + formatMoney(currentDiscount);
         } else if (appliedDiscountType === "Freeship") {
-            // Nếu là freeship thì hiện dòng thông báo mã freeship
+
             discountRow.style.display = 'flex';
             document.getElementById('appliedCodeText').innerText = appliedCouponCode;
             document.getElementById('discountDisplay').innerText = 'Freeship';
@@ -314,7 +314,7 @@
         }
     }
 
-    // ================= CỤM 2: XỬ LÝ MÃ KHUYẾN MÃI (AJAX) =================
+
     function applyCoupon(codeParam) {
         var msgBox = document.getElementById('couponMessage');
         
@@ -358,7 +358,7 @@
         });
     }
 
-    // Hàm gọi ngầm để check lại mã khi khách thay đổi checkbox
+
     function recheckCouponSilent(codeParam) {
         $.ajax({
             url: '/Cart/ApplyCoupon',
@@ -380,7 +380,7 @@
         });
     }
 
-    // Gỡ mã trong im lặng
+
     function removeCouponSilent() {
         currentDiscount = 0;
         appliedCouponCode = "";
@@ -388,12 +388,12 @@
         document.getElementById('manualCouponCode').value = "";
     }
 
-    // Khởi động
+
     window.onload = function() {
         calculateTotal();
     };
 
-    // ================= CỤM 3: TẢI DANH SÁCH MÃ VÀO MODAL =================
+
     $('#voucherModal').on('show.bs.modal', function (e) {
         const container = document.getElementById('voucherListContainer');
         container.innerHTML = '<p style="text-align: center; color: #888; font-size: 14px;"><i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...</p>';

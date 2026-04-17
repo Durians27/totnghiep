@@ -89,7 +89,7 @@
 </div>
 
 <script>
-    // Giả lập đồng hồ đếm ngược (45 phút)
+
     let timeLeft = 45 * 60; 
     const hoursEl = document.getElementById('hours');
     const minutesEl = document.getElementById('minutes');
@@ -100,7 +100,7 @@
         let m = Math.floor((timeLeft % 3600) / 60);
         let s = timeLeft % 60;
 
-        // Thêm số 0 đằng trước nếu số nhỏ hơn 10 cho đẹp
+
         hoursEl.innerText = h < 10 ? '0' + h : h;
         minutesEl.innerText = m < 10 ? '0' + m : m;
         secondsEl.innerText = s < 10 ? '0' + s : s;
@@ -109,14 +109,14 @@
             timeLeft--;
         } else {
             clearInterval(timerInterval);
-            // Hết giờ tự động F5 tải lại trang để check xem Admin mở web lại chưa
+
             location.reload(); 
         }
     }
 
-    // Cứ mỗi 1000ms (1 giây) là chạy hàm updateTimer 1 lần
+
     const timerInterval = setInterval(updateTimer, 1000);
-    // Gọi liền 1 lần lúc vừa load web để không bị delay 1 giây đầu tiên
+
     updateTimer(); 
 </script>
 

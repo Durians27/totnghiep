@@ -36,9 +36,6 @@
     
     .product-img-wrapper { position: relative; width: 100%; height: 250px; border-radius: 10px; overflow: hidden; margin-bottom: 15px; }
     .product-img-wrapper img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; transition: all 0.6s ease-in-out; }
-    .img-hover { opacity: 0; transform: scale(1.1); }
-    .product-card:hover .img-main { opacity: 0; transform: scale(0.9); }
-    .product-card:hover .img-hover { opacity: 1; transform: scale(1); }
     .btn-quick-view { position: absolute; top: 50%; left: 50%; transform: translate(-50%, 20%); background: rgba(255, 255, 255, 0.95); color: #333; border: none; padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 12px; opacity: 0; transition: all 0.3s ease; cursor: pointer; z-index: 5; white-space: nowrap; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     .product-card:hover .btn-quick-view { opacity: 1; transform: translate(-50%, -50%); }
     .btn-quick-view:hover { background: var(--primary-mint); color: white; }
@@ -97,15 +94,25 @@
                     <button type="submit" class="wishlist-btn-item @(isWished ? "active" : "")"><i class="fa-solid fa-heart"></i></button>
                 </form>
                 
-                <a asp-controller="Products" asp-action="Details" asp-route-id="@item.Id" style="text-decoration: none; color: inherit; display: block; margin-top: 10px;">
-                    <div class="product-img-wrapper">
-                        <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-main" alt="@item.Name" onerror="this.src='https://via.placeholder.com/400'">
-                        <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-hover" alt="@item.Name Hover" onerror="this.src='https://via.placeholder.com/400'">
-                        <span class="btn-quick-view">Xem chi tiết</span>
-                    </div>
-                    <h3>@(item.Category != null ? item.Category.Name : "Velvy Skin")</h3>
-                    <h4>@item.Name</h4>
-                </a>
+                @{
+
+                        var imgList = new List<string>();
+                        if (!string.IsNullOrEmpty(item.ImageUrl)) imgList.Add(item.ImageUrl);
+                        if (!string.IsNullOrEmpty(item.ImageUrl2)) imgList.Add(item.ImageUrl2);
+                        if (!string.IsNullOrEmpty(item.ImageUrl3)) imgList.Add(item.ImageUrl3);
+                        if (!string.IsNullOrEmpty(item.ImageUrl4)) imgList.Add(item.ImageUrl4);
+                        if (!string.IsNullOrEmpty(item.ImageUrl5)) imgList.Add(item.ImageUrl5);
+                        string imgData = string.Join(",", imgList); // Nối lại cách nhau bằng dấu phẩy
+                    }
+                    
+                    <a asp-controller="Products" asp-action="Details" asp-route-id="@item.Id" style="text-decoration: none; color: inherit; display: block; margin-top: 10px;">
+                        <div class="product-img-wrapper hover-slideshow" data-images="@imgData">
+                            <img src="@(!string.IsNullOrEmpty(item.ImageUrl) ? item.ImageUrl : "https://via.placeholder.com/400")" class="img-main" alt="@item.Name" onerror="this.src='https://via.placeholder.com/400'" style="transition: opacity 0.3s ease-in-out;">
+                            <span class="btn-quick-view">Xem chi tiết</span>
+                        </div>
+                        <h3>@(item.Category != null ? item.Category.Name : "Velvy Skin")</h3>
+                        <h4>@item.Name</h4>
+                    </a>
 
                 <p class="price">@item.Price.ToString("N0")đ</p>
                 
@@ -133,11 +140,11 @@
                         var wList = wSession != null ? System.Text.Json.JsonSerializer.Deserialize<List<int>>(wSession) : new List<int>();
                         bool wished = wList != null && wList.Contains(item.Id);
                         
-                        // 🔥 ĐÃ FIX: DÙNG DỮ LIỆU THẬT 100% TỪ DATABASE
+
                         decimal currentPrice = item.DiscountPrice; // Giá đang bán là giá Sale
                         decimal oldPrice = item.Price;             // Giá cũ là giá Gốc
                         
-                        // Thuật toán tính phần trăm giảm giá thật
+
                         double discountPercent = 0;
                         if (oldPrice > 0) {
                             discountPercent = Math.Round((double)((oldPrice - currentPrice) / oldPrice * 100));
@@ -182,7 +189,7 @@
             {
                 <div class="product-card">
                     @{
-                        // Lấy trạng thái Wishlist để tô đỏ trái tim nếu khách đã thích
+
                         var wSession = Context.Session.GetString("Wishlist");
                         var wList = wSession != null ? System.Text.Json.JsonSerializer.Deserialize<List<int>>(wSession) : new List<int>();
                         bool wished = wList != null && wList.Contains(item.Id);
@@ -238,5 +245,52 @@
                 product.style.animation = show ? 'fadeInUp 0.5s ease-out forwards' : 'none';
             });
         }
+        const slideshowWrappers = document.querySelectorAll('.hover-slideshow');
+        
+        slideshowWrappers.forEach(wrapper => {
+            const imgElement = wrapper.querySelector('.img-main');
+            const imagesStr = wrapper.getAttribute('data-images');
+            
+            if (!imagesStr || !imgElement) return;
+            
+
+            const images = imagesStr.split(',');
+            if (images.length <= 1) return; // Nếu chỉ có 1 ảnh thì không cần chạy hiệu ứng
+            
+            let intervalId;
+            let currentIndex = 0;
+            const originalSrc = images[0]; // Lưu lại ảnh gốc
+
+
+            wrapper.addEventListener('mouseenter', () => {
+                currentIndex = 1; // Chuyển sang ảnh thứ 2
+                imgElement.style.opacity = 0.8; // Hơi mờ xuống 1 tí để tạo cảm giác chuyển cảnh
+                
+                setTimeout(() => {
+                    imgElement.src = images[currentIndex];
+                    imgElement.style.opacity = 1;
+                }, 150); // Mượt mà tải ảnh mới
+
+
+                intervalId = setInterval(() => {
+                    currentIndex = (currentIndex + 1) % images.length;
+                    imgElement.style.opacity = 0.8;
+                    setTimeout(() => {
+                        imgElement.src = images[currentIndex];
+                        imgElement.style.opacity = 1;
+                    }, 150);
+                }, 1200); 
+            });
+
+
+            wrapper.addEventListener('mouseleave', () => {
+                clearInterval(intervalId); // Tắt bộ đếm
+                imgElement.style.opacity = 0.8;
+                setTimeout(() => {
+                    imgElement.src = originalSrc; // Trả về ảnh mặc định
+                    imgElement.style.opacity = 1;
+                }, 150);
+            });
+        });
     </script>
 }

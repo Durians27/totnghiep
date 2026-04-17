@@ -57,5 +57,7 @@ namespace VelvySkinWeb.Models
         public int BrandId { get; set; } 
         public decimal? PriceLarge { get; set; }
         public decimal DiscountPrice { get; set; }
+        public string? Brand { get; set; } 
+        public string? Tags { get; set; }
     }
 }

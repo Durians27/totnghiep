@@ -43,14 +43,14 @@
 
 @section Scripts {
     <script>
-        // Gộp 6 ô thành 1 chuỗi để gửi về C#
+
         function gatherOTP() {
             let otp = "";
             document.querySelectorAll('#otp-inputs input').forEach(input => otp += input.value);
             document.getElementById('finalOtp').value = otp;
         }
 
-        // Logic tự động nhảy ô của Frontend
+
         const inputs = document.querySelectorAll('#otp-inputs input');
         inputs.forEach((input, index) => {
             input.addEventListener('input', (e) => {

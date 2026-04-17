@@ -48,6 +48,27 @@
     @@media (max-width: 1024px) {
         .summary-grid { grid-template-columns: repeat(1, 1fr); }
         .dashboard-row { grid-template-columns: 1fr; }
+
+        .btn-export-excel {
+        background: var(--primary-mint, #2ec4b6);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 10px rgba(46, 196, 182, 0.2);
+        transition: 0.3s;
+    }
+    .btn-export-excel:hover {
+        background: var(--dark-mint, #208b81);
+        transform: translateY(-2px);
+        color: white;
+    }
+
     }
 </style>
 
@@ -57,7 +78,7 @@
             <h1>Báo Cáo Tổng Bộ Hệ Thống</h1>
             <p style="font-size: 13px; color: #888; margin-top: 5px;">Cập nhật lần cuối: <span id="currentTime">Hôm nay</span></p>
         </div>
-        <button class="btn-export" onclick="window.print()"><i class="fa-solid fa-file-export"></i> Xuất Báo Cáo</button>
+      <a asp-controller="Admin" asp-action="ExportToExcel" style="background: linear-gradient(135deg, #2ec4b6, #208b81); color: white; padding: 10px 22px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(46, 196, 182, 0.3); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(46, 196, 182, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(46, 196, 182, 0.3)';"><i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo (Excel)</a>
     </div>
 
     <div class="summary-grid">
@@ -140,7 +161,7 @@
                         {
                             <tr>
                                 <td style="display: flex; align-items: center; gap: 10px;">
-                                    <img src="~/images/products/@(item.Product.Id).jpg" onerror="this.src='/images/02.png'" class="prod-img">
+                                   <img src="@item.Product.ImageUrl" onerror="this.src='/images/02.png'" class="prod-img">
                                     <span style="font-weight: 600;">@item.Product.Name</span>
                                 </td>
                                 <td>@item.TotalSold</td>
@@ -194,13 +215,13 @@
     <script>
         document.getElementById('currentTime').innerText = new Date().toLocaleString('vi-VN');
 
-        // BẮT DỮ LIỆU TỪ C# NÉM XUỐNG CHO CHART.JS VẼ
+
         var chartLabels = @Html.Raw(Json.Serialize(ViewBag.ChartLabels ?? new List<string>()));
         var chartData = @Html.Raw(Json.Serialize(ViewBag.ChartData ?? new List<decimal>()));
 
-        // Chờ trang tải xong hết mới vẽ biểu đồ (Tránh treo giao diện)
+
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. VẼ BIỂU ĐỒ ĐƯỜNG (DOANH THU 6 THÁNG)
+
             if(document.getElementById('revenueChart')) {
                 const ctxRev = document.getElementById('revenueChart').getContext('2d');
                 new Chart(ctxRev, {
@@ -230,7 +251,7 @@
                 });
             }
 
-            // 2. VẼ BIỂU ĐỒ TRÒN (CƠ CẤU TỶ SUẤT LỢI NHUẬN)
+
             if(document.getElementById('profitChart')) {
                 const ctxProfit = document.getElementById('profitChart').getContext('2d');
                 new Chart(ctxProfit, {

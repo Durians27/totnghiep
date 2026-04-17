@@ -26,12 +26,12 @@
     <div class="stat-card">
         <div class="stat-icon" style="background:#d1ecf1;color:#0c5460;"><i class="fa-solid fa-box"></i></div>
         <div class="stat-number">@ViewBag.TotalOrders</div>
-        <div class="stat-label">Tổng đơn hàng tháng này</div>
+        <div class="stat-label">Tổng đơn mới tiếp nhận</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background:#d4edda;color:#155724;"><i class="fa-solid fa-money-bill-wave"></i></div>
         <div class="stat-number">@ViewBag.TotalRevenue.ToString("N0")đ</div>
-        <div class="stat-label">Doanh thu tháng này</div>
+        <div class="stat-label">Doanh thu dự kiến (GMV)</div>
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background:#fff3cd;color:#856404;"><i class="fa-solid fa-flask"></i></div>
@@ -69,7 +69,7 @@
             {
                 foreach(var order in ViewBag.RecentOrders)
                 {
-                    // 🔥 THUẬT TOÁN ĐỔI MÀU & DỊCH TIẾNG VIỆT ĐỒNG BỘ 🔥
+
                     string badgeClass = "status-pending";
                     string statusText = order.OrderStatus ?? "Pending";
                     string statusLower = statusText.ToLower();
@@ -79,7 +79,7 @@
                     else if (statusLower == "cancelled" || statusLower == "đã hủy") { badgeClass = "status-cancelled"; statusText = "Đã hủy"; }
                     else { badgeClass = "status-pending"; statusText = "Chờ xác nhận"; } 
 
-                    // Lấy tên 1 sản phẩm đại diện
+
                     var firstProduct = Enumerable.FirstOrDefault(order.OrderDetails);
                     string productName = firstProduct != null ? firstProduct.Product.Name : "N/A";
                     if (order.OrderDetails.Count > 1) productName += $" (+{order.OrderDetails.Count - 1} sp khác)";
@@ -105,7 +105,7 @@
 
 @section Scripts {
     <script>
-        // Code vẽ biểu đồ giữ nguyên
+
         var chartLabels = @Html.Raw(Json.Serialize(ViewBag.ChartLabels));
         var chartData = @Html.Raw(Json.Serialize(ViewBag.ChartData));
 

@@ -46,11 +46,22 @@
             <div class="chat-header">
                 <div>
                     <h2>Hỗ Trợ: @Model.IssueType</h2>
-                    <div style="font-size: 13px; color: #666; margin-top: 5px;">Mã đơn: <strong>@(string.IsNullOrEmpty(Model.OrderCode) ? "N/A" : Model.OrderCode)</strong></div>
+                    
+                   <div style="font-size: 13px; color: #666; margin-top: 5px;">
+    @* Kiểm tra nếu có OrderCode thì hiện, không thì chỉ hiện Mã Vé *@
+    @if (!string.IsNullOrEmpty(Model.OrderCode) && Model.OrderCode != "N/A")
+    {
+        <span>Mã đơn: <strong>#@Model.OrderCode</strong></span>
+    }
+    else
+    {
+        <span>Mã vé: <strong>#VS-@Model.Id</strong></span>
+    }
+</div>
                 </div>
                 
                 @if (Model.Status == "Pending" || Model.Status == "Chờ xử lý") { <span class="status-badge status-pending">Đang chờ Admin</span> }
-                else if (Model.Status == "Replied" || Model.Status == "Đang giải quyết") { <span class="status-badge status-processing">Đã phản hồi</span> }
+                else if (Model.Status == "In Progress" || Model.Status == "Replied" || Model.Status == "Đang giải quyết") { <span class="status-badge status-processing">Đã phản hồi</span> }
                 else { <span class="status-badge status-resolved"><i class="fa-solid fa-check"></i> Đã hoàn thành</span> }
             </div>
 
@@ -85,7 +96,7 @@
                 }
             </div>
 
-            @if (Model.Status != "Đã hoàn thành")
+            @if (Model.Status != "Đã hoàn thành" && Model.Status != "Closed" && Model.Status != "Resolved")
             {
                 <form asp-controller="Account" asp-action="ReplyTicketUser" method="post" class="chat-footer">
                     <input type="hidden" name="id" value="@Model.Id" />
@@ -106,7 +117,7 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Cuộn xuống cuối
+
         const chatBox = document.getElementById('chatBox');
         if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 

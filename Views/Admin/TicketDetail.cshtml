@@ -1,8 +1,11 @@
 @model VelvySkinWeb.Models.SupportTicket
+@using System.Security.Claims  
 @{
-    // Tự động đổi Title trang web theo IssueType
     ViewData["Title"] = "Xử Lý " + (Model.IssueType ?? "Hỗ trợ");
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    
+
+    var currentAdminId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 }
 
 <style>
@@ -22,13 +25,27 @@
     .complaint-wrapper .card { background: white; border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); border: 1px solid #f1f1f1; margin-bottom: 25px; }
     .complaint-wrapper .card-title { font-weight: 700; font-size: 14px; text-transform: uppercase; color: var(--dark-mint); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f9f9f9; padding-bottom: 15px; }
 
-    .complaint-wrapper .chat-container { height: 400px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
-    .complaint-wrapper .message { max-width: 80%; padding: 12px 18px; border-radius: 18px; font-size: 14px; line-height: 1.5; }
-    .complaint-wrapper .msg-customer { align-self: flex-start; background: #f1f1f1; color: #333; border-bottom-left-radius: 4px; }
-    .complaint-wrapper .msg-admin { align-self: flex-end; background: var(--primary-mint); color: white; border-bottom-right-radius: 4px; }
-    .complaint-wrapper .msg-system { align-self: center; background: #fff3cd; color: #856404; padding: 5px 15px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px dashed #ffeeba; }
-    .complaint-wrapper .msg-time { font-size: 10px; margin-top: 5px; opacity: 0.7; display: block; }
+    .complaint-wrapper .chat-container { height: 400px; overflow-y: auto; padding: 15px 10px; display: flex; flex-direction: column; gap: 20px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+    
+    /* 🔥 CSS CHUẨN CHO AVATAR KHUNG CHAT 🔥 */
+    .complaint-wrapper .msg-row { display: flex; gap: 15px; align-items: flex-start; }
+    .complaint-wrapper .msg-row.admin { flex-direction: row-reverse; }
+    
+    .complaint-wrapper .msg-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; box-shadow: 0 3px 8px rgba(0,0,0,0.08); flex-shrink: 0; border: 2px solid white; }
+    
+    .complaint-wrapper .msg-content-wrapper { max-width: 75%; display: flex; flex-direction: column; }
+    .complaint-wrapper .msg-row.admin .msg-content-wrapper { align-items: flex-end; }
+    
+    .complaint-wrapper .message { padding: 14px 20px; border-radius: 20px; font-size: 14px; line-height: 1.5; position: relative; }
+    .complaint-wrapper .msg-customer { background: #f1f3f5; color: #333; border-top-left-radius: 4px; }
+    .complaint-wrapper .msg-admin { background: var(--primary-mint); color: white; border-top-right-radius: 4px; box-shadow: 0 4px 15px rgba(46, 196, 182, 0.2); }
+    
+    .complaint-wrapper .msg-system { align-self: center; background: #fff3cd; color: #856404; padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px dashed #ffeeba; text-align: center; max-width: 80%; margin: 10px auto;}
+    
+    .complaint-wrapper .msg-time { font-size: 11px; margin-top: 6px; color: #adb5bd; font-weight: 500; }
+    .complaint-wrapper .sender-name { font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #888; }
 
+    /* Các phần còn lại giữ nguyên */
     .complaint-wrapper .input-area { display: flex; gap: 12px; margin: 0; }
     .complaint-wrapper textarea { flex: 1; padding: 15px; border-radius: 15px; border: 1px solid #eee; outline: none; font-family: inherit; resize: none; transition: 0.3s; }
     .complaint-wrapper textarea:focus { border-color: var(--primary-mint); }
@@ -36,7 +53,7 @@
     .complaint-wrapper .btn-send:hover { background: var(--dark-mint); }
 
     .complaint-wrapper .customer-card { text-align: center; padding-bottom: 20px; }
-    .complaint-wrapper .customer-avatar { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 15px; border: 3px solid var(--light-mint); background-size: cover; background-position: center; }
+    .complaint-wrapper .customer-avatar-main { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 15px; border: 3px solid var(--light-mint); object-fit: cover; }
     .complaint-wrapper .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; text-align: left;}
     .complaint-wrapper .info-label { color: #888; }
     .complaint-wrapper .info-value { font-weight: 600; text-align: right; max-width: 180px; }
@@ -65,24 +82,35 @@
                         {
                             foreach (var msg in Model.TicketMessages.OrderBy(m => m.CreatedAt))
                             {
-                                if (msg.Sender == "User")
-                                {
-                                    <div class="message msg-customer">
-                                        @msg.Content
-                                        <span class="msg-time">@msg.CreatedAt.ToString("HH:mm - dd/MM/yyyy")</span>
-                                    </div>
-                                }
-                                else if (msg.Sender == "Admin")
-                                {
-                                    <div class="message msg-admin">
-                                        @msg.Content
-                                        <span class="msg-time" style="color: #cbf3f0;">@msg.CreatedAt.ToString("HH:mm - dd/MM/yyyy")</span>
-                                    </div>
-                                }
-                                else if (msg.Sender == "System")
+                                if (msg.Sender == "System")
                                 {
                                     <div class="msg-system">
                                         @Html.Raw(msg.Content)
+                                    </div>
+                                }
+                                else
+                                {
+                                    bool isAdmin = msg.Sender == "Admin";
+                                    string rowClass = isAdmin ? "admin" : "user";
+                                    string senderName = isAdmin ? "CSKH Velvy Skin" : (Model.UserFullName ?? "Khách hàng");
+                                    string msgClass = isAdmin ? "msg-admin" : "msg-customer";
+                                    
+
+                                    string avatarSrc = isAdmin ? $"/images/avatars/{currentAdminId}.jpg" : $"/images/avatars/{Model.UserId}.jpg";
+                                    string fallbackName = isAdmin ? "Velvy Admin" : (Model.UserFullName ?? "User");
+                                    
+                                    <div class="msg-row @rowClass">
+                                        <img src="@avatarSrc" 
+                                             onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=@Uri.EscapeDataString(fallbackName)&background=@(isAdmin ? "208b81" : "e993b0")&color=fff';" 
+                                             class="msg-avatar" alt="Avatar">
+                                             
+                                        <div class="msg-content-wrapper">
+                                            <div class="sender-name">@senderName</div>
+                                            <div class="message @msgClass">
+                                                @Html.Raw(msg.Content)
+                                            </div>
+                                            <span class="msg-time">@msg.CreatedAt.ToString("HH:mm - dd/MM/yyyy")</span>
+                                        </div>
                                     </div>
                                 }
                             }
@@ -108,7 +136,8 @@
 
             <div class="right-col">
                 <div class="card customer-card">
-                    <div class="customer-avatar" style="background-image: url('https://i.pravatar.cc/150?u=@Model.UserEmail')"></div>
+                    <img src="/images/avatars/@(Model.UserId).jpg" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=@Uri.EscapeDataString(Model.UserFullName ?? "U")&background=e993b0&color=fff';" class="customer-avatar-main" alt="Avatar">
+                    
                     <h3 style="margin: 0; font-family: 'Playfair Display', serif; color: var(--dark-mint);">@Model.UserFullName</h3>
                     <p style="font-size: 12px; color: #aaa; margin-top: 5px;">@Model.UserEmail</p>
                     
@@ -175,20 +204,18 @@
         const chatBox = document.getElementById('chatBox');
         if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 
-        // 🔥 ĐÃ FIX: Hàm gọi Bảng xác nhận bằng SweetAlert2 🔥
         function confirmUnlock() {
             Swal.fire({
                 title: 'XÁC NHẬN MỞ KHÓA?',
                 html: 'Khách hàng sẽ ngay lập tức được <b>cấp quyền đăng nhập trở lại</b>!',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#2ec4b6', // Nút đồng ý màu xanh Mint của sếp
+                confirmButtonColor: '#2ec4b6', 
                 cancelButtonColor: '#aaa',
                 confirmButtonText: '<i class="fa-solid fa-unlock"></i> Chấp nhận Ân Xá',
                 cancelButtonText: 'Hủy bỏ'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Nếu admin bấm OK thì mới cho form chạy (Submit)
                     document.getElementById('unlockAccountForm').submit();
                 }
             });

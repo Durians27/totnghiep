@@ -28,14 +28,21 @@
         display: flex; flex-direction: column; gap: 20px;
     }
     
+    /* 🔥 Sửa lại cấu trúc hiển thị để chèn Avatar 🔥 */
+    .msg-group { display: flex; gap: 12px; margin-bottom: 10px; }
+    .msg-group.admin { flex-direction: row; }
+    .msg-group.user { flex-direction: row-reverse; }
+    
+    .msg-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-shrink: 0; }
+    
     .msg-row { display: flex; flex-direction: column; max-width: 70%; }
-    .msg-row.admin { align-self: flex-start; }
-    .msg-row.user { align-self: flex-end; align-items: flex-end; }
-    .msg-row.system { align-self: center; align-items: center; max-width: 90%; }
+    .msg-group.admin .msg-row { align-items: flex-start; }
+    .msg-group.user .msg-row { align-items: flex-end; }
+    .msg-row.system { align-self: center; align-items: center; max-width: 80%; margin: 10px auto; }
 
     .msg-bubble { padding: 15px 20px; border-radius: 20px; font-size: 14px; line-height: 1.5; position: relative;}
-    .msg-row.admin .msg-bubble { background: #f1f3f5; color: #333; border-bottom-left-radius: 5px; }
-    .msg-row.user .msg-bubble { background: var(--primary-mint); color: white; border-bottom-right-radius: 5px; }
+    .msg-group.admin .msg-bubble { background: #f1f3f5; color: #333; border-top-left-radius: 5px; }
+    .msg-group.user .msg-bubble { background: var(--primary-mint); color: white; border-top-right-radius: 5px; }
     .msg-row.system .msg-bubble { background: #fff3cd; color: #856404; font-size: 12px; text-align: center; border-radius: 10px; border: 1px dashed #ffeeba;}
 
     .msg-time { font-size: 11px; color: #adb5bd; margin-top: 5px; font-weight: 500; }
@@ -75,36 +82,78 @@
     <div class="chat-header">
         <div>
             <h2>Yêu cầu: @Model.IssueType</h2>
-            <p>Mã vé: #VS-@Model.Id | Bắt đầu: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+            <p>
+    @* Kiểm tra nếu có OrderCode thì hiện mã đơn, không thì ẩn đi *@
+    @if (!string.IsNullOrEmpty(Model.OrderCode) && Model.OrderCode != "N/A")
+    {
+        <span>Mã đơn: <strong>#@Model.OrderCode</strong> | </span>
+    }
+    Mã vé: #VS-@Model.Id | Bắt đầu: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+</p>
         </div>
         @{
             string badgeCls = "st-wait";
-            string stText = Model.Status ?? "Chờ xử lý";
-            if (stText == "Đang giải quyết") badgeCls = "st-process";
-            else if (stText == "Đã hoàn thành" || stText == "Closed") badgeCls = "st-done";
+            string stText = "Chờ xử lý"; // Default
+
+            if (Model.Status == "Pending" || Model.Status == "Chờ xử lý") 
+            { 
+                badgeCls = "st-wait"; 
+                stText = "Chờ xử lý"; 
+            }
+            else if (Model.Status == "In Progress" || Model.Status == "Replied" || Model.Status == "Đang giải quyết" || Model.Status == "Đang xử lý") 
+            { 
+                badgeCls = "st-process"; 
+                stText = "Đang xử lý"; 
+            }
+            else if (Model.Status == "Resolved" || Model.Status == "Completed" || Model.Status == "Đã hoàn thành" || Model.Status == "Closed" || Model.Status == "Đã đóng") 
+            { 
+                badgeCls = "st-done"; 
+                stText = "Đã hoàn thành"; 
+            }
         }
         <span class="status-badge @badgeCls">@stText</span>
     </div>
 
-    <div class="chat-box" id="chatBox">
+   <div class="chat-box" id="chatBox">
         @if (Model.TicketMessages != null && Model.TicketMessages.Any())
         {
             foreach (var msg in Model.TicketMessages.OrderBy(m => m.CreatedAt))
             {
-                string rowClass = msg.Sender == "Admin" ? "admin" : (msg.Sender == "System" ? "system" : "user");
-                string senderName = msg.Sender == "Admin" ? "CSKH Velvy Skin" : (msg.Sender == "System" ? "Hệ thống" : "Bạn");
+                if (msg.Sender == "System")
+                {
+                    <div class="msg-row system">
+                        <div class="msg-bubble">@Html.Raw(msg.Content)</div>
+                    </div>
+                }
+                else
+                {
+                    bool isAdmin = msg.Sender == "Admin";
+                    string groupClass = isAdmin ? "admin" : "user";
+                    string senderName = isAdmin ? "CSKH Velvy Skin" : "Bạn";
 
-                <div class="msg-row @rowClass">
-                    @if (rowClass != "system") { <div class="sender-name">@senderName</div> }
-                    <div class="msg-bubble">@Html.Raw(msg.Content)</div>
-                    <div class="msg-time">@msg.CreatedAt.ToString("HH:mm - dd/MM")</div>
-                </div>
+                    // 🔥 FIX: Admin thì hiện Logo Shop (02.png), Khách thì hiện ảnh Khách
+                    string avatarSrc = isAdmin ? "/images/02.png" : $"/images/avatars/{Model.UserId}.jpg";
+                    string fallbackName = isAdmin ? "Velvy" : (Model.UserFullName ?? "User");
+                    string extraStyle = isAdmin ? "object-fit: contain; border: 1px solid #eee; background: white; padding: 2px;" : "";
+
+                    <div class="msg-group @groupClass">
+                        <img src="@avatarSrc" 
+                             onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=@Uri.EscapeDataString(fallbackName)&background=@(isAdmin ? "208b81" : "e993b0")&color=fff';" 
+                             class="msg-avatar" style="@extraStyle" alt="Avatar">
+                             
+                        <div class="msg-row">
+                            <div class="sender-name">@senderName</div>
+                            <div class="msg-bubble">@Html.Raw(msg.Content)</div>
+                            <div class="msg-time">@msg.CreatedAt.ToString("HH:mm - dd/MM")</div>
+                        </div>
+                    </div>
+                }
             }
         }
     </div>
 
     <div class="chat-input-area">
-        @if (stText != "Đã hoàn thành" && stText != "Closed")
+        @if (stText != "Đã hoàn thành" && stText != "Đã đóng")
         {
             <form asp-controller="Account" asp-action="SendMessage" method="post" class="chat-form">
                 <input type="hidden" name="ticketId" value="@Model.Id" />
@@ -123,8 +172,7 @@
 
 @section Scripts {
     <script>
-
         var chatBox = document.getElementById("chatBox");
-        chatBox.scrollTop = chatBox.scrollHeight;
+        if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     </script>
 }

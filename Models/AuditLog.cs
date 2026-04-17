@@ -7,10 +7,15 @@ namespace VelvySkinWeb.Models
     {
         [Key]
         public int Id { get; set; }
-        public string Username { get; set; } // Ai làm?
-        public string ActionType { get; set; } // Làm gì? (CREATE, UPDATE, DELETE)
-        public string TableName { get; set; } // Ở đâu? (Orders, Products...)
-        public string Description { get; set; } // Chi tiết hành động
-        public DateTime Timestamp { get; set; } = DateTime.Now; // Khi nào?
+        public string Username { get; set; } 
+        public string ActionType { get; set; } 
+        public string TableName { get; set; } 
+        public string Description { get; set; } 
+        public DateTime Timestamp { get; set; } = DateTime.Now; 
+
+
+        public string IpAddress { get; set; } // Lưu IP người dùng
+        public string OldValues { get; set; } // Dữ liệu trước khi sửa (JSON string)
+        public string NewValues { get; set; } // Dữ liệu sau khi sửa/thêm (JSON string)
     }
 }

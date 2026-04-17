@@ -1,148 +1,196 @@
-@model List<VelvySkinWeb.Models.Order>
+@model IEnumerable<VelvySkinWeb.Models.Order>
 @{
     ViewData["Title"] = "Đơn hàng của tôi";
 }
 
 <style>
-    /* Chỉ giữ lại CSS của phần Đơn hàng, bỏ Header/Footer vì _Layout đã lo */
-    .section-container { padding: 50px 5%; text-align: center; min-height: 60vh; font-family: 'Montserrat', sans-serif;}
+    /* --- STYLE ĐỘC QUYỀN CHO LỊCH SỬ ĐƠN HÀNG CHUẨN SHOPEE --- */
+    .history-container { max-width: 1000px; margin: 40px auto; padding: 0 15px; }
     
-    .order-tabs { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
-    .order-tab-btn { background: white; border: 1px solid #ddd; padding: 12px 28px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.3s; color: #666; }
-    .order-tab-btn.active, .order-tab-btn:hover { background: var(--primary-mint); color: white; border-color: var(--primary-mint); }
+    /* Tabs Navigation */
+    .order-tabs { display: flex; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 25px; overflow-x: auto; white-space: nowrap; }
+    .order-tab { flex: 1; text-align: center; padding: 18px 15px; color: #555; font-weight: 600; font-size: 14px; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.3s; }
+    .order-tab:hover { color: var(--primary-mint); background: #fcfcfc; }
+    .order-tab.active { color: var(--primary-mint); border-bottom-color: var(--primary-mint); }
 
-    .order-list { max-width: 1000px; margin: 0 auto; }
-
-    .order-card { background: white; border-radius: 16px; padding: 25px; border: 1px solid #f0f0f0; margin-bottom: 25px; transition: 0.3s; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
-    .order-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.08); border-color: var(--primary-mint); }
-
-    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; width: 100%; flex-wrap: wrap; gap: 10px; }
-    .order-id { font-weight: 700; color: var(--primary-mint); font-size: 15px; }
+    /* Order Card */
+    .order-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 25px; margin-bottom: 20px; transition: 0.3s; border: 1px solid #f5f5f5;}
+    .order-card:hover { border-color: var(--primary-mint); box-shadow: 0 8px 25px rgba(46, 196, 182, 0.1); }
     
-    .status-badge { padding: 6px 18px; border-radius: 30px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-    .status-pending { background: #fff3cd; color: #856404; }
-    .status-shipping { background: #d1ecf1; color: #0c5460; }
-    .status-delivered { background: #d4edda; color: #155724; }
-    .status-cancelled { background: #f8d7da; color: #721c24; }
-
-    .order-date { color: #888; font-size: 13px; }
-
-    .order-items { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; width: 100%;}
-    .order-item { display: flex; align-items: center; gap: 12px; background: #f9f9f9; padding: 8px 14px; border-radius: 10px; }
-    .order-item img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; }
-    .order-item span { font-size: 13px; font-weight: 500; color: #444;}
-
-    .order-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding-top: 20px; border-top: 1px solid #eee; width: 100%;}
-    .order-total { font-size: 16px; font-weight: 700; color: #222; }
-    .order-total span { color: var(--primary-mint); font-size: 18px;}
-
-    .order-actions { display: flex; gap: 12px; }
-    .btn-order-detail { background: white; color: var(--primary-mint); border: 1px solid var(--primary-mint); padding: 10px 24px; border-radius: 50px; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.3s; }
-    .btn-order-detail:hover { background: var(--primary-mint); color: white; }
+    .order-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+    .order-id { font-weight: 700; color: #333; font-size: 15px;}
+    .order-date { color: #888; font-size: 13px; margin-left: 10px; font-weight: 500;}
     
-    .empty-order { padding: 60px 0; color: #888; text-align: center; width: 100%;}
-    .empty-order i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
+    /* Status Badges */
+    .status-badge { padding: 6px 15px; border-radius: 30px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;}
+    .bg-pending { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .bg-processing { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+    .bg-shipping { background: #fef08a; color: #b45309; border: 1px solid #fde047; }
+    .bg-completed { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .bg-cancelled { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+    /* Product Item */
+    .product-item { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+    .product-img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+    .product-info { flex: 1; }
+    .product-name { font-weight: 600; color: #333; font-size: 14px; margin-bottom: 5px;}
+    .product-qty { color: #888; font-size: 13px; }
+    .product-price { font-weight: 600; color: var(--primary-mint); }
+
+    /* Order Footer */
+    .order-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 15px; margin-top: 5px;}
+    .total-amount { font-size: 18px; font-weight: 700; color: var(--accent-pink); }
+    .btn-action { padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 13px; text-decoration: none; transition: 0.3s; cursor: pointer; border: none;}
+    .btn-detail { background: #f1f5f9; color: #475569; margin-right: 10px; }
+    .btn-detail:hover { background: #e2e8f0; }
+    .btn-buy-again { background: var(--primary-mint); color: white; }
+    .btn-buy-again:hover { background: var(--dark-mint); color: white;}
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 12px; display: none;}
+    .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 15px; }
+    .empty-state h3 { font-size: 18px; color: #555; margin-bottom: 10px; }
 </style>
 
-<div class="breadcrumb" style="padding: 20px 5%; background: #f9f9f9; font-size: 18px; color: #ccc; margin-bottom: 0; display: flex; align-items: center; gap: 10px;">
-    <a asp-controller="Home" asp-action="Index" style="color: var(--primary-mint); text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px;">
-        <i class="fa-solid fa-house"></i> Trang chủ
-    </a> 
-    <span>/</span> 
-    <span style="color: #333; font-weight: 700;">Đơn hàng của tôi</span>
-</div>
-
-<div class="section-container">
-    <h2 style="font-family:'Playfair Display'; font-size: 36px; margin-bottom: 10px; color: #222;">Đơn hàng của tôi</h2>
-    <p style="color:#888; margin-bottom:40px; max-width: 600px; margin-left: auto; margin-right: auto;">
-        Theo dõi tình trạng đơn hàng và xem lại lịch sử mua sắm của bạn
-    </p>
+<div class="history-container">
+    <h2 style="font-family:'Playfair Display', serif; color: var(--dark-mint); margin-bottom: 25px; text-align: center;">Đơn hàng của tôi</h2>
 
     <div class="order-tabs">
-        <button class="order-tab-btn active" onclick="filterOrders('all', this)">Tất cả đơn hàng</button>
-        <button class="order-tab-btn" onclick="filterOrders('pending', this)">Chờ xác nhận</button>
-        <button class="order-tab-btn" onclick="filterOrders('shipping', this)">Đang giao</button>
-        <button class="order-tab-btn" onclick="filterOrders('delivered', this)">Đã giao</button>
-        <button class="order-tab-btn" onclick="filterOrders('cancelled', this)">Đã hủy</button>
+        <div class="order-tab active" data-target="all">Tất cả đơn</div>
+        <div class="order-tab" data-target="pending">Chờ xác nhận</div>
+        <div class="order-tab" data-target="processing">Đã thanh toán / Đang xử lý</div>
+        <div class="order-tab" data-target="shipping">Đang giao</div>
+        <div class="order-tab" data-target="completed">Hoàn thành</div>
+        <div class="order-tab" data-target="cancelled">Đã hủy</div>
     </div>
 
-    <div class="order-list" id="orderList">
-        @if (Model == null || !Model.Any())
+    <div class="empty-state" id="emptyState">
+        <i class="fa-solid fa-box-open"></i>
+        <h3>Chưa có đơn hàng nào!</h3>
+        <p style="color:#888; font-size: 14px;">Chưa có đơn hàng nào trong trạng thái này.</p>
+        <a asp-controller="Products" asp-action="Skincare" class="btn-action btn-buy-again" style="display:inline-block; margin-top: 15px;">Tiếp tục mua sắm</a>
+    </div>
+
+    <div id="orderList">
+        @foreach (var order in Model)
         {
-            <div class="empty-order">
-                <i class="fa-solid fa-box-open"></i>
-                <h3>Bạn chưa có đơn hàng nào</h3>
-                <p>Hãy dạo quanh cửa hàng và chọn cho mình những sản phẩm ưng ý nhé!</p>
-                <a asp-controller="Products" asp-action="Skincare" style="display:inline-block; margin-top: 15px; padding: 12px 30px; background: var(--primary-mint); color: white; border-radius: 30px; text-decoration: none; font-weight: bold;">Mua sắm ngay</a>
-            </div>
-        }
-        else
-        {
-            foreach (var order in Model)
-            {
-                string badgeClass = "";
-                string badgeText = "";
-                string dataStatus = "";
+            string originalStatus = order.OrderStatus ?? "";
+            string statusLower = originalStatus.ToLower();
+            
 
-                // ĐÃ FIX SẠCH SẼ TẤT CẢ order.Status THÀNH order.OrderStatus
-                switch (order.OrderStatus?.ToLower()) 
-                {
-                    case "pending": case "chờ xác nhận": 
-                        badgeClass = "status-pending"; badgeText = "Chờ xác nhận"; dataStatus = "pending"; break;
-                    case "shipping": case "đang giao": 
-                        badgeClass = "status-shipping"; badgeText = "Đang giao"; dataStatus = "shipping"; break;
-                    case "completed": case "delivered": case "đã giao": case "thành công":
-                        badgeClass = "status-delivered"; badgeText = "Đã giao"; dataStatus = "delivered"; break;
-                    case "cancelled": case "đã hủy":
-                        badgeClass = "status-cancelled"; badgeText = "Đã hủy"; dataStatus = "cancelled"; break;
-                    default:
-                        badgeClass = "status-pending"; badgeText = order.OrderStatus ?? "Chờ xử lý"; dataStatus = "pending"; break;
-                }
+            string displayStatus = originalStatus;
+            if (originalStatus == "Pending") displayStatus = "Chờ xác nhận";
+            else if (originalStatus == "Shipping") displayStatus = "Đang giao hàng";
+            else if (originalStatus == "Completed") displayStatus = "Hoàn thành";
+            else if (originalStatus == "Cancelled") displayStatus = "Đã hủy";
 
-                <div class="order-card" data-status="@dataStatus">
-                    <div class="order-header">
-                        <span class="order-id">Mã đơn: #@order.Id</span>
-                        <span class="status-badge @badgeClass">@badgeText</span>
+            string group = "pending"; 
+            string badgeClass = "bg-pending";
+            string icon = "fa-clock";
+
+
+            if (statusLower.Contains("hủy") || statusLower.Contains("cancel")) 
+            { 
+                group = "cancelled"; badgeClass = "bg-cancelled"; icon = "fa-ban"; 
+            }
+            else if (statusLower.Contains("hoàn thành") || statusLower.Contains("thành công") || statusLower.Contains("đã giao") || statusLower.Contains("completed")) 
+            { 
+                group = "completed"; badgeClass = "bg-completed"; icon = "fa-circle-check"; 
+            }
+            else if (statusLower.Contains("đang giao") || statusLower.Contains("shipping")) 
+            { 
+                group = "shipping"; badgeClass = "bg-shipping"; icon = "fa-truck-fast"; 
+            }
+            else if (statusLower.Contains("đã thanh toán") || statusLower.Contains("đang xử lý") || statusLower.Contains("processing")) 
+            { 
+                group = "processing"; badgeClass = "bg-processing"; icon = "fa-box-open"; 
+            }
+
+            <div class="order-card" data-group="@group">
+                <div class="order-header">
+                    <div>
+                        <span class="order-id">Mã đơn: #VS-@order.OrderDate.ToString("yyMMdd")-@order.Id</span>
+                        <span class="order-date">@order.OrderDate.ToString("HH:mm dd/MM/yyyy")</span>
                     </div>
-                    <p class="order-date"><strong>Ngày đặt:</strong> @order.OrderDate.ToString("dd/MM/yyyy • HH:mm")</p>
-                    
-                    <div class="order-items">
-                        @if (order.OrderDetails != null)
-                        {
-                            foreach(var detail in order.OrderDetails)
-                            {
-                                <div class="order-item">
-                                    <img src="@(detail.Product?.ImageUrl ?? "https://via.placeholder.com/50")" alt="Product">
-                                    <span>@(detail.Product?.Name ?? "Sản phẩm") &times; @detail.Quantity</span>
-                                </div>
-                            }
-                        }
-                    </div>
+                    <span class="status-badge @badgeClass">
+                        <i class="fa-solid @icon"></i> @displayStatus
+                    </span>
+                </div>
 
-                    <div class="order-footer">
-                        <div class="order-total">Tổng thanh toán: <span>@order.TotalAmount.ToString("N0")đ</span></div>
-                        <div class="order-actions">
-                            <a asp-action="OrderInfo" asp-route-id="@order.Id" class="btn-order-detail">Xem chi tiết</a>
+                <div class="order-body">
+                    @if (order.OrderDetails != null && order.OrderDetails.Any())
+                    {
+                        var firstProduct = order.OrderDetails.First();
+                        <div class="product-item">
+                            <img src="@(firstProduct.Product?.ImageUrl ?? "https://via.placeholder.com/100")" class="product-img" onerror="this.src='https://via.placeholder.com/100'">
+                            <div class="product-info">
+                                <div class="product-name">@(firstProduct.Product?.Name ?? "Sản phẩm")</div>
+                                <div class="product-qty">Phân loại: Tiêu chuẩn | Số lượng: x@(firstProduct.Quantity)</div>
+                            </div>
+                            <div class="product-price">@firstProduct.UnitPrice.ToString("N0")đ</div>
                         </div>
+
+                        if (order.OrderDetails.Count > 1)
+                        {
+                            <div style="text-align: center; color: #888; font-size: 13px; border-top: 1px dashed #f0f0f0; padding-top: 10px; margin-bottom: 10px;">
+                                Xem thêm @(order.OrderDetails.Count - 1) sản phẩm khác...
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="order-footer">
+                    <div>
+                        <span style="color: #666; font-size: 14px;">Thành tiền: </span>
+                        <span class="total-amount">@order.TotalAmount.ToString("N0")đ</span>
+                    </div>
+                    <div>
+                        <a asp-controller="Orders" asp-action="OrderInfo" asp-route-id="@order.Id" class="btn-action btn-detail">Xem chi tiết</a>
+                        <a asp-controller="Home" asp-action="Index" class="btn-action btn-buy-again">Mua lại</a>
                     </div>
                 </div>
-            }
+            </div>
         }
     </div>
 </div>
 
 <script>
-    function filterOrders(status, btn) {
-        document.querySelectorAll('.order-tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.order-tab');
+        const cards = document.querySelectorAll('.order-card');
+        const emptyState = document.getElementById('emptyState');
 
-        const orders = document.querySelectorAll('.order-card');
-        orders.forEach(order => {
-            if (status === 'all') {
-                order.style.display = 'flex';
+        function filterOrders(targetGroup) {
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const cardGroup = card.getAttribute('data-group');
+                
+                if (targetGroup === 'all' || cardGroup === targetGroup) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                emptyState.style.display = 'block';
             } else {
-                order.style.display = (order.getAttribute('data-status') === status) ? 'flex' : 'none';
+                emptyState.style.display = 'none';
             }
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                const target = this.getAttribute('data-target');
+                filterOrders(target);
+            });
         });
-    }
+
+        filterOrders('all');
+    });
 </script>

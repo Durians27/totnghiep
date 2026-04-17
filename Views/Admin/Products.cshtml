@@ -5,10 +5,10 @@
 }
 
 <style>
-    /* ÉP BUỘC LAYOUT PHẢI HIỂN THỊ DỌC (CHỐNG VỠ GIAO DIỆN) */
+    
     .product-page-wrapper { display: block !important; width: 100%; clear: both; }
 
-    /* CSS CỐT LÕI */
+  
     .filter-section { display: flex; gap: 15px; margin-bottom: 25px; align-items: center; background: white; padding: 15px 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
     .search-wrapper { flex: 1; position: relative; }
     .search-wrapper i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; }
@@ -132,11 +132,14 @@
                                     
                                     <a asp-controller="Products" asp-action="Edit" asp-route-id="@item.Id" class="action-btn btn-edit" title="Sửa"><i class="fa-solid fa-pen"></i></a>
                                     
-                                    <form id="delete-form-@item.Id" asp-controller="Products" asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline;">
-                                        <button type="button" class="action-btn btn-delete" title="Xóa" onclick="confirmDelete('@item.Id', '@item.Name.Replace("'", "\\'")')">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <form id="delete-form-@item.Id" asp-controller="Products" asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline;">
+                                            <button type="button" class="action-btn btn-delete" title="Xóa" onclick="confirmDelete('@item.Id', '@item.Name.Replace("'", "\\'")')">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -152,7 +155,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
-        // 1. THÔNG BÁO THÀNH CÔNG KIỂU MỚI (Xịn hơn Alert localhost)
+
         @if (TempData["SuccessMsg"] != null)
         {
             <text>
@@ -166,7 +169,7 @@
             </text>
         }
 
-        // 2. GIAO DIỆN HỎI XÓA CHUYÊN NGHIỆP TRONG WEB
+
         function confirmDelete(id, name) {
             Swal.fire({
                 title: 'Xác nhận xóa?',
@@ -180,7 +183,7 @@
                 backdrop: `rgba(0,0,0,0.5)` // Làm tối nền web
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Nếu admin bấm "Vâng, xóa ngay!" thì mới ra lệnh chạy Form C#
+
                     document.getElementById('delete-form-' + id).submit();
                 }
             });

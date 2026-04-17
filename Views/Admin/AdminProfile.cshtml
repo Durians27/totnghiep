@@ -84,9 +84,9 @@
                 <div class="section-title">Thông Tin Cá Nhân</div>
                 
                 <div class="form-group">
-                    <label>Họ và Tên</label>
-                    <input asp-for="FullName" type="text" class="editable" readonly>
-                </div>
+    <label>Họ và Tên (Không thể đổi)</label>
+    <input asp-for="FullName" type="text" readonly title="Vui lòng liên hệ Admin nếu bạn đổi tên">
+</div>
 
                 <div class="form-group">
                     <label>Số điện thoại</label>
@@ -102,7 +102,7 @@
                 
                 <div class="form-group">
                     <label>Cấp độ truy cập</label>
-                    <input type="text" value="@(ViewBag.Role == "Admin" ? "Toàn quyền hệ thống (Root)" : "Nhân viên CSKH")" readonly style="color: var(--gold); font-weight: 700;">
+                    <input type="text" value="@ViewBag.Role" readonly style="color: var(--gold); font-weight: 700;">
                 </div>
             </div>
         </div>
@@ -119,7 +119,7 @@
         const editableInputs = document.querySelectorAll('.editable');
         const avatarInput = document.getElementById('avatarUpload');
 
-        // Bật chế độ sửa
+
         function enableEdit() {
             form.classList.add('editing-mode');
             editableInputs.forEach(input => input.removeAttribute('readonly'));
@@ -130,7 +130,7 @@
             cancelBtn.style.display = 'block';
         }
 
-        // Tắt chế độ sửa
+
         function disableEdit() {
             form.classList.remove('editing-mode');
             editableInputs.forEach(input => input.setAttribute('readonly', true));
@@ -139,11 +139,11 @@
             editBtn.style.display = 'block';
             saveBtn.style.display = 'none';
             cancelBtn.style.display = 'none';
-            // Reload lại trang để xóa các chữ gõ nháp
+
             window.location.reload(); 
         }
 
-        // Preview ảnh ngay khi chọn
+
         function previewImage(event) {
             const reader = new FileReader();
             reader.onload = function() {
@@ -152,12 +152,12 @@
             };
             if(event.target.files[0]) {
                 reader.readAsDataURL(event.target.files[0]);
-                // Nếu chọn ảnh thì tự động bật nút Lưu luôn cho lẹ
+
                 enableEdit(); 
             }
         }
 
-        // Thông báo thành công từ C#
+
         @if (TempData["SuccessMsg"] != null)
         {
             <text>

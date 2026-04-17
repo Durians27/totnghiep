@@ -17,24 +17,25 @@ namespace VelvySkinWeb.Controllers
             _context = context;
         }
 
-        [Authorize(Roles = "Admin")] 
+        [Authorize(Roles = "Admin, Staff")] 
         public async Task<IActionResult> Index(string status = "all")
         {
             var orders = _context.Orders.AsQueryable();
 
+
             switch (status.ToLower())
             {
                 case "pending":
-                    orders = orders.Where(o => o.OrderStatus == "Pending");
+                    orders = orders.Where(o => o.OrderStatus == "Chờ thanh toán" || o.OrderStatus == "Đang xử lý" || o.OrderStatus == "Chờ xác nhận");
                     break;
                 case "shipping":
-                    orders = orders.Where(o => o.OrderStatus == "Shipping");
+                    orders = orders.Where(o => o.OrderStatus == "Đang giao");
                     break;
                 case "completed":
-                    orders = orders.Where(o => o.OrderStatus == "Completed");
+                    orders = orders.Where(o => o.OrderStatus == "Hoàn thành" || o.OrderStatus.Contains("Đã thanh toán") || o.OrderStatus == "Đã giao thành công");
                     break;
                 case "cancelled":
-                    orders = orders.Where(o => o.OrderStatus == "Cancelled");
+                    orders = orders.Where(o => o.OrderStatus.Contains("Đã hủy") || o.OrderStatus == "Hủy");
                     break;
             }
 
@@ -45,7 +46,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet("Admin/Orders/Details/{id}")] 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> Details(int id)
         {
             var order = await _context.Orders
@@ -59,44 +60,50 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> UpdateStatus(int id, string newStatus)
         {
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
-            // 🔥 1. Bật camera: Lưu lại trạng thái CŨ trước khi đổi
             string oldStatus = order.OrderStatus ?? "Chưa rõ"; 
+            var oldData = new { Trạng_Thái = oldStatus };
             
-            order.OrderStatus = newStatus;
 
-            // ==========================================================
-            // PHẦN 1: GIỮ NGUYÊN CODE GỬI THÔNG BÁO CHO KHÁCH CỦA SẾP
-            // ==========================================================
+            string finalVietnameseStatus = newStatus == "Completed" ? "Hoàn thành" : 
+                                           newStatus == "Pending" ? "Đang xử lý" : 
+                                           newStatus == "Shipping" ? "Đang giao" : 
+                                           newStatus == "Cancelled" ? "Đã hủy" : newStatus;
+
+
+            order.OrderStatus = finalVietnameseStatus;
+            var newData = new { Trạng_Thái = finalVietnameseStatus };
+
+
             string notiTitle = "";
             string notiMessage = "";
             string notiIcon = "fa-box";
 
-            if (newStatus == "Đã xác nhận" || newStatus == "Confirmed")
+            if (finalVietnameseStatus == "Đã xác nhận" || finalVietnameseStatus == "Đang xử lý")
             {
                 notiTitle = "Đơn hàng đã được xác nhận";
                 notiMessage = $"Đơn hàng #VS-{order.OrderDate.ToString("yyMMdd")}-{order.Id} đã được shop xác nhận và đang đóng gói.";
                 notiIcon = "fa-box-open"; 
             }
-            else if (newStatus == "Shipping" || newStatus == "Đang giao")
+            else if (finalVietnameseStatus == "Đang giao")
             {
                 notiTitle = "Đơn hàng đang trên đường giao!";
                 string shipInfo = !string.IsNullOrEmpty(order.ShipperName) ? $" Shipper {order.ShipperName} ({order.ShipperPhone}) sẽ sớm liên hệ với bạn." : " Kiện hàng đã được bàn giao cho đối tác vận chuyển.";
                 notiMessage = $"Đơn hàng #VS-{order.OrderDate.ToString("yyMMdd")}-{order.Id} đang hướng về phía bạn.{shipInfo}";
                 notiIcon = "fa-truck-fast"; 
             }
-            else if (newStatus == "Completed" || newStatus == "Hoàn thành" || newStatus == "Đã giao" || newStatus == "Thành công")
+            else if (finalVietnameseStatus == "Hoàn thành" || finalVietnameseStatus == "Đã giao" || finalVietnameseStatus == "Đã giao thành công")
             {
                 notiTitle = "Giao hàng thành công";
                 notiMessage = $"Đơn hàng #VS-{order.OrderDate.ToString("yyMMdd")}-{order.Id} đã giao thành công. Cảm ơn bạn đã tin tưởng Velvy Skin!";
                 notiIcon = "fa-circle-check"; 
             }
-            else if (newStatus == "Cancelled" || newStatus == "Đã hủy")
+            else if (finalVietnameseStatus.Contains("Đã hủy"))
             {
                 notiTitle = "Đơn hàng đã bị hủy";
                 notiMessage = $"Đơn hàng #VS-{order.OrderDate.ToString("yyMMdd")}-{order.Id} đã bị hủy. Vui lòng liên hệ CSKH nếu bạn cần hỗ trợ thêm.";
@@ -118,37 +125,23 @@ namespace VelvySkinWeb.Controllers
                 _context.Notifications.Add(notiStatus);
             }
 
-            // ==========================================================
-            // 🔥 PHẦN 2: CHÈN THÊM CODE AUDIT LOG CHO ADMIN (CÓ PHIÊN DỊCH)
-            // ==========================================================
-            
-            // 1. Bộ dịch thuật ngầm (Chỉ dịch cho Log, không đổi DB)
-            string logOldStatus = oldStatus == "Completed" ? "Hoàn thành" : 
-                                  oldStatus == "Pending" ? "Chờ xác nhận" : 
-                                  oldStatus == "Shipping" ? "Đang giao" : 
-                                  oldStatus == "Cancelled" ? "Đã hủy" : oldStatus;
 
-            string logNewStatus = newStatus == "Completed" ? "Hoàn thành" : 
-                                  newStatus == "Pending" ? "Chờ xác nhận" : 
-                                  newStatus == "Shipping" ? "Đang giao" : 
-                                  newStatus == "Cancelled" ? "Đã hủy" : newStatus;
-
-            // 2. Ghi vào sổ
             var log = new VelvySkinWeb.Models.AuditLog
             {
                 Username = User.Identity?.Name ?? "Hệ thống",
                 ActionType = "UPDATE",
                 TableName = "Orders",
-                Description = $"Admin đã đổi trạng thái đơn hàng #VS-{id} từ '{logOldStatus}' sang '{logNewStatus}'"
+                Description = $"Admin đã đổi trạng thái đơn hàng #VS-{id} từ '{oldStatus}' sang '{finalVietnameseStatus}'",
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Không xác định",
+                OldValues = System.Text.Json.JsonSerializer.Serialize(oldData),
+                NewValues = System.Text.Json.JsonSerializer.Serialize(newData),
+                Timestamp = DateTime.Now
             };
             _context.AuditLogs.Add(log);
 
-            // ==========================================================
-            // LƯU TẤT CẢ CÙNG LÚC (Đơn hàng + Thông báo + Nhật ký)
-            // ==========================================================
             await _context.SaveChangesAsync();
 
-            if (newStatus == "Shipping" || newStatus == "Đang giao")
+            if (finalVietnameseStatus == "Đang giao")
             {
                 return RedirectToAction("ShippingDetails", new { id = id });
             }
@@ -157,7 +150,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet("Admin/Orders/ShippingDetails/{id}")] 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> ShippingDetails(int id)
         {
             var order = await _context.Orders
@@ -167,7 +160,8 @@ namespace VelvySkinWeb.Controllers
 
             if (order == null) return NotFound();
 
-            if (order.OrderStatus != "Shipping" && order.OrderStatus != "Đang giao")
+
+            if (order.OrderStatus != "Đang giao")
             {
                 TempData["ErrorMsg"] = "Đơn hàng này chưa được bàn giao cho ĐVVC!";
                 return RedirectToAction("Details", new { id = id });
@@ -177,7 +171,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet("Admin/Orders/CompletedDetails/{id}")] 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> CompletedDetails(int id)
         {
             var order = await _context.Orders
@@ -187,7 +181,8 @@ namespace VelvySkinWeb.Controllers
 
             if (order == null) return NotFound();
 
-            if (order.OrderStatus != "Completed" && order.OrderStatus != "Thành công" && order.OrderStatus != "Đã giao")
+
+            if (order.OrderStatus != "Hoàn thành" && order.OrderStatus != "Đã giao thành công")
             {
                 TempData["ErrorMsg"] = "Đơn hàng này chưa hoàn tất!";
                 return RedirectToAction("Orders", "Admin");
@@ -248,15 +243,30 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> UpdateShipperInfo(int id, string shipperName, string shipperPhone)
         {
             var order = await _context.Orders.FindAsync(id);
             if (order == null) return NotFound();
 
+            var oldData = new { Tên_Shipper = order.ShipperName ?? "Trống", SĐT = order.ShipperPhone ?? "Trống" };
+            var newData = new { Tên_Shipper = shipperName, SĐT = shipperPhone };
+
             order.ShipperName = shipperName;
             order.ShipperPhone = shipperPhone;
             
+            var log = new AuditLog {
+                Username = User.Identity?.Name ?? "Hệ thống",
+                ActionType = "UPDATE",
+                TableName = "Orders",
+                Description = $"Đã cập nhật thông tin Shipper cho đơn hàng #{id}",
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Không xác định",
+                OldValues = System.Text.Json.JsonSerializer.Serialize(oldData),
+                NewValues = System.Text.Json.JsonSerializer.Serialize(newData),
+                Timestamp = DateTime.Now
+            };
+            _context.AuditLogs.Add(log);
+
             await _context.SaveChangesAsync();
 
             TempData["SuccessMsg"] = "Đã cập nhật thông tin Shipper thành công! Giờ có thể gọi điện luôn rồi đó.";
@@ -264,7 +274,7 @@ namespace VelvySkinWeb.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Staff")]
         public async Task<IActionResult> PrintInvoice(int id)
         {
             var order = await _context.Orders

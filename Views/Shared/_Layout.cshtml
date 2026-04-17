@@ -76,6 +76,8 @@
         .nav-links { list-style: none; display: flex; justify-content: center; }
         .nav-links li { position: relative; }
         .nav-links li a { text-decoration: none; color: var(--text-gray); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; padding: 18px 25px; display: block; transition: var(--transition); }
+        
+        /* Đã giữ nguyên CSS Active của sếp */
         .nav-links li a.active { color: var(--primary-mint); background: rgba(46, 196, 182, 0.05); }
         .nav-links li a.active::after { content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px; background-color: var(--primary-mint); border-radius: 10px 10px 0 0; }
         .nav-links li a:hover { color: var(--primary-mint); background: rgba(46, 196, 182, 0.05); }
@@ -187,7 +189,7 @@
                             if (User.Identity != null && User.Identity.IsAuthenticated)
                             {
                                 var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                                // Đếm số thông báo CHƯA ĐỌC trong Database
+
                                 unreadCount = _context.Notifications.Count(n => n.UserId == uid && !n.IsRead);
                             }
                         }
@@ -241,46 +243,55 @@
         </header>
 
         <nav class="main-nav">
+            
+            @{
+                string currentController = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "";
+                string currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+                string currentTitle = ViewBag.PageTitle?.ToString() ?? "";
+            }
+
             <ul class="nav-links">
-                <li><a asp-controller="Home" asp-action="Index" class="active">Trang chủ</a></li>
-                <li><a asp-controller="Home" asp-action="AiConsultation">Tư vấn AI <i class="fa-solid fa-sparkles text-warning" style="font-size:10px;"></i></a></li>
-                <li class="has-dropdown">
-                <a asp-controller="Products" asp-action="Skincare">Sản phẩm chăm sóc da <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+                <li><a asp-controller="Home" asp-action="Index" class="@(currentController == "Home" && currentAction == "Index" ? "active" : "")">Trang chủ</a></li>
                 
-                <ul class="dropdown-menu">
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="1">Sữa rửa mặt</a></li>
-                    
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="2">Tẩy tế bào chết</a></li>
-                    
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="4">Serum & Đặc trị</a></li>
-                    
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="3">Kem dưỡng ẩm</a></li>
-                    
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="5">Chống nắng</a></li>
-                </ul>
-            </li>
-               <li class="has-dropdown">
-                <a asp-controller="Products" asp-action="Haircare">Sản phẩm chăm sóc tóc <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="6">Dầu gội & Xả</a></li>
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="7">Tinh dầu dưỡng</a></li>
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="8">Mặt nạ tóc</a></li>
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="9">Xịt dưỡng tóc</a></li>
-                </ul>
-            </li>
+                <li><a asp-controller="Home" asp-action="AiConsultation" class="@(currentController == "Home" && currentAction == "AiConsultation" ? "active" : "")">Tư vấn AI <i class="fa-solid fa-sparkles text-warning" style="font-size:10px;"></i></a></li>
+                
                 <li class="has-dropdown">
-                <a asp-controller="Products" asp-action="Makeup">Sản phẩm trang điểm <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="10">Trang điểm mặt</a></li>
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="11">Trang điểm mắt</a></li>
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="12">Son môi</a></li>
-                    <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="13">Dụng Cụ Trang Điểm </a></li>
-                </ul>
-            </li>
-                <li><a asp-controller="Home" asp-action="About">Về chúng tôi</a></li>
+                    <a asp-controller="Products" asp-action="Skincare" class="@(currentController == "Products" && (currentAction == "Skincare" || currentTitle == "Sản phẩm Chăm Sóc Da" || currentTitle == "Sữa rửa mặt" || currentTitle == "Tẩy tế bào chết" || currentTitle == "Serum & Đặc trị" || currentTitle == "Kem dưỡng ẩm" || currentTitle == "Chống nắng") ? "active" : "")">Sản phẩm chăm sóc da <i class="fa-solid fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="1">Sữa rửa mặt</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="2">Tẩy tế bào chết</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="4">Serum & Đặc trị</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="3">Kem dưỡng ẩm</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="5">Chống nắng</a></li>
+                    </ul>
+                </li>
+                
+                <li class="has-dropdown">
+                    <a asp-controller="Products" asp-action="Haircare" class="@(currentController == "Products" && (currentAction == "Haircare" || currentAction == "Shampoo" || currentTitle == "Sản phẩm Chăm Sóc Tóc" || currentTitle == "Dầu gội & Xả" || currentTitle == "Tinh dầu dưỡng" || currentTitle == "Mặt nạ tóc" || currentTitle == "Xịt dưỡng tóc") ? "active" : "")">Sản phẩm chăm sóc tóc <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="6">Dầu gội & Xả</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="7">Tinh dầu dưỡng</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="8">Mặt nạ tóc</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="9">Xịt dưỡng tóc</a></li>
+                    </ul>
+                </li>
+                
+                <li class="has-dropdown">
+                    <a asp-controller="Products" asp-action="Makeup" class="@(currentController == "Products" && (currentAction == "Makeup" || currentTitle == "Sản phẩm Trang Điểm" || currentTitle == "Trang điểm mặt" || currentTitle == "Trang điểm mắt" || currentTitle == "Son môi" || currentTitle == "Dụng Cụ Trang Điểm ") ? "active" : "")">Sản phẩm trang điểm <i class="fa fa-chevron-down" style="font-size: 10px; margin-left: 5px;"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="10">Trang điểm mặt</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="11">Trang điểm mắt</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="12">Son môi</a></li>
+                        <li><a asp-controller="Products" asp-action="CategoryDetail" asp-route-id="13">Dụng Cụ Trang Điểm </a></li>
+                    </ul>
+                </li>
+                
+                <li><a asp-controller="Home" asp-action="About" class="@(currentController == "Home" && currentAction == "About" ? "active" : "")">Về chúng tôi</a></li>
             </ul>
         </nav>
-    </div> <main role="main">
+    </div> 
+
+    <main role="main">
         <div class="container" style="max-width: 1200px; margin: 20px auto 0; padding: 0 5%; position: relative; z-index: 1000;">
             @if (TempData["SuccessMsg"] != null)
             {

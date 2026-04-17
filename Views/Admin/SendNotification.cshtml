@@ -86,14 +86,14 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Form validate & loading effect
+
         document.querySelector('form').addEventListener('submit', function() {
             const btn = document.getElementById('btnSubmit');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Đang phát sóng...';
             btn.style.pointerEvents = 'none';
         });
 
-        // Xử lý thông báo an toàn bằng biến JS (Khắc phục triệt để lỗi gạch đỏ của Razor)
+
         var successMsg = '@Html.Raw(TempData["SuccessMsg"])';
         if (successMsg !== '') {
             Swal.fire({
