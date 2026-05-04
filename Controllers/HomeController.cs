@@ -26,21 +26,13 @@ namespace VelvySkinWeb.Controllers
 
         public async Task<IActionResult> Logout()
         {
-
             await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
-            
-
-            HttpContext.Session.Clear(); 
-            
-
+            HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
         }
 
-public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index()
         {
-
-
-
             var topSellingData = await _context.OrderDetails
                 .Include(od => od.Order)
                 .Where(od => od.Order.OrderStatus == "Đang xử lý" || od.Order.OrderStatus.Contains("Đã thanh toán") || od.Order.OrderStatus == "Thành công" || od.Order.OrderStatus == "Đã giao")
@@ -55,29 +47,24 @@ public async Task<IActionResult> Index()
 
             var topProductIds = topSellingData.Select(x => x.ProductId).ToList();
             var bestSellers = new List<Product>();
-            
+
             if (topProductIds.Any())
             {
                 bestSellers = await _context.Products
                     .Include(p => p.Category)
                     .Where(p => topProductIds.Contains(p.Id) && p.IsActive)
                     .ToListAsync();
-
                 bestSellers = bestSellers.OrderBy(p => topProductIds.IndexOf(p.Id)).ToList();
             }
             else
             {
-
                 bestSellers = await _context.Products
                     .Include(p => p.Category)
                     .Where(p => p.IsActive)
-                    .OrderBy(p => Guid.NewGuid()) 
+                    .OrderBy(p => Guid.NewGuid())
                     .Take(8)
                     .ToListAsync();
             }
-
-
-
 
             var saleProducts = await _context.Products
                 .Include(p => p.Category)
@@ -86,35 +73,25 @@ public async Task<IActionResult> Index()
                 .Take(8)
                 .ToListAsync();
 
-
-
-
-
-
-
-            
             var lovedProducts = await _context.Products
                 .Include(p => p.Category)
                 .Where(p => p.IsActive)
-                .Select(p => new 
+                .Select(p => new
                 {
                     Product = p,
                     TotalSold = _context.OrderDetails.Where(od => od.ProductId == p.Id).Sum(od => (int?)od.Quantity) ?? 0
                 })
                 .OrderByDescending(x => x.TotalSold)
-
-
                 .Take(8)
                 .Select(x => x.Product)
                 .ToListAsync();
-                
 
             if (lovedProducts.Count == 0 || lovedProducts.All(p => topProductIds.Contains(p.Id)))
             {
                 lovedProducts = await _context.Products
                     .Include(p => p.Category)
-                    .Where(p => p.IsActive && !topProductIds.Contains(p.Id)) // Lấy những thằng chưa lọt top bán chạy
-                    .OrderBy(p => Guid.NewGuid()) // Random để có sự đa dạng
+                    .Where(p => p.IsActive && !topProductIds.Contains(p.Id))
+                    .OrderBy(p => Guid.NewGuid())
                     .Take(8)
                     .ToListAsync();
             }
@@ -125,213 +102,267 @@ public async Task<IActionResult> Index()
 
             var allProducts = await _context.Products.Include(p => p.Category).Where(p => p.IsActive).ToListAsync();
             return View(allProducts);
-        } 
-        
-        public IActionResult AiConsultation()
-        {
-            return View();
         }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+        public IActionResult AiConsultation() => View();
+        public IActionResult Privacy() => View();
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        public IActionResult Error() =>
+            View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 
-
-
-
-       
-
-        public IActionResult About()
-        {
-            return View();
-        }
+        public IActionResult About() => View();
 
         public async Task<IActionResult> Vouchers()
         {
-
             var activeCoupons = await _context.Coupons
                 .Where(c => c.IsActive && c.EndDate >= DateTime.Now)
                 .OrderBy(c => c.EndDate)
                 .ToListAsync();
-
             return View(activeCoupons);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetVoucherListHtml()
         {
-
             var activeCoupons = await _context.Coupons
                 .Where(c => c.IsActive && c.EndDate >= DateTime.Now)
-                .OrderBy(c => c.EndDate) 
+                .OrderBy(c => c.EndDate)
                 .ToListAsync();
-
-
             return PartialView("_VoucherListPartial", activeCoupons);
         }
 
         [HttpGet]
-        public IActionResult Maintenance()
-        {
-            return View();
-        }
+        public IActionResult Maintenance() => View();
 
         [HttpGet]
         public IActionResult Support()
         {
-
             TempData["ActiveTab"] = "tab-support";
-            
-
             return RedirectToAction("Profile", "Account");
         }
 
-
-
-[HttpPost]
-public async Task<IActionResult> AiResult(string skinType, string skinConcern, IFormFile faceImage)
-{
-
-    var suggestedProducts = _context.Products.Take(4).ToList();
-
-
-    if (faceImage == null || faceImage.Length == 0)
-    {
-        ViewBag.AiAdvice = "⚠️ LỖI: C# không nhận được bức ảnh nào! Hãy kiểm tra lại Form HTML xem có đúng name='faceImage' và enctype='multipart/form-data' chưa nhé!";
-        ViewBag.Moisture = 0; ViewBag.Oil = 0; ViewBag.Acne = 0; ViewBag.Smoothness = 0;
-        return View(suggestedProducts);
-    }
-
-    try
-    {
-
-        using var ms = new MemoryStream();
-        await faceImage.CopyToAsync(ms);
-        string base64Image = Convert.ToBase64String(ms.ToArray());
-        string mimeType = faceImage.ContentType;
-
-
-        string apiKey = "AQ.Ab8RN6L7Do9LqKJIkVW5DzM6x-vbtnF5qj2hMYGICg-Cso7Yvw"; 
-        string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}";
-
-        string prompt = $"Hãy đóng vai bác sĩ da liễu. Hãy nhìn bức ảnh khuôn mặt này. Người dùng cho biết da họ là '{skinType}' và đang lo ngại về '{skinConcern}'. Hãy phân tích bức ảnh và trả về kết quả BẮT BUỘC ĐÚNG ĐỊNH DẠNG JSON SAU (không có bất kỳ chữ nào khác, giá trị phải là số): {{\"Moisture\": 65, \"Oil\": 40, \"Acne\": 70, \"Smoothness\": 50, \"Advice\": \"3 câu tư vấn cách chăm sóc dựa trên ảnh\"}}";
-
-
-        var requestData = new
+        // ================================================================
+        //  AI RESULT — phân tích ảnh + chỉ số % + gợi ý sản phẩm
+        // ================================================================
+        [HttpPost]
+        public async Task<IActionResult> AiResult(string skinType, string skinConcern, IFormFile faceImage)
         {
-            contents = new[] {
-                new {
-                    parts = new object[] {
-                        new { text = prompt },
-                        new { inlineData = new { mimeType = mimeType, data = base64Image } }
-                    }
-                }
-            }
-        };
-
-        using (var client = new HttpClient())
-        {
-            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
-            var response = await client.PostAsync(url, content);
-            
-            var jsonString = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
+            // --- Kiểm tra ảnh đầu vào ---
+            if (faceImage == null || faceImage.Length == 0)
             {
-                using (JsonDocument doc = JsonDocument.Parse(jsonString))
+                ViewBag.AiAdvice   = "⚠️ Không nhận được ảnh! Hãy kiểm tra lại Form HTML.";
+                ViewBag.Moisture   = 0; ViewBag.Oil  = 0;
+                ViewBag.Acne       = 0; ViewBag.Smoothness = 0;
+                ViewBag.SkinType   = skinType;
+                ViewBag.SkinConcern = skinConcern;
+                var fb = await _context.Products.Include(p => p.Category)
+                                       .Where(p => p.IsActive).Take(4).ToListAsync();
+                return View(fb);
+            }
+
+            // --- Lấy danh sách sản phẩm để nhúng vào prompt (tối đa 40) ---
+            var productListForAI = await _context.Products
+                .Include(p => p.Category)
+                .Where(p => p.IsActive)
+                .Take(40)
+                .Select(p => new
                 {
-                    var aiTextResponse = doc.RootElement.GetProperty("candidates")[0]
-                                   .GetProperty("content").GetProperty("parts")[0]
-                                   .GetProperty("text").GetString();
+                    id   = p.Id,
+                    name = p.Name,
+                    desc = p.ShortDescription ?? "",
+                    ingr = p.Ingredients ?? "",
+                    tags = p.Tags ?? "",
+                    cate = p.Category != null ? p.Category.Name : ""
+                })
+                .ToListAsync();
 
-
-                    aiTextResponse = aiTextResponse.Replace("```json", "").Replace("```", "").Trim();
-
-
-                    using (JsonDocument resultDoc = JsonDocument.Parse(aiTextResponse))
-                    {
-                        ViewBag.Moisture = Convert.ToInt32(resultDoc.RootElement.GetProperty("Moisture").ToString());
-                        ViewBag.Oil = Convert.ToInt32(resultDoc.RootElement.GetProperty("Oil").ToString());
-                        ViewBag.Acne = Convert.ToInt32(resultDoc.RootElement.GetProperty("Acne").ToString());
-                        ViewBag.Smoothness = Convert.ToInt32(resultDoc.RootElement.GetProperty("Smoothness").ToString());
-                        ViewBag.AiAdvice = resultDoc.RootElement.GetProperty("Advice").GetString();
-                    }
-                }
-            }
-            else 
+            string productJson = JsonSerializer.Serialize(productListForAI, new JsonSerializerOptions
             {
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
 
-                ViewBag.AiAdvice = $"⚠️ LỖI TỪ GOOGLE API: {jsonString}";
-                RandomizeNumbers();
-            }
-        }
-    }
-    catch (Exception ex) 
-    { 
+            List<Product> suggestedProducts = new();
 
-        ViewBag.AiAdvice = $"⚠️ LỖI CODE C#: {ex.Message}";
-        RandomizeNumbers();
-    }
-
-    ViewBag.SkinType = skinType; 
-    ViewBag.SkinConcern = skinConcern;
-    return View(suggestedProducts); 
-
-
-    void RandomizeNumbers() {
-        Random rnd = new Random();
-        ViewBag.Moisture = rnd.Next(40, 80); ViewBag.Oil = rnd.Next(30, 85); 
-        ViewBag.Acne = rnd.Next(20, 70); ViewBag.Smoothness = rnd.Next(50, 90);
-    }
-}
-
-private async Task<string> CallGeminiAI(string skinType, string skinProblem)
-{
-    try
-    {
-
-        string apiKey = "AQ.Ab8RN6L7Do9LqKJIkVW5DzM6x-vbtnF5qj2hMYGICg-Cso7Yvw"; 
-       string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}";
-
-
-        var requestData = new
-        {
-            contents = new[] {
-                new { parts = new[] { new { text = $"Đóng vai chuyên gia da liễu Velvy Skin. Viết đúng 3 câu ngắn gọn tư vấn cách chăm sóc cho người có '{skinType}' và đang bị '{skinProblem}'. Trả lời trực tiếp, không dùng ký tự đặc biệt." } } }
-            }
-        };
-
-        using (var client = new HttpClient())
-        {
-            var content = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
-            var response = await client.PostAsync(url, content);
-            
-            if (response.IsSuccessStatusCode)
+            try
             {
+                // --- Encode ảnh sang base64 ---
+                using var ms = new MemoryStream();
+                await faceImage.CopyToAsync(ms);
+                string base64Image = Convert.ToBase64String(ms.ToArray());
+                string mimeType    = faceImage.ContentType;
+
+                string apiKey = "AIzaSyCj6PQ7WAAzQOATA1dnTKwVGzGCg5_CFtc";
+                string url    = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}";
+
+                // ============================================================
+                // PROMPT — Gemini tự NHẬN XÉT da trước, rồi tự TÍNH % từ
+                // chính nhận xét đó để 4 chỉ số luôn nhất quán với lời khuyên.
+                //
+                // Quy ước chỉ số (giải thích rõ để AI hiểu ý nghĩa):
+                //   Moisture   : 0 = rất khô, 100 = đủ ẩm tốt
+                //   Oil        : 0 = không dầu, 100 = rất nhiều dầu
+                //   Acne       : 0 = không mụn/thâm, 100 = rất nhiều
+                //   Smoothness : 0 = da sần sùi, 100 = rất mịn
+                // ============================================================
+                string prompt = $@"Bạn là bác sĩ da liễu AI của Velvy Skin. Hãy thực hiện đúng 3 bước sau:
+
+BƯỚC 1 — QUAN SÁT ẢNH:
+Nhìn kỹ bức ảnh khuôn mặt. Người dùng tự nhận da là ""{skinType}"" và lo ngại về ""{skinConcern}"".
+Viết nhận xét thực tế 3-4 câu về tình trạng da nhìn thấy trong ảnh (Advice).
+
+BƯỚC 2 — TÍNH CHỈ SỐ DỰA THEO NHẬN XÉT:
+Từ nhận xét vừa viết ở Bước 1, quy đổi sang 4 chỉ số số nguyên 0-100:
+- Moisture   (Độ ẩm)    : 0 = rất khô/thiếu ẩm, 100 = căng mọng đủ ẩm
+- Oil        (Độ dầu)   : 0 = không tiết dầu, 100 = rất nhiều dầu bóng nhờn
+- Acne       (Mụn/Thâm) : 0 = không có mụn/thâm, 100 = rất nhiều mụn và vết thâm
+- Smoothness (Độ mịn)   : 0 = da sần/lỗ chân lông to, 100 = da cực mịn đều màu
+
+Ví dụ nhất quán: nếu Advice nói ""da khô, thiếu ẩm"" thì Moisture thấp (~25-40). 
+Nếu Advice nói ""da dầu bóng"" thì Oil cao (~70-85). 
+Nếu Advice nói ""da mịn, ít mụn"" thì Smoothness cao (~75-90) và Acne thấp (~10-20).
+Các chỉ số PHẢI nhất quán với nội dung Advice.
+
+BƯỚC 3 — CHỌN SẢN PHẨM PHÙ HỢP:
+Từ danh sách sản phẩm dưới đây, chọn đúng 4 sản phẩm phù hợp nhất với tình trạng da vừa phân tích:
+{productJson}
+
+OUTPUT: Chỉ trả về JSON THUẦN (không markdown, không giải thích):
+{{
+  ""Advice"": ""[Nhận xét 3-4 câu từ Bước 1]"",
+  ""Moisture"": 65,
+  ""Oil"": 40,
+  ""Acne"": 30,
+  ""Smoothness"": 75,
+  ""SuggestedProductIds"": [1, 5, 12, 20],
+  ""SuggestedReasons"": [""lý do sp1"", ""lý do sp2"", ""lý do sp3"", ""lý do sp4""]
+}}";
+
+                var requestData = new
+                {
+                    contents = new[] {
+                        new {
+                            parts = new object[] {
+                                new { text = prompt },
+                                new { inline_data = new { mime_type = mimeType, data = base64Image } }
+                            }
+                        }
+                    },
+                    generationConfig = new { response_mime_type = "application/json" }
+                };
+
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(45);
+
+                var httpContent = new StringContent(
+                    JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
+                var response   = await client.PostAsync(url, httpContent);
                 var jsonString = await response.Content.ReadAsStringAsync();
-                using (JsonDocument doc = JsonDocument.Parse(jsonString))
+
+                if (response.IsSuccessStatusCode)
                 {
-                    var root = doc.RootElement;
-                    var text = root.GetProperty("candidates")[0]
-                                   .GetProperty("content")
-                                   .GetProperty("parts")[0]
-                                   .GetProperty("text").GetString();
-                    return text; // Trả về câu văn do AI tự sáng tác
+                    using JsonDocument doc = JsonDocument.Parse(jsonString);
+
+                    var aiRaw = doc.RootElement
+                        .GetProperty("candidates")[0]
+                        .GetProperty("content")
+                        .GetProperty("parts")[0]
+                        .GetProperty("text")
+                        .GetString() ?? "";
+
+                    // Làm sạch phòng Gemini vẫn wrap markdown
+                    aiRaw = aiRaw.Replace("```json", "").Replace("```", "").Trim();
+
+                    using JsonDocument result = JsonDocument.Parse(aiRaw);
+                    var root = result.RootElement;
+
+                    // --- Parse chỉ số (dùng GetDouble để xử lý cả 65 lẫn 65.0) ---
+                    ViewBag.Moisture   = root.TryGetProperty("Moisture",   out var m) ? Clamp((int)m.GetDouble()) : 0;
+                    ViewBag.Oil        = root.TryGetProperty("Oil",        out var o) ? Clamp((int)o.GetDouble()) : 0;
+                    ViewBag.Acne       = root.TryGetProperty("Acne",       out var a) ? Clamp((int)a.GetDouble()) : 0;
+                    ViewBag.Smoothness = root.TryGetProperty("Smoothness", out var s) ? Clamp((int)s.GetDouble()) : 0;
+                    ViewBag.AiAdvice   = root.TryGetProperty("Advice",     out var adv) ? adv.GetString() : "";
+
+                    // --- Lý do gợi ý sản phẩm ---
+                    var reasons = new List<string>();
+                    if (root.TryGetProperty("SuggestedReasons", out var rEl) && rEl.ValueKind == JsonValueKind.Array)
+                        reasons = rEl.EnumerateArray().Select(x => x.GetString() ?? "").ToList();
+                    ViewBag.SuggestedReasons = reasons;
+
+                    // --- Lấy sản phẩm theo Id Gemini chọn ---
+                    if (root.TryGetProperty("SuggestedProductIds", out var idsEl) && idsEl.ValueKind == JsonValueKind.Array)
+                    {
+                        var ids = idsEl.EnumerateArray().Select(x => x.GetInt32()).ToList();
+                        var dbP = await _context.Products.Include(p => p.Category)
+                                      .Where(p => ids.Contains(p.Id) && p.IsActive).ToListAsync();
+                        suggestedProducts = dbP.OrderBy(p => ids.IndexOf(p.Id)).ToList();
+                    }
+
+                    // Fallback nếu Gemini không chọn đúng
+                    if (suggestedProducts.Count == 0)
+                        suggestedProducts = await FallbackProducts();
+                }
+                else
+                {
+                    ViewBag.AiAdvice = $"⚠️ LỖI GOOGLE API: {jsonString}";
+                    SetRandomScores();
+                    suggestedProducts = await FallbackProducts();
                 }
             }
-        }
-    }
-    catch { } // Nếu lỗi mạng hoặc API Key sai, nó sẽ chạy xuống dòng dưới
-    
+            catch (Exception ex)
+            {
+                ViewBag.AiAdvice = $"⚠️ LỖI C#: {ex.Message}";
+                SetRandomScores();
+                suggestedProducts = await FallbackProducts();
+            }
 
-    return $"Dựa trên phân tích, da bạn thuộc loại {skinType}. Vấn đề chính đang hiện hữu là {skinProblem}. Lượng dầu và nước đang mất cân bằng. Hệ thống đề xuất lộ trình phục hồi chuyên sâu dưới đây."; 
-}
+            ViewBag.SkinType    = skinType;
+            ViewBag.SkinConcern = skinConcern;
+            return View(suggestedProducts);
+
+            // ---- helpers ----
+            int Clamp(int v) => Math.Max(0, Math.Min(100, v));
+
+            void SetRandomScores()
+            {
+                var rnd = new Random();
+                ViewBag.Moisture   = rnd.Next(30, 75);
+                ViewBag.Oil        = rnd.Next(25, 80);
+                ViewBag.Acne       = rnd.Next(15, 65);
+                ViewBag.Smoothness = rnd.Next(40, 85);
+            }
+
+            async Task<List<Product>> FallbackProducts() =>
+                await _context.Products.Include(p => p.Category)
+                    .Where(p => p.IsActive).OrderBy(p => Guid.NewGuid()).Take(4).ToListAsync();
+        }
+
+        private async Task<string> CallGeminiAI(string skinType, string skinProblem)
+        {
+            try
+            {
+                string apiKey = "AIzaSyCj6PQ7WAAzQOATA1dnTKwVGzGCg5_CFtc";
+                string url    = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}";
+                var requestData = new
+                {
+                    contents = new[] {
+                        new { parts = new[] { new { text = $"Đóng vai chuyên gia da liễu Velvy Skin. Viết đúng 3 câu ngắn gọn tư vấn cách chăm sóc cho người có '{skinType}' và đang bị '{skinProblem}'. Trả lời trực tiếp, không dùng ký tự đặc biệt." } } }
+                    }
+                };
+                using var client  = new HttpClient();
+                var content       = new StringContent(JsonSerializer.Serialize(requestData), Encoding.UTF8, "application/json");
+                var response      = await client.PostAsync(url, content);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    return doc.RootElement.GetProperty("candidates")[0]
+                        .GetProperty("content").GetProperty("parts")[0]
+                        .GetProperty("text").GetString() ?? "";
+                }
+            }
+            catch { }
+            return $"Da bạn thuộc loại {skinType}. Vấn đề chính là {skinProblem}. Hệ thống đề xuất lộ trình phục hồi chuyên sâu dưới đây.";
+        }
     }
 }

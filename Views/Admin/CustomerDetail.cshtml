@@ -1,0 +1,312 @@
+@model VelvySkinWeb.Models.CustomerDetailViewModel
+@{
+    ViewData["Title"] = "Chi Tiết Khách Hàng | Velvy Skin Admin";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml"; 
+}
+
+<style>
+    :root {
+        --mint: #2ec4b6;
+        --dark-mint: #208b81;
+        --light-mint: #f0fdfa;
+        --gold: #c5a059;
+        --bg: #f4f7f6;
+        --text: #333;
+        --border: #edf2f7;
+    }
+
+    .cd-container { font-family: 'Montserrat', sans-serif; color: var(--text); padding: 20px 0; }
+    
+    /* ĐÃ SỬA LỖI: Đổi tên class, bỏ max-width để nó dãn full màn hình, không đụng chạm tới Menu Admin */
+    .velvy-detail-grid { 
+        width: 100%; 
+        display: grid; 
+        grid-template-columns: 350px 1fr; /* Tỷ lệ vàng của Lực */
+        gap: 30px; 
+        align-items: start; 
+    }
+
+    /* --- LEFT COLUMN: USER CARD --- */
+    .user-profile-card { background: white; border-radius: 25px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); text-align: center; }
+    .avatar-lg { width: 120px; height: 120px; border-radius: 50%; border: 5px solid var(--light-mint); margin-bottom: 20px; object-fit: cover; }
+    .user-name { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--dark-mint); margin: 10px 0; font-weight: 700;}
+    .badge-rank { background: var(--gold); color: white; padding: 5px 15px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    
+    .quick-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 30px; border-top: 1px solid var(--border); padding-top: 30px; }
+    .stat-item h4 { font-size: 18px; margin: 0; color: var(--mint); }
+    .stat-item p { font-size: 11px; color: #aaa; text-transform: uppercase; margin: 5px 0 0; }
+
+    /* --- RIGHT COLUMN: DETAILS --- */
+    .content-section { background: white; border-radius: 25px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-bottom: 30px; }
+    .section-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--dark-mint); margin-bottom: 25px; display: flex; align-items: center; gap: 10px; font-weight: 700;}
+    .section-title i { color: var(--gold); font-size: 18px; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .info-label { font-size: 11px; font-weight: 700; color: #bbb; text-transform: uppercase; margin-bottom: 5px; }
+    .info-value { font-size: 14px; font-weight: 500; color: #444; margin-bottom: 20px; word-break: break-word;}
+
+    /* Skin Profile Highlight */
+    .skin-box { background: #fcfaf5; border: 1px solid #f3ece0; border-radius: 20px; padding: 25px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+    /* Table Style */
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .admin-table th { text-align: left; font-size: 11px; text-transform: uppercase; color: #aaa; padding: 15px; border-bottom: 2px solid var(--border); }
+    .admin-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 14px; }
+    
+    .status-pill { padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap;}
+    .pill-done { background: #e8f8f5; color: #27ae60; border: 1px solid #a9dfbf; }
+    .pill-wait { background: #fff4e6; color: #f39c12; border: 1px solid #f9e79f; }
+    .pill-cancel { background: #ffebee; color: #e74c3c; border: 1px solid #ffcdd2; }
+
+    /* Buttons */
+    .btn-edit { background: var(--mint); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; text-decoration: none; display: block; box-sizing: border-box; width: 100%; text-align: center; margin-bottom: 10px;}
+    .btn-edit:hover { background: var(--dark-mint); color: white;}
+
+    .btn-lock { background: #ffebee; color: #e74c3c; border: 1px solid #ffcdd2; padding: 12px 25px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.3s; display: block; text-decoration: none; box-sizing: border-box; width: 100%; text-align: center;}
+    .btn-lock:hover { background: #e74c3c; color: white;}
+
+    .back-link { display: inline-block; margin-bottom: 25px; color: var(--dark-mint); text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.2s; }
+    .back-link:hover { color: var(--mint); transform: translateX(-5px); }
+
+    /* CSS CHO POPUP KHÓA TÀI KHOẢN */
+    .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); display: none; justify-content: center; align-items: center; z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
+    .custom-modal-overlay.active { display: flex; opacity: 1; }
+    .custom-modal-box { background: white; border-radius: 20px; width: 100%; max-width: 450px; padding: 30px; box-shadow: 0 15px 50px rgba(0,0,0,0.2); transform: translateY(-20px); transition: transform 0.3s ease; }
+    .custom-modal-overlay.active .custom-modal-box { transform: translateY(0); }
+    .custom-modal-header { font-family: 'Playfair Display', serif; font-size: 22px; color: #e74c3c; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 700;}
+    .custom-modal-form label { display: block; font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 8px; margin-top: 15px;}
+    .custom-modal-form select, .custom-modal-form textarea { width: 100%; padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border); background: #fafafa; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.3s; }
+    .custom-modal-form select:focus, .custom-modal-form textarea:focus { border-color: #e74c3c; background: white;}
+    .modal-actions { display: flex; gap: 10px; margin-top: 25px; }
+    .btn-modal-cancel { flex: 1; padding: 12px; border-radius: 12px; border: none; background: #f5f5f5; color: #666; font-weight: 600; cursor: pointer; transition: 0.2s;}
+    .btn-modal-cancel:hover { background: #e0e0e0; }
+    .btn-modal-confirm { flex: 1; padding: 12px; border-radius: 12px; border: none; background: #e74c3c; color: white; font-weight: 600; cursor: pointer; transition: 0.2s;}
+    .btn-modal-confirm:hover { background: #c0392b; }
+</style>
+
+<div class="cd-container">
+    <a href="/Admin/Customers" class="back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a>
+
+    <div class="velvy-detail-grid">
+        <!-- CỘT TRÁI (350px tuyệt đối) -->
+        <aside>
+            <div class="user-profile-card" style="position: sticky; top: 20px;">
+                <img src="https://ui-avatars.com/api/?name=@Model.FullName&background=random&size=120" class="avatar-lg" alt="Customer">
+                <div><span class="badge-rank">Thành viên Vàng</span></div>
+                <h2 class="user-name">@Model.FullName</h2>
+                
+                <p style="font-size: 13px; color: #888; font-family: monospace;">ID: #@Model.Id.Substring(0, Math.Min(8, Model.Id.Length))</p>
+                
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <h4>@Model.OrderCount</h4>
+                        <p>Đơn hàng</p>
+                    </div>
+                    <div class="stat-item">
+                        <h4>@Model.TotalSpent.ToString("N0")đ</h4>
+                        <p>Chi tiêu</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <a href="@Url.Action("EditCustomer", "Admin", new { id = Model.Id })" class="btn-edit">
+                        <i class="fa-solid fa-user-pen me-2"></i> Chỉnh sửa hồ sơ
+                    </a>
+                    <button class="btn-lock" onclick="openLockModal()">
+                        <i class="fa-solid fa-lock me-2"></i> Khóa tài khoản
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CỘT PHẢI (Tự động bung rộng hết cỡ) -->
+        <main>
+            <div class="content-section">
+                <div class="section-title"><i class="fa-solid fa-address-book"></i> Thông tin liên hệ</div>
+                <div class="info-grid">
+                    <div>
+                        <div class="info-label">Số điện thoại</div>
+                        <div class="info-value">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "Chưa cập nhật" : Model.PhoneNumber)</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Email</div>
+                        <div class="info-value">@Model.Email</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Trạng thái</div>
+                        <div class="info-value" style="color: #0ca678; font-weight: 700;">Đang hoạt động</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Mã hệ thống</div>
+                        <div class="info-value" style="font-size: 13px; color: #888; font-family: monospace;">@Model.Id</div>
+                    </div>
+                </div>
+                <div class="info-label">Địa chỉ giao hàng mặc định</div>
+                <div class="info-value">Chưa thiết lập địa chỉ mặc định</div>
+            </div>
+
+            <!-- Dữ liệu da thật từ Backend -->
+            <div class="content-section">
+                <div class="section-title"><i class="fa-solid fa-sparkles"></i> Hồ sơ làn da (Skin Analysis)</div>
+                <div class="skin-box">
+                    <div>
+                        <div class="info-label">Loại da</div>
+                        <div class="info-value" style="color: var(--gold); margin-bottom: 0;">@Model.SkinType</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Vấn đề da</div>
+                        <div class="info-value" style="color: var(--gold); margin-bottom: 0;">@Model.SkinConcern</div>
+                    </div>
+                    <div>
+                        <div class="info-label">Dị ứng</div>
+                        <div class="info-value" style="color: #e74c3c; margin-bottom: 0;">@Model.Allergy</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div class="info-label">Ghi chú tư vấn của Admin</div>
+                    <p style="font-size: 13px; font-style: italic; color: #666; background: #f9f9f9; padding: 15px; border-radius: 12px;">"Chưa có ghi chú nội bộ nào cho khách hàng này."</p>
+                </div>
+            </div>
+
+            <!-- Bảng Đơn Hàng từ Backend -->
+            <div class="content-section">
+                <div class="section-title"><i class="fa-solid fa-bag-shopping"></i> Lịch sử đơn hàng gần nhất</div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Mã Đơn</th>
+                            <th>Ngày đặt</th>
+                            <th>Sản phẩm</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var recentOrders = ViewBag.RecentOrders as List<VelvySkinWeb.Models.Order> ?? new List<VelvySkinWeb.Models.Order>();
+                        }
+                        @if (recentOrders.Any())
+                        {
+                            foreach (var order in recentOrders)
+                            {
+                                <tr>
+                                    <td><strong>#VS-@order.Id</strong></td>
+                                    <td>@order.OrderDate.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        @{
+                                            var productNames = order.OrderDetails.Select(od => od.Product?.Name).ToList();
+                                            var displayProducts = string.Join(", ", productNames);
+                                            if (displayProducts.Length > 40) {
+                                                displayProducts = displayProducts.Substring(0, 40) + "...";
+                                            }
+                                        }
+                                        <span style="color: #555;">@displayProducts</span>
+                                    </td>
+                                    <td style="font-weight: 600; color: var(--dark-mint);">@order.TotalAmount.ToString("N0")đ</td>
+                                    <td>
+                                        @{
+                                            string ordStatus = order.OrderStatus ?? "Chưa rõ";
+                                            string ordClass = "pill-wait";
+                                            string lowerStatus = ordStatus.ToLower();
+                                            
+                                            if (lowerStatus.Contains("hoàn thành") || lowerStatus.Contains("đã giao") || lowerStatus.Contains("thành công")) {
+                                                ordClass = "pill-done";
+                                            } 
+                                            else if (lowerStatus.Contains("hủy") || lowerStatus.Contains("cancel")) {
+                                                ordClass = "pill-cancel";
+                                            }
+                                        }
+                                        <span class="status-pill @ordClass">@ordStatus</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #888; padding: 30px;">Khách hàng chưa có đơn hàng nào.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tickets từ Backend -->
+            <div class="content-section">
+                <div class="section-title"><i class="fa-solid fa-headset"></i> Yêu cầu hỗ trợ (Tickets)</div>
+                
+                @if (Model.SupportTickets != null && Model.SupportTickets.Any())
+                {
+                    foreach (var ticket in Model.SupportTickets)
+                    {
+                        <div style="padding: 20px; border: 1px dashed #ddd; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <div>
+                                <h5 style="margin: 0; font-size: 14px; color: var(--dark-mint);">#TK-@ticket.Id: @ticket.Subject</h5>
+                                <p style="margin: 5px 0 0; font-size: 13px; color: #555; line-height: 1.4;">@ticket.Content</p>
+                                <p style="margin: 5px 0 0; font-size: 11px; color: #aaa;"><i class="fa-regular fa-clock"></i> @ticket.CreatedAt.ToString("HH:mm - dd/MM/yyyy")</p>
+                            </div>
+                            
+                            @{
+                                string displayStatus = ticket.Status;
+                                string pillClass = "pill-wait"; 
+                                string statusLower = (ticket.Status ?? "").ToLower();
+
+                                if (statusLower.Contains("pending") || statusLower.Contains("chờ") || statusLower.Contains("đang xử lý")) {
+                                    displayStatus = "Đang chờ xử lý";
+                                    pillClass = "pill-wait";
+                                } 
+                                else if (statusLower.Contains("resolved") || statusLower.Contains("closed") || statusLower.Contains("hoàn thành") || statusLower.Contains("xong")) {
+                                    displayStatus = "Đã hoàn thành";
+                                    pillClass = "pill-done"; 
+                                }
+                            }
+                            <div>
+                                <span class="status-pill @pillClass">@displayStatus</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div style="padding: 30px; border: 1px dashed #ddd; border-radius: 15px; text-align: center; color: #888; font-size: 13px;">
+                        Khách hàng này chưa gửi yêu cầu hỗ trợ nào.
+                    </div>
+                }
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- POPUP MODAL KHÓA TÀI KHOẢN -->
+<div class="custom-modal-overlay" id="lockModal">
+    <div class="custom-modal-box">
+        <div class="custom-modal-header">
+            <i class="fa-solid fa-user-lock"></i> Khóa Tài Khoản
+        </div>
+        
+        <form class="custom-modal-form" asp-controller="Admin" asp-action="LockAccount" method="post">
+            <input type="hidden" name="userId" value="@Model.Id" />
+            
+            <label>Thời gian khóa</label>
+            <select name="lockDays" required>
+                <option value="3">Khóa 3 ngày (Cảnh cáo)</option>
+                <option value="7">Khóa 7 ngày (Vi phạm nhẹ)</option>
+                <option value="30">Khóa 30 ngày (Vi phạm nặng)</option>
+                <option value="9999" style="color: red; font-weight: bold;">Khóa vĩnh viễn (Spam/Lừa đảo)</option>
+            </select>
+
+            <label>Lý do khóa (Lưu vào hồ sơ và AuditLog)</label>
+            <textarea name="lockReason" rows="3" placeholder="VD: Boom hàng nhiều lần, có lời lẽ xúc phạm nhân viên..." required></textarea>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" onclick="closeLockModal()">Hủy bỏ</button>
+                <button type="submit" class="btn-modal-confirm"><i class="fa-solid fa-ban"></i> Xác nhận khóa</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openLockModal() { document.getElementById('lockModal').classList.add('active'); }
+    function closeLockModal() { document.getElementById('lockModal').classList.remove('active'); }
+</script>

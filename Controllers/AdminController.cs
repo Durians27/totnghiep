@@ -494,47 +494,67 @@ namespace VelvySkinWeb.Controllers
             var sortedList = customerList.OrderByDescending(c => c.TotalSpent).ToList();
             return View(sortedList);
         }
+[HttpGet("Admin/CustomerDetail/{id}")]
+[Authorize(Roles = "Admin")]
+public async Task<IActionResult> CustomerDetail(string id)
+{
+    if (string.IsNullOrEmpty(id)) return NotFound();
 
-        [HttpGet("Admin/CustomerDetail/{id}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CustomerDetail(string id)
-        {
-            if (string.IsNullOrEmpty(id)) return NotFound();
+    // 1. Tìm thông tin User Profile
+    var user = await _context.UserProfiles.FirstOrDefaultAsync(u => u.UserId == id);
+    if (user == null)
+    {
+        var identityUser = await _userManager.FindByIdAsync(id);
+        if (identityUser == null) return NotFound();
+        user = new UserProfile { UserId = id, FullName = identityUser.UserName, Email = identityUser.Email };
+    }
 
-            var userAccount = await _userManager.FindByIdAsync(id);
-            if (userAccount == null) return NotFound();
+    // 2. Lấy danh sách Ticket
+    var tickets = await _context.SupportTickets
+                                .Where(t => t.UserId == id)
+                                .OrderByDescending(t => t.CreatedAt)
+                                .ToListAsync();
 
-            var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == id);
-            if (profile == null) profile = new UserProfile { UserId = id, FullName = "Khách hàng Velvy" };
+    // 3. LẤY DANH SÁCH ĐƠN HÀNG (Kèm theo Chi tiết và Tên sản phẩm)
+    var orders = await _context.Orders
+                               .Include(o => o.OrderDetails)
+                                    .ThenInclude(od => od.Product) // Phải có dòng này mới lấy được tên SP
+                               .Where(o => o.UserId == id)
+                               .OrderByDescending(o => o.OrderDate)
+                               .ToListAsync();
 
-            var userOrders = await _context.Orders
-                .Where(o => o.UserId == id && o.OrderStatus != "Cancelled" && o.OrderStatus != "Đã hủy")
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
+    string displayEmail = user.Email;
+    if (string.IsNullOrEmpty(displayEmail))
+    {
+        var identityUser = await _userManager.FindByIdAsync(id);
+        displayEmail = identityUser?.Email ?? "Chưa có Email";
+    }
 
-            decimal totalSpent = userOrders.Sum(o => o.TotalAmount);
-            
-            string rank = "Mới";
-            if (totalSpent >= 50000000) rank = "Kim Cương";
-            else if (totalSpent >= 20000000) rank = "Bạch Kim";
-            else if (totalSpent >= 10000000) rank = "Vàng";
-            else if (totalSpent >= 5000000) rank = "Bạc";
-            else if (totalSpent >= 1000000) rank = "Member";
+    // 4. ĐỔ DỮ LIỆU VÀO VIEWMODEL
+    var viewModel = new VelvySkinWeb.Models.CustomerDetailViewModel
+    {
+        Id = user.UserId ?? id,
+        FullName = user.FullName,
+        Email = displayEmail,
+        PhoneNumber = user.PhoneNumber,
+        SupportTickets = tickets,
+        OrderCount = orders.Count,
+        TotalSpent = orders.Where(o => !string.IsNullOrEmpty(o.OrderStatus) && 
+                                       !o.OrderStatus.ToLower().Contains("hủy") && 
+                                       !o.OrderStatus.ToLower().Contains("cancel"))
+                           .Sum(o => o.TotalAmount),
 
-            var activeTickets = await _context.SupportTickets
-                .Where(t => t.UserId == id && t.Status != "Đã hoàn thành" && t.Status != "Closed")
-                .OrderByDescending(t => t.CreatedAt)
-                .ToListAsync();
+        // ĐÃ FIX: Lấy dữ liệu da từ Database thật của khách hàng
+        SkinType = !string.IsNullOrWhiteSpace(user.SkinType) ? user.SkinType : "Chưa khảo sát",
+        SkinConcern = !string.IsNullOrWhiteSpace(user.SkinConcern) ? user.SkinConcern : "Chưa khảo sát",
+        Allergy = !string.IsNullOrWhiteSpace(user.Allergies) ? user.Allergies : "Không ghi nhận"
+    };
 
-            ViewBag.UserAccount = userAccount;
-            ViewBag.Rank = rank;
-            ViewBag.TotalSpent = totalSpent;
-            ViewBag.OrderCount = userOrders.Count;
-            ViewBag.RecentOrders = userOrders.Take(5).ToList();
-            ViewBag.ActiveTickets = activeTickets;
+    // ĐÃ FIX: Truyền 5 đơn hàng gần nhất sang View để vẽ bảng
+    ViewBag.RecentOrders = orders.Take(5).ToList();
 
-            return View(profile);
-        }
+    return View(viewModel); 
+}
 
         [HttpGet("Admin/EditCustomer/{id}")]
         [Authorize(Roles = "Admin")]
